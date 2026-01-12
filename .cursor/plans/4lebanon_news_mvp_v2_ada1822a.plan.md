@@ -4,65 +4,65 @@ overview: Build a production-ready Arabic RTL Lebanese news website MVP inspired
 todos:
   - id: scaffold-nextjs16
     content: Scaffold Next.js 16.1.1 project with TypeScript, Tailwind, Turbopack
-    status: in_progress
+    status: completed
   - id: husky-setup
     content: Configure Husky + lint-staged for pre-commit enforcement
-    status: pending
+    status: completed
     dependencies:
       - scaffold-nextjs16
   - id: tailwind-palette
-    content: "Set up Tailwind config with #830005/#000000/#ffffff palette"
-    status: pending
+    content: 'Set up Tailwind config with #830005/#000000/#ffffff palette'
+    status: completed
     dependencies:
       - scaffold-nextjs16
   - id: supabase-migrations
-    content: "Create SQL migrations: schema, indexes, RLS policies, seed data"
-    status: pending
+    content: 'Create SQL migrations: schema, indexes, RLS policies, seed data'
+    status: completed
     dependencies:
       - scaffold-nextjs16
   - id: supabase-auth
     content: Set up @supabase/ssr auth utilities and middleware
-    status: pending
+    status: completed
     dependencies:
       - scaffold-nextjs16
   - id: layout-components
     content: Build header, nav bar, footer, live ticker (Lebanon Debate style)
-    status: pending
+    status: completed
     dependencies:
       - tailwind-palette
   - id: public-pages
     content: Implement homepage, search, article, section, author pages
-    status: pending
+    status: completed
     dependencies:
       - supabase-migrations
       - supabase-auth
       - layout-components
   - id: admin-pages
     content: Implement admin login, dashboard, article editor with image upload
-    status: pending
+    status: completed
     dependencies:
       - supabase-migrations
       - supabase-auth
       - layout-components
   - id: seo-feeds
     content: Add sitemap.xml, RSS feed, robots.txt, per-page metadata
-    status: pending
+    status: completed
     dependencies:
       - public-pages
   - id: caching-revalidation
     content: Configure ISR + on-demand revalidation on publish
-    status: pending
+    status: completed
     dependencies:
       - public-pages
       - admin-pages
   - id: github-actions
     content: Create CI workflow for typecheck, lint, build
-    status: pending
+    status: completed
     dependencies:
       - husky-setup
   - id: documentation
     content: Write deploy, performance, CI/CD, and cost documentation
-    status: pending
+    status: completed
     dependencies:
       - caching-revalidation
       - github-actions
@@ -88,17 +88,17 @@ Based on analysis of [lebanondebate.com](https://www.lebanondebate.com/):
 
 ### Color Palette
 
-| Color       | Hex       | Usage                                     |
+| Color | Hex | Usage |
 
 | ----------- | --------- | ----------------------------------------- |
 
-| Deep Red    | `#830005` | Header, nav bar, footer, buttons, accents |
+| Deep Red | `#830005` | Header, nav bar, footer, buttons, accents |
 
-| Black       | `#000000` | Text, logo number "4"                     |
+| Black | `#000000` | Text, logo number "4" |
 
-| White       | `#ffffff` | Background, nav text, logo text           |
+| White | `#ffffff` | Background, nav text, logo text |
 
-| Gold/Yellow | `#f5c518` | Active nav highlights                     |
+| Gold/Yellow | `#f5c518` | Active nav highlights |
 
 ### Layout Components (from Lebanon Debate)
 
@@ -151,21 +151,21 @@ flowchart TB
         Turbo[Turbopack Bundler]
         ISR[ISR Cache Layer]
     end
-    
+
     subgraph Supabase["Supabase Backend"]
         Auth[Auth Service]
         DB[(PostgreSQL + RLS)]
         Storage[Storage Bucket]
         FTS[Full-Text Search]
     end
-    
+
     subgraph CI["CI/CD Pipeline"]
         Husky[Husky Pre-commit]
         Lint[ESLint + Prettier]
         Types[TypeScript Check]
         GHA[GitHub Actions]
     end
-    
+
     RSC --> DB
     RSC --> Auth
     RSC --> Storage
@@ -229,6 +229,7 @@ flowchart TB
   }
 }
 ```
+
 ```bash
 # .husky/pre-commit
 pnpm lint-staged
@@ -310,39 +311,39 @@ E:\Projects\...\app\
 
 ### Tables
 
-| Table            | Key Fields                                                                                                                                                                                    |
+| Table | Key Fields |
 
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
-| `profiles`       | id (uuid = auth.users.id), display_name_ar, avatar_url, bio_ar                                                                                                                                |
+| `profiles` | id (uuid = auth.users.id), display_name_ar, avatar_url, bio_ar |
 
-| `sections`       | id, slug, name_ar (الأخبار, تحليل, etc.)                                                                                                                                                      |
+| `sections` | id, slug, name_ar (الأخبار, تحليل, etc.) |
 
-| `regions`        | id, slug, name_ar                                                                                                                                                                             |
+| `regions` | id, slug, name_ar |
 
-| `countries`      | id, slug, name_ar, region_id FK                                                                                                                                                               |
+| `countries` | id, slug, name_ar, region_id FK |
 
-| `topics`         | id, slug, name_ar                                                                                                                                                                             |
+| `topics` | id, slug, name_ar |
 
-| `articles`       | id, author_id FK, slug, title_ar, excerpt_ar, body_md, cover_image_path, section_id FK, region_id FK, country_id FK, status, published_at, is_breaking, sources JSONB, search_vector tsvector |
+| `articles` | id, author_id FK, slug, title_ar, excerpt_ar, body_md, cover_image_path, section_id FK, region_id FK, country_id FK, status, published_at, is_breaking, sources JSONB, search_vector tsvector |
 
-| `article_topics` | article_id, topic_id                                                                                                                                                                          |
+| `article_topics` | article_id, topic_id |
 
 ### Performance Indexes
 
 ```sql
 -- Core query patterns
-CREATE INDEX idx_articles_published ON articles (published_at DESC) 
+CREATE INDEX idx_articles_published ON articles (published_at DESC)
   WHERE status IN ('published', 'scheduled') AND published_at IS NOT NULL;
-CREATE INDEX idx_articles_breaking ON articles (is_breaking, published_at DESC) 
+CREATE INDEX idx_articles_breaking ON articles (is_breaking, published_at DESC)
   WHERE is_breaking = true;
 CREATE INDEX idx_articles_section ON articles (section_id, published_at DESC);
 CREATE INDEX idx_articles_author ON articles (author_id, updated_at DESC);
 
 -- Full-text search (Arabic using 'simple' config)
-ALTER TABLE articles ADD COLUMN search_vector tsvector 
+ALTER TABLE articles ADD COLUMN search_vector tsvector
   GENERATED ALWAYS AS (
-    to_tsvector('simple', coalesce(title_ar,'') || ' ' || 
+    to_tsvector('simple', coalesce(title_ar,'') || ' ' ||
     coalesce(excerpt_ar,'') || ' ' || coalesce(body_md,''))
   ) STORED;
 CREATE INDEX idx_fts ON articles USING GIN (search_vector);
@@ -357,14 +358,14 @@ CREATE INDEX idx_title_trgm ON articles USING GIN (title_ar gin_trgm_ops);
 ```sql
 -- Public visibility rule
 CREATE POLICY "public_read" ON articles FOR SELECT USING (
-  status IN ('published', 'scheduled') 
-  AND published_at IS NOT NULL 
+  status IN ('published', 'scheduled')
+  AND published_at IS NOT NULL
   AND published_at <= now()
 );
 
 -- Author ownership enforcement
-CREATE POLICY "author_crud" ON articles FOR ALL 
-  USING (author_id = auth.uid()) 
+CREATE POLICY "author_crud" ON articles FOR ALL
+  USING (author_id = auth.uid())
   WITH CHECK (author_id = auth.uid());
 ```
 
@@ -378,18 +379,16 @@ CREATE POLICY "author_crud" ON articles FOR ALL
 // app/layout.tsx
 import { Noto_Kufi_Arabic } from 'next/font/google'
 
-const font = Noto_Kufi_Arabic({ 
+const font = Noto_Kufi_Arabic({
   subsets: ['arabic'],
   weight: ['400', '500', '700'],
-  variable: '--font-arabic'
+  variable: '--font-arabic',
 })
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl" className={font.variable}>
-      <body className="font-arabic bg-white text-black">
-        {children}
-      </body>
+      <body className="font-arabic bg-white text-black">{children}</body>
     </html>
   )
 }
@@ -403,15 +402,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#830005',      // Deep red
+        primary: '#830005', // Deep red
         'primary-dark': '#6a0004',
-        accent: '#f5c518',       // Gold highlight
+        accent: '#f5c518', // Gold highlight
       },
       fontFamily: {
         arabic: ['var(--font-arabic)', 'sans-serif'],
-      }
-    }
-  }
+      },
+    },
+  },
 }
 ```
 
@@ -419,25 +418,25 @@ export default {
 
 ## 5. Caching Strategy (Next.js 16)
 
-| Route                     | Strategy | Revalidate |
+| Route | Strategy | Revalidate |
 
 | ------------------------- | -------- | ---------- |
 
-| Homepage `/`              | ISR      | 120s       |
+| Homepage `/` | ISR | 120s |
 
-| Section `/section/[slug]` | ISR      | 180s       |
+| Section `/section/[slug]` | ISR | 180s |
 
-| Article `/article/[slug]` | ISR      | 600s       |
+| Article `/article/[slug]` | ISR | 600s |
 
-| Search `/search`          | Dynamic  | No cache   |
+| Search `/search` | Dynamic | No cache |
 
-| Author `/author/[id]`     | ISR      | 300s       |
+| Author `/author/[id]` | ISR | 300s |
 
-| RSS `/rss.xml`            | ISR      | 300s       |
+| RSS `/rss.xml` | ISR | 300s |
 
-| Sitemap `/sitemap.xml`    | ISR      | 3600s      |
+| Sitemap `/sitemap.xml` | ISR | 3600s |
 
-| Admin `/*`                | Dynamic  | No cache   |
+| Admin `/*` | Dynamic | No cache |
 
 **On-Demand Revalidation**: Admin publish action triggers `revalidatePath()` for affected routes.
 
@@ -448,8 +447,6 @@ export default {
 ### GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml))
 
 ```yaml
-
-
 name: CI
 on: [push, pull_request]
 jobs:
@@ -482,55 +479,55 @@ Enforces lint + typecheck locally before any commit reaches remote.
 
 Based on Lebanon Debate, adapted for 4Lebanon:
 
-| Arabic             | English       | Route                  |
+| Arabic | English | Route |
 
 | ------------------ | ------------- | ---------------------- |
 
-| الصفحة الرئيسية    | Homepage      | `/`                    |
+| الصفحة الرئيسية | Homepage | `/` |
 
-| أخبار عاجلة        | Breaking News | `/section/breaking`    |
+| أخبار عاجلة | Breaking News | `/section/breaking` |
 
-| تحليل              | Analysis      | `/section/analysis`    |
+| تحليل | Analysis | `/section/analysis` |
 
-| الجغرافيا السياسية | Geopolitics   | `/section/geopolitics` |
+| الجغرافيا السياسية | Geopolitics | `/section/geopolitics` |
 
-| كتّابنا             | Our Writers   | `/authors`             |
+| كتّابنا | Our Writers | `/authors` |
 
-| بحث                | Search        | `/search`              |
+| بحث | Search | `/search` |
 
 ---
 
 ## 8. Documentation Deliverables
 
-| Document                                           | Content                                             |
+| Document | Content |
 
 | -------------------------------------------------- | --------------------------------------------------- |
 
-| [`docs/README_DEPLOY.md`](docs/README_DEPLOY.md)   | Supabase setup, migrations, env vars, Vercel deploy |
+| [`docs/README_DEPLOY.md`](docs/README_DEPLOY.md) | Supabase setup, migrations, env vars, Vercel deploy |
 
-| [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)       | Caching strategy, revalidation, scaling notes       |
+| [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) | Caching strategy, revalidation, scaling notes |
 
-| [`docs/CICD.md`](docs/CICD.md)                     | GitHub Actions, Husky, Vercel flow, migrations      |
+| [`docs/CICD.md`](docs/CICD.md) | GitHub Actions, Husky, Vercel flow, migrations |
 
-| [`docs/STACK_AND_COST.md`](docs/STACK_AND_COST.md) | Monthly cost breakdown                              |
+| [`docs/STACK_AND_COST.md`](docs/STACK_AND_COST.md) | Monthly cost breakdown |
 
 ---
 
 ## 9. Cost Estimates
 
-| Service           | Free Tier       | Production  |
+| Service | Free Tier | Production |
 
 | ----------------- | --------------- | ----------- |
 
-| Vercel            | Hobby (limited) | Pro ~$20/mo |
+| Vercel | Hobby (limited) | Pro ~$20/mo |
 
-| Supabase          | Free (pauses)   | Pro ~$25/mo |
+| Supabase | Free (pauses) | Pro ~$25/mo |
 
-| Domain            | -               | ~$10/yr     |
+| Domain | - | ~$10/yr |
 
-| Email (4 boxes)   | -               | ~$42-84/yr  |
+| Email (4 boxes) | - | ~$42-84/yr |
 
-| **Monthly Total** | ~$0             | ~$50-70/mo  |
+| **Monthly Total** | ~$0 | ~$50-70/mo |
 
 ---
 
