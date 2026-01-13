@@ -162,13 +162,56 @@ p {
 /* Card hover effects */
 .card-hover {
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(198, 27, 35, 0.15);
+}
+
+/* Enhanced button hover effects */
+button,
+.btn,
+a[class*='btn'] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover,
+.btn:hover,
+a[class*='btn']:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:active,
+.btn:active,
+a[class*='btn']:active {
+  transform: translateY(0);
+}
+
+/* Link hover effects */
+a {
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.9;
+}
+
+/* Image hover effects */
+img {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
 /* Live indicator animation */

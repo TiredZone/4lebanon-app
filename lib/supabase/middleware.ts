@@ -34,8 +34,11 @@ export async function updateSession(request: NextRequest) {
 
   // Protect admin routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Allow access to login page
-    if (request.nextUrl.pathname === '/admin/login') {
+    // Allow access to login and signup pages
+    if (
+      request.nextUrl.pathname === '/admin/login' ||
+      request.nextUrl.pathname === '/admin/signup'
+    ) {
       // If already logged in, redirect to admin dashboard
       if (user) {
         const url = request.nextUrl.clone()

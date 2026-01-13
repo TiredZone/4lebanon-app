@@ -108,18 +108,20 @@ export default async function SectionPage({ params, searchParams }: PageProps) {
   const totalPages = Math.ceil(total / PAGINATION.defaultPageSize)
 
   return (
-    <div className="bg-muted py-8">
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Section Header */}
-        <div className="mb-8">
-          <h1 className="text-foreground text-3xl font-bold">{section.name_ar}</h1>
+    <div className="bg-gray-50 py-4 md:py-8">
+      <div className="mx-auto max-w-7xl px-3 md:px-4">
+        {/* Section Header - Mobile optimized */}
+        <div className="mb-4 md:mb-8">
+          <h1 className="text-2xl font-bold text-[#c61b23] md:text-3xl">{section.name_ar}</h1>
           {section.description_ar && (
-            <p className="text-muted-foreground mt-2">{section.description_ar}</p>
+            <p className="mt-1 text-sm text-gray-600 md:mt-2 md:text-base">
+              {section.description_ar}
+            </p>
           )}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-4">
-          {/* Articles Grid */}
+        <div className="grid gap-6 md:gap-8 lg:grid-cols-4">
+          {/* Articles Grid - Mobile: 1 column, Desktop: 3 columns */}
           <div className="lg:col-span-3">
             {articles.length > 0 ? (
               <>
@@ -134,14 +136,16 @@ export default async function SectionPage({ params, searchParams }: PageProps) {
                 )}
               </>
             ) : (
-              <div className="rounded-lg bg-white p-8 text-center">
-                <p className="text-muted-foreground">لا توجد مقالات في هذا القسم حالياً.</p>
+              <div className="rounded-lg bg-white p-6 text-center shadow-sm md:p-8">
+                <p className="text-sm text-gray-500 md:text-base">
+                  لا توجد مقالات في هذا القسم حالياً.
+                </p>
               </div>
             )}
           </div>
 
-          {/* Sidebar */}
-          <aside className="space-y-6">
+          {/* Sidebar - Hidden on mobile, shown on desktop */}
+          <aside className="hidden space-y-6 lg:block">
             <MostReadStatic articles={mostRead} />
           </aside>
         </div>
@@ -175,11 +179,11 @@ function Pagination({
   }
 
   return (
-    <nav className="mt-8 flex items-center justify-center gap-2">
+    <nav className="mt-6 flex flex-wrap items-center justify-center gap-2 md:mt-8">
       {currentPage > 1 && (
         <a
           href={`${baseUrl}?page=${currentPage - 1}`}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
+          className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-[#c61b23] hover:text-white md:px-4 md:text-sm"
         >
           السابق
         </a>
@@ -189,10 +193,10 @@ function Pagination({
         <a
           key={pageNum}
           href={`${baseUrl}?page=${pageNum}`}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
+          className={`rounded-lg px-3 py-2 text-xs font-medium shadow-sm transition-colors md:px-4 md:text-sm ${
             pageNum === currentPage
-              ? 'bg-primary text-white'
-              : 'text-foreground hover:bg-primary bg-white hover:text-white'
+              ? 'bg-[#c61b23] text-white'
+              : 'bg-white text-gray-900 hover:bg-[#c61b23] hover:text-white'
           }`}
         >
           {pageNum}
@@ -202,7 +206,7 @@ function Pagination({
       {currentPage < totalPages && (
         <a
           href={`${baseUrl}?page=${currentPage + 1}`}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
+          className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-[#c61b23] hover:text-white md:px-4 md:text-sm"
         >
           التالي
         </a>

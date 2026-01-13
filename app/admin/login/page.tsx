@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
@@ -79,6 +80,13 @@ function LoginForm() {
       >
         {loading ? 'جاري التسجيل...' : 'تسجيل الدخول'}
       </button>
+
+      <p className="text-center text-sm text-gray-600">
+        ليس لديك حساب؟{' '}
+        <Link href="/admin/signup" className="text-primary font-medium hover:underline">
+          إنشاء حساب جديد
+        </Link>
+      </p>
     </form>
   )
 }

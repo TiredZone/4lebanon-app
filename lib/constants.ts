@@ -11,13 +11,15 @@ export const SITE_CONFIG = {
 
 // Navigation items
 export const NAV_ITEMS = [
-  { href: '/', label: 'الصفحة الرئيسية' },
-  { href: '/section/breaking', label: 'أخبار عاجلة' },
-  { href: '/section/news', label: 'الأخبار' },
-  { href: '/section/analysis', label: 'تحليل' },
-  { href: '/section/geopolitics', label: 'الجغرافيا السياسية' },
+  { href: '/', label: 'الرئيسية' },
+  { href: '/important', label: 'الأخبار المهمة' },
+  { href: '/section/radar', label: 'رادار' },
+  { href: '/section/investigation', label: 'بحث وتحرّي' },
+  { href: '/section/local', label: 'المحليّة' },
+  { href: '/section/security', label: 'أمن وقضاء' },
+  { href: '/section/regional', label: 'إقليمي ودولي' },
+  { href: '/writers', label: 'كتّابنا' },
   { href: '/section/economy', label: 'اقتصاد' },
-  { href: '/section/opinion', label: 'رأي' },
   { href: '/section/special', label: 'خاص' },
 ] as const
 

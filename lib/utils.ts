@@ -8,9 +8,36 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
 }
 
-// Format date in Arabic
+// Arabic month names (Gregorian in Arabic)
+const ARABIC_MONTHS = [
+  'كانون الثاني', // January
+  'شباط', // February
+  'آذار', // March
+  'نيسان', // April
+  'أيار', // May
+  'حزيران', // June
+  'تموز', // July
+  'آب', // August
+  'أيلول', // September
+  'تشرين الأول', // October
+  'تشرين الثاني', // November
+  'كانون الأول', // December
+]
+
+const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
+
+// Format date in Arabic with custom month names
 export function formatDateAr(date: string | Date, formatStr: string = 'dd MMMM yyyy') {
   const d = typeof date === 'string' ? new Date(date) : date
+
+  if (formatStr === 'EEEE، dd MMMM yyyy') {
+    const dayName = ARABIC_DAYS[d.getDay()]
+    const day = d.getDate()
+    const month = ARABIC_MONTHS[d.getMonth()]
+    const year = d.getFullYear()
+    return `${dayName}، ${day} ${month} ${year}`
+  }
+
   return format(d, formatStr, { locale: ar })
 }
 
@@ -84,8 +111,8 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 // Get Supabase storage public URL
-export function getStorageUrl(path: string | null): string | null {
-  if (!path) return null
+export function getStorageUrl(path: string | null): string {
+  if (!path) return '/placeholder.png'
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   return `${supabaseUrl}/storage/v1/object/public/images/${path}`
 }
