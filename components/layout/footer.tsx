@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SITE_CONFIG, FOOTER_NAV, SOCIAL_LINKS } from '@/lib/constants'
 
 export function Footer() {
@@ -10,9 +11,8 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* Logo and Social */}
           <div>
-            <Link href="/" className="mb-4 flex items-baseline gap-1 text-2xl font-bold">
-              <span className="text-3xl text-black">4</span>
-              <span className="text-white">Lebanon</span>
+            <Link href="/" className="mb-4 block">
+              <Image src="/logo-transparent.png" alt="4Lebanon Logo" width={150} height={50} className="h-12 w-auto" />
             </Link>
             <p className="mb-6 text-sm text-white/80">{SITE_CONFIG.description}</p>
             <div className="flex gap-3">

@@ -1,0 +1,48 @@
+{
+  "sections": {
+    "important": "Important",
+    "radar": "Radar",
+    "investigation": "Enquête",
+    "special": "Spécial",
+    "mostRead": "Les Plus Lus",
+    "spotshot": "SpotShot",
+    "local": "Local",
+    "security": "Sécurité",
+    "regional": "Régional",
+    "economy": "Économie",
+    "writers": "Nos Auteurs"
+  },
+  "buttons": {
+    "more": "Plus",
+    "allWriters": "Tous les Auteurs",
+    "search": "Rechercher"
+  },
+  "common": {
+    "noArticles": "Aucun article dans cette section",
+    "readMore": "Lire Plus",
+    "by": "Par",
+    "admin": "Panneau Admin",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "openMenu": "Ouvrir le Menu",
+    "closeMenu": "Fermer le Menu"
+  },
+  "footer": {
+    "about": "À Propos",
+    "contact": "Contactez-nous",
+    "privacy": "Plaintes et Corrections",
+    "terms": "Publicité",
+    "copyright": "© 2026 Lebanon Debate. Tous droits réservés."
+  },
+  "nav": {
+    "home": "Accueil",
+    "local": "Local",
+    "security": "Sécurité",
+    "regional": "Régional",
+    "economy": "Économie",
+    "investigation": "Enquête",
+    "special": "Spécial",
+    "writers": "Auteurs",
+    "radar": "Radar"
+  }
+}

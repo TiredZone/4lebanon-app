@@ -96,6 +96,26 @@ export function ArticleEditor({
     setSources([...sources, { title: '', url: '' }])
   }
 
+  const handleReset = () => {
+    setTitle(article?.title_ar || '')
+    setExcerpt(article?.excerpt_ar || '')
+    setBody(article?.body_md || '')
+    setCoverImage(article?.cover_image_path || '')
+    setSectionId(article?.section_id || null)
+    setRegionId(article?.region_id || null)
+    setCountryId(article?.country_id || null)
+    setSelectedTopics(topicIds)
+    setStatus(article?.status || 'draft')
+    setPublishedAt(
+      article?.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : ''
+    )
+    setIsBreaking(article?.is_breaking || false)
+    setIsFeatured(article?.is_featured || false)
+    setSources(article?.sources || [])
+    setError(null)
+    setSuccess(null)
+  }
+
   const handleRemoveSource = (index: number) => {
     setSources(sources.filter((_, i) => i !== index))
   }
@@ -361,6 +381,14 @@ export function ArticleEditor({
               >
                 {isPending ? 'جاري الحفظ...' : mode === 'create' ? 'إنشاء المقال' : 'حفظ التغييرات'}
               </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={isPending}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                إعادة تعيين
+              </button>
               {mode === 'edit' && (
                 <button
                   type="button"
@@ -389,6 +417,8 @@ export function ArticleEditor({
                   type="button"
                   onClick={() => setCoverImage('')}
                   className="absolute top-2 left-2 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
+                  title="حذف الصورة"
+                  aria-label="حذف الصورة"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -401,7 +431,11 @@ export function ArticleEditor({
                 </button>
               </div>
             )}
+            <label htmlFor="cover-image" className="text-foreground mb-2 block text-sm font-medium">
+              اختر الصورة
+            </label>
             <input
+              id="cover-image"
               type="file"
               accept="image/*"
               onChange={handleImageUpload}

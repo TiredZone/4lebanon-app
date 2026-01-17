@@ -10,7 +10,7 @@ export function NavBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="hidden border-t border-white/10 bg-[#c61b23] lg:block">
+    <nav className="hidden border-t border-gray-200 bg-[#f8f8f8] lg:block">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-center justify-between">
           <ul className="scrollbar-hide flex flex-1 items-center gap-1 overflow-x-auto py-2">
@@ -25,8 +25,8 @@ export function NavBar() {
                     className={cn(
                       'rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
                       isActive
-                        ? 'bg-white/20 text-white'
-                        : 'text-white/90 hover:bg-white/10 hover:text-white'
+                        ? 'bg-[#c61b23] text-white'
+                        : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
                     )}
                   >
                     {item.label}

@@ -1,7 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { useTranslations } from 'next-intl'
-import { getTranslations } from 'next-intl/server'
-import { HeadlineScroller, AnimatedSection, AnimatedCard } from '@/components/layout'
 import { NewsletterForm } from '@/components/layout/newsletter-form'
 import { formatTimeAr, formatDateAr, getStorageUrl } from '@/lib/utils'
 import Link from 'next/link'
@@ -11,7 +8,6 @@ import type { ArticleListItem } from '@/types/database'
 export const revalidate = 120 // 2 minutes
 
 export async function generateMetadata() {
-  const t = await getTranslations('sections')
   return {
     title: '4Lebanon News'
   }

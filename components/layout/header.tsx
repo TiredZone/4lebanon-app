@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { formatDateAr } from '@/lib/utils'
 import { SearchForm } from './search-form'
 import { useState } from 'react'
@@ -35,18 +36,19 @@ export function Header() {
 
             {/* Logo - Center on mobile, left on desktop */}
             <Link href="/" className="order-2 flex items-center gap-2 lg:order-1">
-              <div className="flex items-center">
-                <span className="text-xl font-bold text-white md:text-2xl">لبنانـ</span>
-                <span className="text-xl font-bold text-white md:text-2xl">ـديبايت</span>
-              </div>
+              <Image src="/logo-transparent.png" alt="Logo" width={120} height={40} className="h-8 w-auto md:h-10" priority />
             </Link>
 
-            {/* Center: Date and Live indicator - Desktop only */}
+            {/* Center: Date only - Desktop only */}
             <div className="order-2 hidden items-center gap-4 lg:flex">
               <time className="text-sm opacity-90">{today}</time>
+            </div>
+
+            {/* Removed live button */}
+            <div className="order-2 hidden lg:flex">
               <Link
-                href="/"
-                className="flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-sm transition-colors hover:bg-white/20"
+                href="#"
+                className="hidden"
               >
                 <span className="live-indicator h-2 w-2 rounded-full bg-red-500"></span>
                 <span>مباشر</span>

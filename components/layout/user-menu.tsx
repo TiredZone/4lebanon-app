@@ -58,7 +58,8 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-white transition-colors hover:text-white/80"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition-all hover:bg-gray-800 font-bold"
+        aria-label="User Menu"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -67,15 +68,6 @@ export function UserMenu() {
             strokeWidth={2}
             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
           />
-        </svg>
-        <span className="hidden font-medium sm:inline">{user.email?.split('@')[0]}</span>
-        <svg
-          className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
