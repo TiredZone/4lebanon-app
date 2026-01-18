@@ -309,86 +309,143 @@ export default async function Home() {
       <section className="bg-white py-12">
         <div className="mx-auto max-w-7xl px-4">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            {/* ========== RADAR SECTION ========== */}
+            {/* ========== RADAR SECTION - PREMIUM MAGAZINE ========== */}
             {data.sections.radar.length > 0 && (
-              <div className="rounded-xl bg-white shadow-sm">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-[#c61b23] px-6 py-4">
-                  <Link
-                    href="/section/radar"
-                    className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-                  >
-                    <span>المزيد</span>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </Link>
-                  <h2 className="text-2xl font-bold text-[#c61b23]">رادار</h2>
+              <div className="rounded-xl bg-white shadow-sm" dir="rtl">
+                {/* Glass-Style Header */}
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold text-[#c61b23]">رادار</h2>
+                    <Link
+                      href="/section/radar"
+                      className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                    >
+                      <span>المزيد</span>
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
+                  {/* Gradient Line Accent */}
+                  <div className="mt-3 h-0.5 w-full bg-gradient-to-l from-[#c61b23] to-transparent"></div>
                 </div>
 
-                {/* Content Grid */}
-                <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
-                  {/* Right Side - Featured Card */}
-                  {data.sections.radar[0] && (
-                    <Link
-                      href={`/article/${data.sections.radar[0].slug}`}
-                      className="group space-y-3"
-                    >
-                      {data.sections.radar[0].cover_image_path && (
-                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                {/* Premium Grid: 1.6fr / 1fr */}
+                <div className="grid grid-cols-1 items-start gap-6 p-6 lg:grid-cols-[1.6fr_1fr]">
+                  {/* Left Column - Dual-Hero with Modern Gradients */}
+                  <div className="flex flex-col gap-6">
+                    {/* Hero Card 1 */}
+                    {data.sections.radar[0] && (
+                      <Link
+                        href={`/article/${data.sections.radar[0].slug}`}
+                        className="group relative aspect-video overflow-hidden rounded-[2rem] bg-gray-800"
+                      >
+                        {data.sections.radar[0].cover_image_path && (
                           <Image
                             src={getStorageUrl(data.sections.radar[0].cover_image_path)}
                             alt={data.sections.radar[0].title_ar}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                        </div>
-                      )}
-                      <h3 className="line-clamp-2 text-base leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                        {data.sections.radar[0].title_ar}
-                      </h3>
-                      {data.sections.radar[0].published_at && (
-                        <time className="block text-xs text-gray-500">
-                          {new Date(data.sections.radar[0].published_at).toLocaleDateString(
-                            'ar-EG',
-                            {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            }
-                          )}
-                        </time>
-                      )}
-                    </Link>
-                  )}
+                        )}
+                        {/* Modern Smooth Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 via-50% to-transparent"></div>
 
-                  {/* Left Side - List of Headlines */}
-                  <div className="space-y-0">
-                    {data.sections.radar.slice(1, 4).map((article, index) => (
+                        {/* Content Box */}
+                        <div className="absolute right-0 bottom-0 left-0 overflow-hidden p-6">
+                          <h3 className="mb-2 line-clamp-2 text-2xl leading-tight font-bold break-words text-white drop-shadow-lg">
+                            {data.sections.radar[0].title_ar}
+                          </h3>
+                          {data.sections.radar[0].excerpt_ar && (
+                            <p className="line-clamp-2 text-sm leading-relaxed break-words text-white/90">
+                              {data.sections.radar[0].excerpt_ar}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    )}
+
+                    {/* Hero Card 2 */}
+                    {data.sections.radar[1] && (
+                      <Link
+                        href={`/article/${data.sections.radar[1].slug}`}
+                        className="group relative aspect-video overflow-hidden rounded-[2rem] bg-gray-800"
+                      >
+                        {data.sections.radar[1].cover_image_path && (
+                          <Image
+                            src={getStorageUrl(data.sections.radar[1].cover_image_path)}
+                            alt={data.sections.radar[1].title_ar}
+                            fill
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        )}
+                        {/* Modern Smooth Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 via-50% to-transparent"></div>
+
+                        {/* Content Box */}
+                        <div className="absolute right-0 bottom-0 left-0 overflow-hidden p-6">
+                          <h3 className="mb-2 line-clamp-2 text-2xl leading-tight font-bold break-words text-white drop-shadow-lg">
+                            {data.sections.radar[1].title_ar}
+                          </h3>
+                          {data.sections.radar[1].excerpt_ar && (
+                            <p className="line-clamp-2 text-sm leading-relaxed break-words text-white/90">
+                              {data.sections.radar[1].excerpt_ar}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Right Column - Clean Feed */}
+                  <div className="flex flex-col space-y-6 overflow-hidden">
+                    {data.sections.radar.slice(2, 6).map((article) => (
                       <Link
                         key={article.id}
                         href={`/article/${article.slug}`}
-                        className={`group block py-4 transition-colors hover:bg-gray-50 ${
-                          index !== 0 ? 'border-t border-gray-100' : ''
-                        }`}
+                        className="group flex flex-row-reverse items-start gap-4 overflow-hidden"
                       >
-                        <h4 className="mb-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                          {article.title_ar}
-                        </h4>
-                        {article.published_at && (
-                          <time className="text-xs text-gray-500">
-                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </time>
+                        {/* Thumbnail - 100px square */}
+                        {article.cover_image_path && (
+                          <div className="relative h-[100px] w-[100px] flex-shrink-0 overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
+                            <Image
+                              src={getStorageUrl(article.cover_image_path)}
+                              alt={article.title_ar}
+                              fill
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          </div>
                         )}
+                        {/* Text Area */}
+                        <div className="min-w-0 flex-1 overflow-hidden text-right">
+                          <h4 className="mb-2 line-clamp-2 leading-[1.6] font-bold break-words text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                            {article.title_ar}
+                          </h4>
+                          {article.excerpt_ar && (
+                            <p className="line-clamp-2 text-sm break-words text-gray-500">
+                              {article.excerpt_ar}
+                            </p>
+                          )}
+                          {/* Red Bullet + Date */}
+                          {article.published_at && (
+                            <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-gray-400">
+                              <span className="truncate">
+                                {new Date(article.published_at).toLocaleDateString('ar-LB')}
+                              </span>
+                              <span className="h-1 w-1 flex-shrink-0 rounded-full bg-[#c61b23]"></span>
+                            </div>
+                          )}
+                        </div>
                       </Link>
                     ))}
                   </div>
@@ -396,86 +453,143 @@ export default async function Home() {
               </div>
             )}
 
-            {/* ========== INVESTIGATION SECTION (بحث وتحرّي) ========== */}
+            {/* ========== INVESTIGATION SECTION - PREMIUM MAGAZINE ========== */}
             {data.sections.investigation.length > 0 && (
-              <div className="rounded-xl bg-white shadow-sm">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-[#c61b23] px-6 py-4">
-                  <Link
-                    href="/section/investigation"
-                    className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-                  >
-                    <span>المزيد</span>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </Link>
-                  <h2 className="text-2xl font-bold text-[#c61b23]">بحث وتحرّي</h2>
+              <div className="rounded-xl bg-white shadow-sm" dir="rtl">
+                {/* Glass-Style Header */}
+                <div className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-bold text-[#c61b23]">بحث وتحرّي</h2>
+                    <Link
+                      href="/section/investigation"
+                      className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                    >
+                      <span>المزيد</span>
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
+                  {/* Gradient Line Accent */}
+                  <div className="mt-3 h-0.5 w-full bg-gradient-to-l from-[#c61b23] to-transparent"></div>
                 </div>
 
-                {/* Content Grid */}
-                <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
-                  {/* Right Side - Featured Card */}
-                  {data.sections.investigation[0] && (
-                    <Link
-                      href={`/article/${data.sections.investigation[0].slug}`}
-                      className="group space-y-3"
-                    >
-                      {data.sections.investigation[0].cover_image_path && (
-                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                {/* Premium Grid: 1.6fr / 1fr */}
+                <div className="grid grid-cols-1 items-start gap-6 p-6 lg:grid-cols-[1.6fr_1fr]">
+                  {/* Left Column - Dual-Hero with Modern Gradients */}
+                  <div className="flex flex-col gap-6">
+                    {/* Hero Card 1 */}
+                    {data.sections.investigation[0] && (
+                      <Link
+                        href={`/article/${data.sections.investigation[0].slug}`}
+                        className="group relative aspect-video overflow-hidden rounded-[2rem] bg-gray-800"
+                      >
+                        {data.sections.investigation[0].cover_image_path && (
                           <Image
                             src={getStorageUrl(data.sections.investigation[0].cover_image_path)}
                             alt={data.sections.investigation[0].title_ar}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
-                        </div>
-                      )}
-                      <h3 className="line-clamp-2 text-base leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                        {data.sections.investigation[0].title_ar}
-                      </h3>
-                      {data.sections.investigation[0].published_at && (
-                        <time className="block text-xs text-gray-500">
-                          {new Date(data.sections.investigation[0].published_at).toLocaleDateString(
-                            'ar-EG',
-                            {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            }
-                          )}
-                        </time>
-                      )}
-                    </Link>
-                  )}
+                        )}
+                        {/* Modern Smooth Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 via-50% to-transparent"></div>
 
-                  {/* Left Side - List of Headlines */}
-                  <div className="space-y-0">
-                    {data.sections.investigation.slice(1, 4).map((article, index) => (
+                        {/* Content Box */}
+                        <div className="absolute right-0 bottom-0 left-0 overflow-hidden p-6">
+                          <h3 className="mb-2 line-clamp-2 text-2xl leading-tight font-bold break-words text-white drop-shadow-lg">
+                            {data.sections.investigation[0].title_ar}
+                          </h3>
+                          {data.sections.investigation[0].excerpt_ar && (
+                            <p className="line-clamp-2 text-sm leading-relaxed break-words text-white/90">
+                              {data.sections.investigation[0].excerpt_ar}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    )}
+
+                    {/* Hero Card 2 */}
+                    {data.sections.investigation[1] && (
+                      <Link
+                        href={`/article/${data.sections.investigation[1].slug}`}
+                        className="group relative aspect-video overflow-hidden rounded-[2rem] bg-gray-800"
+                      >
+                        {data.sections.investigation[1].cover_image_path && (
+                          <Image
+                            src={getStorageUrl(data.sections.investigation[1].cover_image_path)}
+                            alt={data.sections.investigation[1].title_ar}
+                            fill
+                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        )}
+                        {/* Modern Smooth Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 via-50% to-transparent"></div>
+
+                        {/* Content Box */}
+                        <div className="absolute right-0 bottom-0 left-0 overflow-hidden p-6">
+                          <h3 className="mb-2 line-clamp-2 text-2xl leading-tight font-bold break-words text-white drop-shadow-lg">
+                            {data.sections.investigation[1].title_ar}
+                          </h3>
+                          {data.sections.investigation[1].excerpt_ar && (
+                            <p className="line-clamp-2 text-sm leading-relaxed break-words text-white/90">
+                              {data.sections.investigation[1].excerpt_ar}
+                            </p>
+                          )}
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Right Column - Clean Feed */}
+                  <div className="flex flex-col space-y-6 overflow-hidden">
+                    {data.sections.investigation.slice(2, 6).map((article) => (
                       <Link
                         key={article.id}
                         href={`/article/${article.slug}`}
-                        className={`group block py-4 transition-colors hover:bg-gray-50 ${
-                          index !== 0 ? 'border-t border-gray-100' : ''
-                        }`}
+                        className="group flex flex-row-reverse items-start gap-4 overflow-hidden"
                       >
-                        <h4 className="mb-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                          {article.title_ar}
-                        </h4>
-                        {article.published_at && (
-                          <time className="text-xs text-gray-500">
-                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </time>
+                        {/* Thumbnail - 100px square */}
+                        {article.cover_image_path && (
+                          <div className="relative h-[100px] w-[100px] flex-shrink-0 overflow-hidden rounded-2xl bg-gray-200 shadow-sm">
+                            <Image
+                              src={getStorageUrl(article.cover_image_path)}
+                              alt={article.title_ar}
+                              fill
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          </div>
                         )}
+                        {/* Text Area */}
+                        <div className="min-w-0 flex-1 overflow-hidden text-right">
+                          <h4 className="mb-2 line-clamp-2 leading-[1.6] font-bold break-words text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                            {article.title_ar}
+                          </h4>
+                          {article.excerpt_ar && (
+                            <p className="line-clamp-2 text-sm break-words text-gray-500">
+                              {article.excerpt_ar}
+                            </p>
+                          )}
+                          {/* Red Bullet + Date */}
+                          {article.published_at && (
+                            <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-gray-400">
+                              <span className="truncate">
+                                {new Date(article.published_at).toLocaleDateString('ar-LB')}
+                              </span>
+                              <span className="h-1 w-1 flex-shrink-0 rounded-full bg-[#c61b23]"></span>
+                            </div>
+                          )}
+                        </div>
                       </Link>
                     ))}
                   </div>
@@ -490,101 +604,132 @@ export default async function Home() {
       {data.sections.special && data.sections.special.length > 0 && (
         <section className="bg-[#f4f4f9] py-12">
           <div className="mx-auto max-w-7xl px-4">
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <Link
-                href="/section/special"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
-              <h2 className="text-3xl font-bold text-[#c61b23]">خاص</h2>
+            {/* Header - Premium Magazine Style */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between pb-4">
+                {/* Title on far RIGHT */}
+                <h2 className="text-3xl font-bold text-[#c61b23]">خاص</h2>
+                {/* More button on far LEFT */}
+                <Link
+                  href="/section/special"
+                  className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
+                >
+                  <span>المزيد</span>
+                  <span>←</span>
+                </Link>
+              </div>
+              {/* Elegant full-width red separator line */}
+              <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* Grid Layout: 60% Right (Hero) + 40% Left (List) */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[60%_40%]">
-              {/* Right Side - The Hero */}
-              {data.sections.special[0] && (
-                <Link href={`/article/${data.sections.special[0].slug}`} className="group">
-                  {/* Large Image */}
-                  {data.sections.special[0].cover_image_path && (
-                    <div className="relative mb-4 aspect-video overflow-hidden rounded-xl shadow-lg transition-shadow duration-300 group-hover:shadow-2xl">
-                      <Image
-                        src={getStorageUrl(data.sections.special[0].cover_image_path)}
-                        alt={data.sections.special[0].title_ar}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                  )}
-
-                  {/* Headline and Date Below Image */}
-                  <div className="space-y-2 text-right">
-                    <h3 className="text-2xl leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                      {data.sections.special[0].title_ar}
-                    </h3>
-                    {data.sections.special[0].published_at && (
-                      <time className="block text-sm text-gray-500">
-                        {new Date(data.sections.special[0].published_at).toLocaleDateString(
-                          'ar-EG',
-                          {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          }
-                        )}
-                      </time>
-                    )}
-                  </div>
-                </Link>
-              )}
-
-              {/* Left Side - The List */}
-              <div className="space-y-6">
-                {data.sections.special.slice(1, 5).map((article) => (
+            {/* Premium Magazine Layout Container */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-[60%_40%] lg:p-8">
+                {/* Left Column - Featured Hero (60% Width) */}
+                {data.sections.special[0] && (
                   <Link
-                    key={article.id}
-                    href={`/article/${article.slug}`}
-                    className="group flex gap-4 rounded-lg bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                    href={`/article/${data.sections.special[0].slug}`}
+                    className="group order-2 lg:order-1"
                   >
-                    {/* Thumbnail on Left (RTL: appears on right visually) */}
-                    {article.cover_image_path && (
-                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-md">
+                    {data.sections.special[0].cover_image_path && (
+                      <div className="relative aspect-video overflow-hidden rounded-3xl">
+                        {/* Background Image with object-cover */}
                         <Image
-                          src={getStorageUrl(article.cover_image_path)}
-                          alt={article.title_ar}
+                          src={getStorageUrl(data.sections.special[0].cover_image_path)}
+                          alt={data.sections.special[0].title_ar}
                           fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
+
+                        {/* Dark bottom-to-top gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Text overlay at bottom right */}
+                        <div className="absolute right-0 bottom-0 left-0 p-6 text-right lg:p-8">
+                          {/* Headline */}
+                          <h3 className="mb-3 text-2xl leading-tight font-bold text-white lg:text-3xl">
+                            {data.sections.special[0].title_ar}
+                          </h3>
+
+                          {/* Article Summary */}
+                          {data.sections.special[0].excerpt_ar && (
+                            <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-white/90 lg:text-base">
+                              {data.sections.special[0].excerpt_ar}
+                            </p>
+                          )}
+
+                          {/* Date */}
+                          {data.sections.special[0].published_at && (
+                            <time className="block text-sm text-white/80">
+                              {new Date(data.sections.special[0].published_at).toLocaleDateString(
+                                'ar-EG',
+                                {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                }
+                              )}
+                            </time>
+                          )}
+                        </div>
                       </div>
                     )}
-
-                    {/* Text on Right (RTL: appears on left visually) */}
-                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-1.5">
-                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                        {article.title_ar}
-                      </h4>
-                      {article.published_at && (
-                        <time className="text-xs text-gray-500">
-                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </time>
-                      )}
-                    </div>
                   </Link>
-                ))}
+                )}
+
+                {/* Right Column - The Feed (40% Width) */}
+                <div className="order-1 space-y-4 lg:order-2">
+                  {data.sections.special.slice(1, 4).map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/article/${article.slug}`}
+                      className="group flex gap-4 transition-all duration-300 hover:-translate-y-1"
+                    >
+                      {/* Text area with light gray background (on RIGHT in RTL) */}
+                      <div className="flex min-w-0 flex-1 flex-col justify-center rounded-lg bg-[#f9f9f9] p-4">
+                        {/* Headline - bold black */}
+                        <h4
+                          className="mb-2 text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {article.title_ar}
+                        </h4>
+
+                        {/* Article summary - muted gray, 2-line clamp */}
+                        {article.excerpt_ar && (
+                          <p
+                            className="text-sm leading-relaxed text-gray-600"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {article.excerpt_ar}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Small square thumbnail (on LEFT in RTL, ~100px) */}
+                      {article.cover_image_path && (
+                        <div className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-xl">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -593,143 +738,142 @@ export default async function Home() {
 
       {/* ==================== MAHALIYA (المحلية) SECTION ==================== */}
       {data.sections.local.length > 0 && (
-        <section className="bg-[#fafafa] py-12">
-          <div className="mx-auto max-w-7xl px-4">
-            {/* Header */}
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <Link
-                href="/section/local"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
-              <h2 className="text-3xl font-bold text-[#c61b23]">المحلية</h2>
+        <section className="bg-[#fafafa] py-12" dir="rtl">
+          <div className="mx-auto max-w-7xl overflow-hidden px-4">
+            {/* Header - Premium Magazine Style */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between pb-4">
+                {/* Title on far RIGHT */}
+                <h2 className="text-3xl font-bold text-[#c61b23]">المحلية</h2>
+                {/* More button on far LEFT */}
+                <Link
+                  href="/section/local"
+                  className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
+                >
+                  <span>المزيد</span>
+                  <span>←</span>
+                </Link>
+              </div>
+              {/* Elegant full-width red separator line */}
+              <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* Hero Asymmetric Grid: 60% Right (Featured) + 40% Left (Secondary) */}
-            <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
-              {/* Right Side - Main Hero Feature */}
-              {data.sections.local[0] && (
-                <Link
-                  href={`/article/${data.sections.local[0].slug}`}
-                  className="group lg:col-span-3"
-                >
-                  {/* Hero Image */}
-                  {data.sections.local[0].cover_image_path && (
-                    <div className="relative mb-4 aspect-video overflow-hidden rounded-2xl border border-gray-100 bg-white">
-                      <Image
-                        src={getStorageUrl(data.sections.local[0].cover_image_path)}
-                        alt={data.sections.local[0].title_ar}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                  )}
-
-                  {/* Headline, Excerpt, Date */}
-                  <div className="space-y-2">
-                    <h3 className="text-2xl leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                      {data.sections.local[0].title_ar}
-                    </h3>
-                    {data.sections.local[0].excerpt_ar && (
-                      <p className="line-clamp-2 text-sm leading-relaxed text-gray-600">
-                        {data.sections.local[0].excerpt_ar}
-                      </p>
-                    )}
-                    {data.sections.local[0].published_at && (
-                      <time className="block text-xs text-gray-500">
-                        {new Date(data.sections.local[0].published_at).toLocaleDateString('ar-EG', {
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </time>
-                    )}
-                  </div>
-                </Link>
-              )}
-
-              {/* Left Side - Three Secondary Cards Stacked */}
-              <div className="space-y-4 lg:col-span-2">
-                {data.sections.local.slice(1, 4).map((article) => (
+            {/* Premium Magazine Layout - 60/40 Power Split */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-[60%_40%] lg:p-8">
+                {/* Left Column - Featured Local Story (60% Width) */}
+                {data.sections.local[0] && (
                   <Link
-                    key={article.id}
-                    href={`/article/${article.slug}`}
-                    className="group flex gap-4 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                    href={`/article/${data.sections.local[0].slug}`}
+                    className="group order-2 lg:order-1"
                   >
-                    {/* Thumbnail on Right (RTL) */}
-                    {article.cover_image_path && (
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+                    {data.sections.local[0].cover_image_path && (
+                      <div className="relative h-[350px] overflow-hidden rounded-3xl lg:aspect-video lg:h-auto">
+                        {/* Background Image with object-cover */}
                         <Image
-                          src={getStorageUrl(article.cover_image_path)}
-                          alt={article.title_ar}
+                          src={getStorageUrl(data.sections.local[0].cover_image_path)}
+                          alt={data.sections.local[0].title_ar}
                           fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
+
+                        {/* Dark bottom-to-top gradient overlay (85% opacity at bottom) */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+
+                        {/* Text overlay at bottom right */}
+                        <div className="absolute right-0 bottom-0 left-0 p-6 text-right lg:p-8">
+                          {/* Headline - White */}
+                          <h3 className="mb-3 text-2xl leading-tight font-bold text-white lg:text-3xl">
+                            {data.sections.local[0].title_ar}
+                          </h3>
+
+                          {/* Article Summary - 2-line clamp - White/Gray */}
+                          {data.sections.local[0].excerpt_ar && (
+                            <p
+                              className="mb-3 text-sm leading-relaxed text-white/90 lg:text-base"
+                              style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {data.sections.local[0].excerpt_ar}
+                            </p>
+                          )}
+
+                          {/* Date */}
+                          {data.sections.local[0].published_at && (
+                            <time className="block text-sm text-white/80">
+                              {new Date(data.sections.local[0].published_at).toLocaleDateString(
+                                'ar-EG',
+                                {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                }
+                              )}
+                            </time>
+                          )}
+                        </div>
                       </div>
                     )}
-
-                    {/* Text on Left (RTL) */}
-                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-1.5">
-                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                        {article.title_ar}
-                      </h4>
-                      {article.excerpt_ar && (
-                        <p className="line-clamp-1 text-xs leading-relaxed text-gray-600">
-                          {article.excerpt_ar}
-                        </p>
-                      )}
-                      {article.published_at && (
-                        <time className="text-xs text-gray-500">
-                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </time>
-                      )}
-                    </div>
                   </Link>
-                ))}
-              </div>
-            </div>
+                )}
 
-            {/* Quick News List - Text Only (3-Column Grid) */}
-            <div className="rounded-2xl border border-[#eeeeee] bg-[#f9f9f9] p-6">
-              <h3 className="mb-4 text-lg font-bold text-[#c61b23]">أخبار سريعة</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {data.sections.local.slice(4, 7).map((article, index) => (
-                  <div key={article.id}>
-                    {index > 0 && <div className="mb-4 border-t border-gray-300 md:hidden" />}
-                    <Link href={`/article/${article.slug}`} className="group block">
-                      <h4 className="mb-2 line-clamp-2 text-sm leading-[1.6] font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                        {article.title_ar}
-                      </h4>
-                      {article.excerpt_ar && (
-                        <p className="mb-2 line-clamp-2 text-xs leading-[1.6] text-gray-600">
-                          {article.excerpt_ar}
-                        </p>
-                      )}
-                      {article.published_at && (
-                        <time className="text-xs text-gray-500">
-                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                            day: 'numeric',
-                            month: 'long',
-                          })}
-                        </time>
+                {/* Right Column - The Local News Feed (40% Width) */}
+                <div className="order-1 space-y-0 divide-y divide-gray-100 lg:order-2">
+                  {data.sections.local.slice(1, 4).map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/article/${article.slug}`}
+                      className="group flex gap-4 py-4 transition-all duration-300 first:pt-0 last:pb-0 hover:bg-gray-50"
+                    >
+                      {/* Text Content on RIGHT (in RTL flow) */}
+                      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-2">
+                        {/* Headline - Bold black with line-clamp-2 */}
+                        <h4
+                          className="text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {article.title_ar}
+                        </h4>
+
+                        {/* Article Summary - Muted gray with line-clamp-2 */}
+                        {article.excerpt_ar && (
+                          <p
+                            className="text-sm leading-relaxed text-gray-600"
+                            style={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}
+                          >
+                            {article.excerpt_ar}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Small square thumbnail on LEFT (in RTL flow) - w-24 h-24 */}
+                      {article.cover_image_path && (
+                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        </div>
                       )}
                     </Link>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -798,7 +942,7 @@ export default async function Home() {
 
             {/* Left Side - Ranked List (02-05) */}
             <div className="space-y-4">
-              {data.recent.slice(1, 5).map((article, index) => {
+              {data.recent.slice(1, 8).map((article, index) => {
                 const rankNumber = (index + 2).toString().padStart(2, '0')
                 return (
                   <Link
@@ -827,7 +971,7 @@ export default async function Home() {
                     )}
 
                     {/* Text Content */}
-                    <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-1">
                       {/* Category */}
                       {article.section && (
                         <span className="mb-1 text-xs font-semibold text-gray-500">
@@ -838,6 +982,12 @@ export default async function Home() {
                       <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
                         {article.title_ar}
                       </h4>
+                      {/* Excerpt */}
+                      {article.excerpt_ar && (
+                        <p className="line-clamp-1 text-xs leading-relaxed text-gray-600">
+                          {article.excerpt_ar}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 )
@@ -901,40 +1051,37 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Security & Justice - 60/40 Hybrid Grid */}
+      {/* Security & Justice - Modern Bento Grid */}
       {data.sections.security.length > 0 && (
-        <section className="bg-white py-12">
+        <section className="bg-white py-12" dir="rtl">
           <div className="mx-auto max-w-7xl px-4">
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <Link
-                href="/section/security"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
-              <h2 className="text-3xl font-bold text-[#c61b23]">أمن وقضاء</h2>
+            <div className="mb-8">
+              <div className="flex items-center justify-between pb-4">
+                <h2 className="text-3xl font-bold text-[#c61b23]">أمن وقضاء</h2>
+                <Link
+                  href="/section/security"
+                  className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
+                >
+                  <span>المزيد</span>
+                  <span>←</span>
+                </Link>
+              </div>
+              <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* 60/40 Hybrid Grid */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-              {/* Right: Large Featured Card (60%) */}
+            {/* Bento Grid Layout */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
+              {/* Hero Card - Spans 2 columns x 2 rows */}
               {data.sections.security[0] && (
                 <Link
                   href={`/article/${data.sections.security[0].slug}`}
-                  className="group lg:col-span-3"
+                  className="group relative overflow-hidden rounded-2xl md:col-span-2 md:row-span-2"
                 >
-                  <div className="overflow-hidden rounded-2xl border border-[#eeeeee] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-                    {data.sections.security[0].cover_image_path && (
-                      <div className="relative aspect-video overflow-hidden">
+                  {data.sections.security[0].cover_image_path && (
+                    <>
+                      {/* Full-bleed background image */}
+                      <div className="relative h-[400px] md:h-full md:min-h-[500px]">
                         <Image
                           src={getStorageUrl(data.sections.security[0].cover_image_path)}
                           alt={data.sections.security[0].title_ar}
@@ -942,43 +1089,49 @@ export default async function Home() {
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
-                    )}
-                    <div className="p-6 leading-[1.6]">
-                      <h3 className="mb-3 text-xl leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                        {data.sections.security[0].title_ar}
-                      </h3>
-                      {data.sections.security[0].excerpt_ar && (
-                        <p className="mb-3 line-clamp-2 text-sm leading-[1.6] text-gray-600">
-                          {data.sections.security[0].excerpt_ar}
-                        </p>
-                      )}
-                      {data.sections.security[0].published_at && (
-                        <time className="text-xs text-gray-500">
-                          {new Date(data.sections.security[0].published_at).toLocaleDateString(
-                            'ar-EG',
-                            {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            }
-                          )}
-                        </time>
-                      )}
-                    </div>
-                  </div>
+
+                      {/* Dark gradient overlay - bottom 60% */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-40% to-transparent" />
+
+                      {/* Text overlay - bottom-left */}
+                      <div className="absolute right-6 bottom-6 left-6 text-left">
+                        <h3 className="mb-3 text-2xl leading-tight font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+                          {data.sections.security[0].title_ar}
+                        </h3>
+                        {data.sections.security[0].excerpt_ar && (
+                          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-white/90 drop-shadow-md lg:text-base">
+                            {data.sections.security[0].excerpt_ar}
+                          </p>
+                        )}
+                        {data.sections.security[0].published_at && (
+                          <time className="block text-sm text-white/90 drop-shadow-md">
+                            {new Date(data.sections.security[0].published_at).toLocaleDateString(
+                              'ar-EG',
+                              {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              }
+                            )}
+                          </time>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </Link>
               )}
 
-              {/* Left: Three Horizontal Items (40%) */}
-              <div className="space-y-4 lg:col-span-2">
-                {data.sections.security.slice(1, 4).map((article) => (
-                  <Link
-                    key={article.id}
-                    href={`/article/${article.slug}`}
-                    className="group flex gap-4 rounded-2xl border border-[#eeeeee] bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                  >
-                    {article.cover_image_path && (
-                      <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-xl">
+              {/* Smaller Cards - Grid items (1x1) */}
+              {data.sections.security.slice(1, 7).map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/article/${article.slug}`}
+                  className="group relative overflow-hidden rounded-2xl"
+                >
+                  {article.cover_image_path && (
+                    <>
+                      {/* Full-bleed background image */}
+                      <div className="relative h-[250px] md:h-[240px]">
                         <Image
                           src={getStorageUrl(article.cover_image_path)}
                           alt={article.title_ar}
@@ -986,28 +1139,33 @@ export default async function Home() {
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col justify-center leading-[1.6]">
-                      <h4 className="mb-2 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                        {article.title_ar}
-                      </h4>
-                      {article.excerpt_ar && (
-                        <p className="mb-1 line-clamp-1 text-xs leading-[1.6] text-gray-600">
-                          {article.excerpt_ar}
-                        </p>
-                      )}
-                      {article.published_at && (
-                        <time className="text-xs text-gray-500">
-                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                            day: 'numeric',
-                            month: 'long',
-                          })}
-                        </time>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
+
+                      {/* Dark gradient overlay - bottom 60% */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-40% to-transparent" />
+
+                      {/* Text overlay - bottom-left */}
+                      <div className="absolute right-4 bottom-4 left-4 text-left">
+                        <h4 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-white drop-shadow-lg md:text-lg">
+                          {article.title_ar}
+                        </h4>
+                        {article.excerpt_ar && (
+                          <p className="mb-2 line-clamp-1 text-xs leading-relaxed text-white/90 drop-shadow-md">
+                            {article.excerpt_ar}
+                          </p>
+                        )}
+                        {article.published_at && (
+                          <time className="block text-xs text-white/90 drop-shadow-md">
+                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                              day: 'numeric',
+                              month: 'long',
+                            })}
+                          </time>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Link>
+              ))}
             </div>
           </div>
         </section>
@@ -1019,6 +1177,7 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4">
             {/* Header with Gradient Underline */}
             <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <h2 className="text-3xl font-bold text-[#c61b23]">إقليمي ودولي</h2>
               <Link
                 href="/section/regional"
                 className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
@@ -1033,7 +1192,6 @@ export default async function Home() {
                   />
                 </svg>
               </Link>
-              <h2 className="text-3xl font-bold text-[#c61b23]">إقليمي ودولي</h2>
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
@@ -1111,23 +1269,36 @@ export default async function Home() {
                 </div>
 
                 {/* Bottom: Quick Scan Text-Only List */}
-                <div className="rounded-2xl bg-[#f8f8f8] p-6 shadow-sm">
+                <div className="rounded-2xl bg-white p-6 shadow-sm">
                   <div className="space-y-4">
-                    {data.sections.regional.slice(3, 6).map((article, index) => (
+                    {data.sections.regional.slice(3, 7).map((article, index) => (
                       <div key={article.id}>
                         {index > 0 && <div className="my-4 border-t border-gray-300" />}
-                        <Link href={`/article/${article.slug}`} className="group block">
-                          <h5 className="mb-2 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                            {article.title_ar}
-                          </h5>
-                          {article.published_at && (
-                            <time className="text-xs text-gray-500">
-                              {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                              })}
-                            </time>
+                        <Link href={`/article/${article.slug}`} className="group flex gap-4">
+                          {/* Thumbnail if available */}
+                          {article.cover_image_path && (
+                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                              <Image
+                                src={getStorageUrl(article.cover_image_path)}
+                                alt={article.title_ar}
+                                fill
+                                className="object-cover transition-transform duration-300 group-hover:scale-110"
+                              />
+                            </div>
                           )}
+                          <div className="flex min-w-0 flex-1 flex-col justify-center">
+                            <h5 className="mb-1 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                              {article.title_ar}
+                            </h5>
+                            {article.published_at && (
+                              <time className="text-xs text-gray-500">
+                                {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                })}
+                              </time>
+                            )}
+                          </div>
                         </Link>
                       </div>
                     ))}
@@ -1145,6 +1316,7 @@ export default async function Home() {
           <div className="mx-auto max-w-7xl px-4">
             {/* Header */}
             <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <h2 className="text-3xl font-bold text-[#c61b23]">كتابنا</h2>
               <Link
                 href="/writers"
                 className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
@@ -1159,7 +1331,6 @@ export default async function Home() {
                   />
                 </svg>
               </Link>
-              <h2 className="text-3xl font-bold text-[#c61b23]">كتابنا</h2>
             </div>
 
             {/* Carousel Container */}
@@ -1181,20 +1352,6 @@ export default async function Home() {
         <section className="bg-[#f9f9f9] py-12">
           <div className="mx-auto max-w-7xl px-4">
             <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <Link
-                href="/section/economy"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
               <div className="flex items-center gap-3">
                 <h2 className="text-3xl font-bold text-[#c61b23]">اقتصاد</h2>
                 <div className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2">
@@ -1213,6 +1370,20 @@ export default async function Home() {
                   </svg>
                 </div>
               </div>
+              <Link
+                href="/section/economy"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {data.sections.economy.map((article) => (
