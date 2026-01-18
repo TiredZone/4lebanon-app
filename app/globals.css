@@ -141,8 +141,14 @@ p {
 /* Utility to hide scrollbars on specific elements (scoped) */
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
 }
+
+@supports (scrollbar-width: none) {
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
   width: 0;
@@ -270,4 +276,17 @@ a[href*='/important'],
 a[href*='/recent'] {
   font-weight: 900 !important;
   color: #000 !important;
+}
+
+/* Text shadow utilities for overlay text readability */
+.text-shadow-lg {
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.8),
+    0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.text-shadow-md {
+  text-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.7),
+    0 0.5px 2px rgba(0, 0, 0, 0.5);
 }
