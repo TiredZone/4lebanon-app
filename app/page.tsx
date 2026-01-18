@@ -1,34 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
-import { useTranslations } from 'next-intl'
-import { getTranslations } from 'next-intl/server'
-import { HeadlineScroller, AnimatedSection, AnimatedCard } from '@/components/layout'
-import { NewsletterForm } from '@/components/layout/newsletter-form'
-import { formatTimeAr, formatDateAr, getStorageUrl } from '@/lib/utils'
+import { getStorageUrl } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
+import WritersCarousel from '@/components/writers-carousel'
 import type { ArticleListItem } from '@/types/database'
 
-export const revalidate = 120 // 2 minutes
+export const revalidate = 120
 
 export async function generateMetadata() {
-  const t = await getTranslations('sections')
   return {
-    title: '4Lebanon News'
+    title: '4Lebanon News',
   }
 }
 
 async function getHomepageData() {
   const supabase = await createClient()
 
-  // Headline articles for المانشيت scroller
-  const { data: headlineArticles } = await supabase
-    .from('articles')
-    .select('id, slug, title_ar, published_at')
-    .eq('is_breaking', true)
-    .order('published_at', { ascending: false })
-    .limit(10)
-
-  // Recent articles for على مدار الساعة (left sidebar) - with excerpt and images
   const { data: recentArticles } = await supabase
     .from('articles')
     .select(
@@ -37,75 +24,46 @@ async function getHomepageData() {
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
+    .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(10)
 
-  // Important/Featured articles (main area) - must have cover images
   const { data: importantArticles } = await supabase
     .from('articles')
     .select(
       `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking,
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
       author:profiles!articles_author_id_fkey(id, display_name_ar),
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
+    .eq('status', 'published')
     .or('is_featured.eq.true,is_breaking.eq.true')
     .not('cover_image_path', 'is', null)
     .order('published_at', { ascending: false })
     .limit(6)
 
-  // Get articles by specific sections for section blocks
   const sectionQueries = await Promise.all([
-    getSectionArticles('radar', 4),
-    getSectionArticles('investigation', 4),
-    getSectionArticles('special', 5),
-    getSectionArticles('local', 6),
-    getSectionArticles('security', 8),
-    getSectionArticles('regional', 6),
-    getSectionArticles('economy', 8),
+    getSectionArticles('radar', 6),
+    getSectionArticles('investigation', 6),
+    getSectionArticles('special', 8),
+    getSectionArticles('local', 8),
+    getSectionArticles('security', 10),
+    getSectionArticles('regional', 8),
+    getSectionArticles('economy', 6),
   ])
 
-  // Get most read articles (we'll use recent popular ones as a fallback)
-  const { data: mostReadArticles } = await supabase
-    .from('articles')
-    .select(
-      `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
-      section:sections!articles_section_id_fkey(id, slug, name_ar)
-    `
-    )
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(6)
-
-  // Get writers/authors with avatars
-  const { data: writers } = await supabase
+  // Fetch writers/authors
+  const { data: writersData } = await supabase
     .from('profiles')
     .select('id, display_name_ar, avatar_url')
     .not('display_name_ar', 'is', null)
-    .limit(6)
+    .limit(10)
 
   return {
-    headlines: ((headlineArticles || []) as Record<string, unknown>[]).map((item) => ({
-      id: item.id as string,
-      slug: item.slug as string,
-      title_ar: item.title_ar as string,
-      published_at: item.published_at as string,
-    })),
-    recent: ((recentArticles || []) as Record<string, unknown>[]).map((item) => ({
-      id: item.id as string,
-      slug: item.slug as string,
-      title_ar: item.title_ar as string,
-      excerpt_ar: item.excerpt_ar as string | null,
-      cover_image_path: item.cover_image_path as string | null,
-      published_at: item.published_at as string | null,
-      is_breaking: item.is_breaking as boolean,
-      section: item.section as { id: number; name_ar: string } | null,
-    })),
+    recent: transformArticles((recentArticles || []) as Record<string, unknown>[]),
     important: transformArticles((importantArticles || []) as Record<string, unknown>[]),
-    mostRead: transformArticles((mostReadArticles || []) as Record<string, unknown>[]),
+    writers: writersData || [],
     sections: {
       radar: sectionQueries[0],
       investigation: sectionQueries[1],
@@ -115,29 +73,23 @@ async function getHomepageData() {
       regional: sectionQueries[5],
       economy: sectionQueries[6],
     },
-    writers: writers || [],
   }
 }
 
-// Helper function to get articles by section slug
 async function getSectionArticles(
   sectionSlug: string,
   limit: number = 6
 ): Promise<ArticleListItem[]> {
   const supabase = await createClient()
 
-  // First get the section ID
   const { data: sectionData } = await supabase
     .from('sections')
     .select('id')
     .eq('slug', sectionSlug)
     .single()
 
-  if (!sectionData) {
-    return []
-  }
+  if (!sectionData) return []
 
-  // Then get articles for that section
   const { data } = await supabase
     .from('articles')
     .select(
@@ -155,7 +107,6 @@ async function getSectionArticles(
   return transformArticles((data || []) as Record<string, unknown>[])
 }
 
-// Transform database response to ArticleListItem
 function transformArticles(articles: Record<string, unknown>[]): ArticleListItem[] {
   return articles.map((article) => ({
     id: article.id as string,
@@ -173,39 +124,46 @@ function transformArticles(articles: Record<string, unknown>[]): ArticleListItem
 
 export default async function Home() {
   const data = await getHomepageData()
-  const t = await getTranslations('sections')
-  const tButtons = await getTranslations('buttons')
-  const tCommon = await getTranslations('common')
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Two Column Layout: على مدار الساعة + الأخبار المهمة */}
-        <div className="mb-12 grid grid-cols-1 gap-8 lg:grid-cols-[40%_60%]">
-          {/* Left Sidebar: على مدار الساعة */}
-          <aside className="border border-gray-200 bg-gray-50">
-            <div className="bg-[#830005] px-4 py-3 text-white">
-              <h2 className="text-xl font-bold">على مدار الساعة</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {data.recent.map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/article/${article.slug}`}
-                  className="block px-4 py-4 transition-colors hover:bg-gray-100"
-                >
-                  <div className="flex items-start gap-3">
-                    <time className="shrink-0 pt-1 text-lg font-bold text-[#830005]">
-                      {article.published_at ? formatTimeAr(article.published_at) : '--:--'}
-                    </time>
-                    <div className="min-w-0 flex-1 space-y-2">
-                      {article.is_breaking && (
-                        <span className="mb-2 inline-block bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
-                          عاجل
-                        </span>
-                      )}
-                      <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-gray-900">
+    <div className="min-h-screen bg-[#f8f8f8]">
+      {/* First Section: 30% Recent + 70% Featured */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-0 lg:grid-cols-[30%_70%]">
+            {/* Right Sidebar - على مدار الساعة (Recent News) */}
+            <div className="order-2 border-l border-gray-200 lg:order-1">
+              {/* Header */}
+              <div className="border-b-2 border-[#c61b23] bg-white px-5 py-3">
+                <h2 className="text-lg font-bold text-[#c61b23]">على مدار الساعة</h2>
+              </div>
+
+              {/* News List */}
+              <div className="bg-white">
+                {data.recent.slice(0, 7).map((article, index) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className={`group flex items-start gap-4 border-b border-gray-100 px-5 py-4 transition-colors last:border-b-0 hover:bg-gray-50 ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                    }`}
+                  >
+                    {/* Time on the left (RTL, so it appears on the right visually) */}
+                    <div className="shrink-0">
+                      <div className="text-base font-bold text-[#c61b23]">
+                        {article.published_at
+                          ? new Date(article.published_at).toLocaleTimeString('ar-EG', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false,
+                            })
+                          : '00:00'}
+                      </div>
+                    </div>
+
+                    {/* Title and excerpt on the right (RTL, so it appears on the left visually) */}
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <h3 className="line-clamp-1 text-sm leading-tight font-semibold text-gray-900 transition-colors group-hover:text-[#c61b23]">
                         {article.title_ar}
                       </h3>
                       {article.excerpt_ar && (
@@ -213,85 +171,1035 @@ export default async function Home() {
                           {article.excerpt_ar}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                    </div>
+                  </Link>
+                ))}
+
+                {/* More Button */}
+                <Link
+                  href="/recent"
+                  className="flex items-center justify-center gap-2 border-t-2 border-[#c61b23] bg-white px-5 py-3 text-center text-sm font-bold text-black transition-colors hover:bg-gray-50"
+                >
+                  <span>المزيد</span>
+                  <span>←</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Left Main Area - الأهم (Featured Articles) */}
+            <div className="order-1 lg:order-2">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b-2 border-[#c61b23] bg-white px-5 py-3">
+                <h2 className="text-lg font-bold text-[#c61b23]">أهم الأخبار</h2>
+                <Link
+                  href="/important"
+                  className="text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
+                >
+                  المزيد ←
+                </Link>
+              </div>
+
+              <div className="bg-white">
+                {/* Top Section - Hero Image (First Featured Article) */}
+                {data.important.slice(0, 1).map((article) => {
+                  if (!article.cover_image_path) return null
+
+                  return (
+                    <Link
+                      key={article.id}
+                      href={`/article/${article.slug}`}
+                      className="group relative block overflow-hidden"
+                    >
+                      {/* Hero Image */}
+                      <div className="relative h-[450px] w-full lg:h-[550px]">
+                        <Image
+                          src={getStorageUrl(article.cover_image_path)}
+                          alt={article.title_ar}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          priority
+                        />
+
+                        {/* Gradient Overlay for Text Readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                      </div>
+
+                      {/* Text Overlay at Bottom Right */}
+                      <div className="absolute right-0 bottom-0 left-0 p-8 lg:p-10">
+                        {/* Category Badge */}
                         {article.section && (
-                          <span className="text-[#830005]">{article.section.name_ar}</span>
+                          <div className="mb-3">
+                            <span className="inline-block rounded bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
+                              {article.section.name_ar}
+                            </span>
+                          </div>
                         )}
+
+                        {/* Title */}
+                        <h2 className="mb-3 text-3xl leading-tight font-bold text-white transition-colors group-hover:text-gray-100 lg:text-4xl xl:text-5xl">
+                          {article.title_ar}
+                        </h2>
+
+                        {/* Date */}
+                        <p className="text-sm font-medium text-white/90 lg:text-base">
+                          {article.published_at &&
+                            new Date(article.published_at).toLocaleDateString('ar-EG', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                        </p>
+                      </div>
+                    </Link>
+                  )
+                })}
+
+                {/* Bottom Section - Two Side-by-Side Images (Next Two Featured Articles) */}
+                <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+                  {data.important.slice(1, 3).map((article) => {
+                    if (!article.cover_image_path) return null
+
+                    return (
+                      <Link
+                        key={article.id}
+                        href={`/article/${article.slug}`}
+                        className="group relative block overflow-hidden border-t border-l border-gray-200 first:border-l-0 sm:first:border-l"
+                      >
+                        {/* Image */}
+                        <div className="relative h-64 w-full lg:h-72">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+
+                          {/* Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                        </div>
+
+                        {/* Text Overlay */}
+                        <div className="absolute right-0 bottom-0 left-0 p-5 lg:p-6">
+                          {/* Category Badge */}
+                          {article.section && (
+                            <div className="mb-2">
+                              <span className="inline-block rounded bg-[#c61b23] px-2 py-0.5 text-xs font-bold text-white">
+                                {article.section.name_ar}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          <h3 className="line-clamp-3 text-lg leading-snug font-bold text-white transition-colors group-hover:text-gray-100 lg:text-xl">
+                            {article.title_ar}
+                          </h3>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== TOP GRID: RADAR & INVESTIGATION ==================== */}
+      <section className="bg-white py-12">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            {/* ========== RADAR SECTION ========== */}
+            {data.sections.radar.length > 0 && (
+              <div className="rounded-xl bg-white shadow-sm">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-[#c61b23] px-6 py-4">
+                  <Link
+                    href="/section/radar"
+                    className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                  >
+                    <span>المزيد</span>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </Link>
+                  <h2 className="text-2xl font-bold text-[#c61b23]">رادار</h2>
+                </div>
+
+                {/* Content Grid */}
+                <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
+                  {/* Right Side - Featured Card */}
+                  {data.sections.radar[0] && (
+                    <Link
+                      href={`/article/${data.sections.radar[0].slug}`}
+                      className="group space-y-3"
+                    >
+                      {data.sections.radar[0].cover_image_path && (
+                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                          <Image
+                            src={getStorageUrl(data.sections.radar[0].cover_image_path)}
+                            alt={data.sections.radar[0].title_ar}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      <h3 className="line-clamp-2 text-base leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                        {data.sections.radar[0].title_ar}
+                      </h3>
+                      {data.sections.radar[0].published_at && (
+                        <time className="block text-xs text-gray-500">
+                          {new Date(data.sections.radar[0].published_at).toLocaleDateString(
+                            'ar-EG',
+                            {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }
+                          )}
+                        </time>
+                      )}
+                    </Link>
+                  )}
+
+                  {/* Left Side - List of Headlines */}
+                  <div className="space-y-0">
+                    {data.sections.radar.slice(1, 4).map((article, index) => (
+                      <Link
+                        key={article.id}
+                        href={`/article/${article.slug}`}
+                        className={`group block py-4 transition-colors hover:bg-gray-50 ${
+                          index !== 0 ? 'border-t border-gray-100' : ''
+                        }`}
+                      >
+                        <h4 className="mb-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                          {article.title_ar}
+                        </h4>
                         {article.published_at && (
-                          <span>{formatDateAr(article.published_at, 'dd/MM')}</span>
+                          <time className="text-xs text-gray-500">
+                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </time>
                         )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========== INVESTIGATION SECTION (بحث وتحرّي) ========== */}
+            {data.sections.investigation.length > 0 && (
+              <div className="rounded-xl bg-white shadow-sm">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-[#c61b23] px-6 py-4">
+                  <Link
+                    href="/section/investigation"
+                    className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                  >
+                    <span>المزيد</span>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </Link>
+                  <h2 className="text-2xl font-bold text-[#c61b23]">بحث وتحرّي</h2>
+                </div>
+
+                {/* Content Grid */}
+                <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2">
+                  {/* Right Side - Featured Card */}
+                  {data.sections.investigation[0] && (
+                    <Link
+                      href={`/article/${data.sections.investigation[0].slug}`}
+                      className="group space-y-3"
+                    >
+                      {data.sections.investigation[0].cover_image_path && (
+                        <div className="relative aspect-video overflow-hidden rounded-lg">
+                          <Image
+                            src={getStorageUrl(data.sections.investigation[0].cover_image_path)}
+                            alt={data.sections.investigation[0].title_ar}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      <h3 className="line-clamp-2 text-base leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                        {data.sections.investigation[0].title_ar}
+                      </h3>
+                      {data.sections.investigation[0].published_at && (
+                        <time className="block text-xs text-gray-500">
+                          {new Date(data.sections.investigation[0].published_at).toLocaleDateString(
+                            'ar-EG',
+                            {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }
+                          )}
+                        </time>
+                      )}
+                    </Link>
+                  )}
+
+                  {/* Left Side - List of Headlines */}
+                  <div className="space-y-0">
+                    {data.sections.investigation.slice(1, 4).map((article, index) => (
+                      <Link
+                        key={article.id}
+                        href={`/article/${article.slug}`}
+                        className={`group block py-4 transition-colors hover:bg-gray-50 ${
+                          index !== 0 ? 'border-t border-gray-100' : ''
+                        }`}
+                      >
+                        <h4 className="mb-1.5 line-clamp-2 text-sm leading-snug font-semibold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                          {article.title_ar}
+                        </h4>
+                        {article.published_at && (
+                          <time className="text-xs text-gray-500">
+                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </time>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== BOTTOM SECTION: KHAS (خاص) ==================== */}
+      {data.sections.special && data.sections.special.length > 0 && (
+        <section className="bg-[#f4f4f9] py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/section/special"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+              <h2 className="text-3xl font-bold text-[#c61b23]">خاص</h2>
+            </div>
+
+            {/* Grid Layout: 60% Right (Hero) + 40% Left (List) */}
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[60%_40%]">
+              {/* Right Side - The Hero */}
+              {data.sections.special[0] && (
+                <Link href={`/article/${data.sections.special[0].slug}`} className="group">
+                  {/* Large Image */}
+                  {data.sections.special[0].cover_image_path && (
+                    <div className="relative mb-4 aspect-video overflow-hidden rounded-xl shadow-lg transition-shadow duration-300 group-hover:shadow-2xl">
+                      <Image
+                        src={getStorageUrl(data.sections.special[0].cover_image_path)}
+                        alt={data.sections.special[0].title_ar}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  )}
+
+                  {/* Headline and Date Below Image */}
+                  <div className="space-y-2 text-right">
+                    <h3 className="text-2xl leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                      {data.sections.special[0].title_ar}
+                    </h3>
+                    {data.sections.special[0].published_at && (
+                      <time className="block text-sm text-gray-500">
+                        {new Date(data.sections.special[0].published_at).toLocaleDateString(
+                          'ar-EG',
+                          {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          }
+                        )}
+                      </time>
+                    )}
+                  </div>
+                </Link>
+              )}
+
+              {/* Left Side - The List */}
+              <div className="space-y-6">
+                {data.sections.special.slice(1, 5).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group flex gap-4 rounded-lg bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  >
+                    {/* Thumbnail on Left (RTL: appears on right visually) */}
+                    {article.cover_image_path && (
+                      <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-md">
+                        <Image
+                          src={getStorageUrl(article.cover_image_path)}
+                          alt={article.title_ar}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </div>
+                    )}
+
+                    {/* Text on Right (RTL: appears on left visually) */}
+                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-1.5">
+                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                        {article.title_ar}
+                      </h4>
+                      {article.published_at && (
+                        <time className="text-xs text-gray-500">
+                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </time>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ==================== MAHALIYA (المحلية) SECTION ==================== */}
+      {data.sections.local.length > 0 && (
+        <section className="bg-[#fafafa] py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/section/local"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+              <h2 className="text-3xl font-bold text-[#c61b23]">المحلية</h2>
+            </div>
+
+            {/* Hero Asymmetric Grid: 60% Right (Featured) + 40% Left (Secondary) */}
+            <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-5">
+              {/* Right Side - Main Hero Feature */}
+              {data.sections.local[0] && (
+                <Link
+                  href={`/article/${data.sections.local[0].slug}`}
+                  className="group lg:col-span-3"
+                >
+                  {/* Hero Image */}
+                  {data.sections.local[0].cover_image_path && (
+                    <div className="relative mb-4 aspect-video overflow-hidden rounded-2xl border border-gray-100 bg-white">
+                      <Image
+                        src={getStorageUrl(data.sections.local[0].cover_image_path)}
+                        alt={data.sections.local[0].title_ar}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  )}
+
+                  {/* Headline, Excerpt, Date */}
+                  <div className="space-y-2">
+                    <h3 className="text-2xl leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                      {data.sections.local[0].title_ar}
+                    </h3>
+                    {data.sections.local[0].excerpt_ar && (
+                      <p className="line-clamp-2 text-sm leading-relaxed text-gray-600">
+                        {data.sections.local[0].excerpt_ar}
+                      </p>
+                    )}
+                    {data.sections.local[0].published_at && (
+                      <time className="block text-xs text-gray-500">
+                        {new Date(data.sections.local[0].published_at).toLocaleDateString('ar-EG', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </time>
+                    )}
+                  </div>
+                </Link>
+              )}
+
+              {/* Left Side - Three Secondary Cards Stacked */}
+              <div className="space-y-4 lg:col-span-2">
+                {data.sections.local.slice(1, 4).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group flex gap-4 rounded-xl border border-gray-100 bg-white p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  >
+                    {/* Thumbnail on Right (RTL) */}
+                    {article.cover_image_path && (
+                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg">
+                        <Image
+                          src={getStorageUrl(article.cover_image_path)}
+                          alt={article.title_ar}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      </div>
+                    )}
+
+                    {/* Text on Left (RTL) */}
+                    <div className="flex min-w-0 flex-1 flex-col justify-center space-y-1.5">
+                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                        {article.title_ar}
+                      </h4>
+                      {article.excerpt_ar && (
+                        <p className="line-clamp-1 text-xs leading-relaxed text-gray-600">
+                          {article.excerpt_ar}
+                        </p>
+                      )}
+                      {article.published_at && (
+                        <time className="text-xs text-gray-500">
+                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </time>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick News List - Text Only (3-Column Grid) */}
+            <div className="rounded-2xl border border-[#eeeeee] bg-[#f9f9f9] p-6">
+              <h3 className="mb-4 text-lg font-bold text-[#c61b23]">أخبار سريعة</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {data.sections.local.slice(4, 7).map((article, index) => (
+                  <div key={article.id}>
+                    {index > 0 && <div className="mb-4 border-t border-gray-300 md:hidden" />}
+                    <Link href={`/article/${article.slug}`} className="group block">
+                      <h4 className="mb-2 line-clamp-2 text-sm leading-[1.6] font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                        {article.title_ar}
+                      </h4>
+                      {article.excerpt_ar && (
+                        <p className="mb-2 line-clamp-2 text-xs leading-[1.6] text-gray-600">
+                          {article.excerpt_ar}
+                        </p>
+                      )}
+                      {article.published_at && (
+                        <time className="text-xs text-gray-500">
+                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                        </time>
+                      )}
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ==================== MOST READ (الأكثر قراءة) SECTION ==================== */}
+      <section className="bg-white py-12">
+        <div className="mx-auto max-w-7xl px-4">
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-[#c61b23]">الأكثر قراءة</h2>
+          </div>
+
+          {/* Asymmetric Grid: 65% Right (#1 Hero) + 35% Left (List 2-5) */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[65%_35%]">
+            {/* Right Side - #1 Ranked Hero */}
+            {data.recent[0] && (
+              <Link href={`/article/${data.recent[0].slug}`} className="group relative">
+                <div className="relative overflow-hidden rounded-3xl shadow-xl transition-shadow duration-300 group-hover:shadow-2xl">
+                  {/* Large Hero Image */}
+                  {data.recent[0].cover_image_path && (
+                    <div className="relative aspect-square overflow-hidden lg:aspect-[4/5]">
+                      <Image
+                        src={getStorageUrl(data.recent[0].cover_image_path)}
+                        alt={data.recent[0].title_ar}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {/* Dark gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                    </div>
+                  )}
+
+                  {/* Ranking Number - Large, Semi-Transparent */}
+                  <div className="absolute top-6 left-6 text-8xl font-bold text-white/20 lg:text-9xl">
+                    01
+                  </div>
+
+                  {/* Content at Bottom */}
+                  <div className="absolute right-0 bottom-0 left-0 p-6 lg:p-8">
+                    {/* Category Tag */}
+                    {data.recent[0].section && (
+                      <div className="mb-3">
+                        <span className="inline-block rounded-full bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
+                          {data.recent[0].section.name_ar}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Headline */}
+                    <h3 className="mb-2 text-2xl leading-tight font-bold text-white lg:text-3xl">
+                      {data.recent[0].title_ar}
+                    </h3>
+
+                    {/* Excerpt */}
+                    {data.recent[0].excerpt_ar && (
+                      <p className="line-clamp-2 text-sm text-white/80">
+                        {data.recent[0].excerpt_ar}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            {/* Left Side - Ranked List (02-05) */}
+            <div className="space-y-4">
+              {data.recent.slice(1, 5).map((article, index) => {
+                const rankNumber = (index + 2).toString().padStart(2, '0')
+                return (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group flex gap-4 rounded-xl bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  >
+                    {/* Thumbnail with Rank Badge */}
+                    {article.cover_image_path && (
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
+                        <Image
+                          src={getStorageUrl(article.cover_image_path)}
+                          alt={article.title_ar}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        {/* Glassmorphism Rank Badge */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
+                            <span className="text-lg font-bold text-[#c61b23] transition-colors group-hover:text-[#9a1519]">
+                              {rankNumber}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Text Content */}
+                    <div className="flex min-w-0 flex-1 flex-col justify-center">
+                      {/* Category */}
+                      {article.section && (
+                        <span className="mb-1 text-xs font-semibold text-gray-500">
+                          {article.section.name_ar}
+                        </span>
+                      )}
+                      {/* Headline */}
+                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                        {article.title_ar}
+                      </h4>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Old Local Section - Grid Cards Design */}
+      {data.sections.local.length > 0 && false && (
+        <section className="bg-[#f8f8f8] py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="section-heading text-3xl font-bold text-black">المحلية</h2>
+              <Link href="/section/local" className="text-sm font-bold text-black">
+                المزيد ←
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {data.sections.local.map((article, index) => (
+                <Link
+                  key={article.id}
+                  href={`/article/${article.slug}`}
+                  className={`group overflow-hidden rounded-2xl bg-white shadow-lg transition-all ${index === 0 ? 'sm:col-span-2 lg:col-span-1 lg:row-span-2' : ''}`}
+                >
+                  {article.cover_image_path && (
+                    <div
+                      className={`relative overflow-hidden ${index === 0 ? 'h-64 lg:h-80' : 'h-48'}`}
+                    >
+                      <Image
+                        src={getStorageUrl(article.cover_image_path)}
+                        alt={article.title_ar}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute right-0 bottom-0 left-0 p-5">
+                        <h3
+                          className={`leading-tight font-bold text-white ${index === 0 ? 'text-xl lg:text-2xl' : 'line-clamp-2 text-lg'}`}
+                        >
+                          {article.title_ar}
+                        </h3>
                       </div>
                     </div>
+                  )}
+                  <div className={index === 0 ? 'p-6' : 'p-4'}>
+                    {article.published_at && (
+                      <time className="text-xs text-gray-500">
+                        {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                          day: '2-digit',
+                          month: 'long',
+                        })}
+                      </time>
+                    )}
                   </div>
                 </Link>
               ))}
             </div>
-            <Link
-              href="/recent"
-              className="block bg-gray-100 py-3 text-center font-bold text-[#830005] transition-colors hover:bg-gray-200"
-            >
-              + المزيــــــد
-            </Link>
-          </aside>
+          </div>
+        </section>
+      )}
 
-          {/* Main Area: الأخبار المهمة */}
-          <AnimatedSection>
-            <div className="mb-6 flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-[#c61b23] md:text-3xl">{t('important')}</h2>
-              <Link href="/important" className="text-sm font-bold text-[#c61b23] hover:underline whitespace-nowrap">
-                {tButtons('more')} ←
+      {/* Security & Justice - 60/40 Hybrid Grid */}
+      {data.sections.security.length > 0 && (
+        <section className="bg-white py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/section/security"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
               </Link>
+              <h2 className="text-3xl font-bold text-[#c61b23]">أمن وقضاء</h2>
             </div>
-            <div className="mb-6 h-0.5 bg-[#c61b23]"></div>
-            <div className="space-y-4">
-              {data.important.length > 0 ? (
-                data.important.map((article, index) => (
-                  <AnimatedCard key={article.id} delay={index * 0.1}>
-                    <Link
-                      href={`/article/${article.slug}`}
-                      className="group flex gap-4 rounded-lg border border-gray-100 bg-white p-4 transition-all duration-300 hover:border-[#c61b23] hover:shadow-xl"
-                    >
-                      <div className="relative h-28 w-40 shrink-0 overflow-hidden rounded-lg md:h-32 md:w-48">
+
+            {/* 60/40 Hybrid Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+              {/* Right: Large Featured Card (60%) */}
+              {data.sections.security[0] && (
+                <Link
+                  href={`/article/${data.sections.security[0].slug}`}
+                  className="group lg:col-span-3"
+                >
+                  <div className="overflow-hidden rounded-2xl border border-[#eeeeee] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                    {data.sections.security[0].cover_image_path && (
+                      <div className="relative aspect-video overflow-hidden">
                         <Image
-                          src={getStorageUrl(article.cover_image_path || '')}
-                          alt={article.title_ar}
+                          src={getStorageUrl(data.sections.security[0].cover_image_path)}
+                          alt={data.sections.security[0].title_ar}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        {article.is_breaking && (
-                          <span className="mb-2 inline-block rounded bg-[#c61b23] px-2 py-1 text-xs font-bold text-white">
-                            عاجل
-                          </span>
-                        )}
-                        {article.section && (
-                          <span className="mb-2 inline-block text-xs font-semibold text-[#c61b23] md:text-sm">
-                            {article.section.name_ar}
-                          </span>
-                        )}
-                        <h3 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-xl">
-                          {article.title_ar}
-                        </h3>
-                        {article.excerpt_ar && (
-                          <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-gray-600 md:text-sm">
-                            {article.excerpt_ar}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                          {article.published_at && (
-                            <time>{formatDateAr(article.published_at)}</time>
+                    )}
+                    <div className="p-6 leading-[1.6]">
+                      <h3 className="mb-3 text-xl leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                        {data.sections.security[0].title_ar}
+                      </h3>
+                      {data.sections.security[0].excerpt_ar && (
+                        <p className="mb-3 line-clamp-2 text-sm leading-[1.6] text-gray-600">
+                          {data.sections.security[0].excerpt_ar}
+                        </p>
+                      )}
+                      {data.sections.security[0].published_at && (
+                        <time className="text-xs text-gray-500">
+                          {new Date(data.sections.security[0].published_at).toLocaleDateString(
+                            'ar-EG',
+                            {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }
                           )}
-                          {article.author && <span>• {article.author.display_name_ar}</span>}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
+
+              {/* Left: Three Horizontal Items (40%) */}
+              <div className="space-y-4 lg:col-span-2">
+                {data.sections.security.slice(1, 4).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group flex gap-4 rounded-2xl border border-[#eeeeee] bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  >
+                    {article.cover_image_path && (
+                      <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-xl">
+                        <Image
+                          src={getStorageUrl(article.cover_image_path)}
+                          alt={article.title_ar}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col justify-center leading-[1.6]">
+                      <h4 className="mb-2 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                        {article.title_ar}
+                      </h4>
+                      {article.excerpt_ar && (
+                        <p className="mb-1 line-clamp-1 text-xs leading-[1.6] text-gray-600">
+                          {article.excerpt_ar}
+                        </p>
+                      )}
+                      {article.published_at && (
+                        <time className="text-xs text-gray-500">
+                          {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                        </time>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Regional & International - Premium 60/40 Power-Grid */}
+      {data.sections.regional.length > 0 && (
+        <section className="bg-[#f8f8f8] py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            {/* Header with Gradient Underline */}
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/section/regional"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+              <h2 className="text-3xl font-bold text-[#c61b23]">إقليمي ودولي</h2>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+              {/* Right: Hero Article (60%) */}
+              {data.sections.regional[0] && (
+                <Link
+                  href={`/article/${data.sections.regional[0].slug}`}
+                  className="group lg:col-span-3"
+                >
+                  <div className="relative h-full min-h-[500px] overflow-hidden rounded-3xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl">
+                    {data.sections.regional[0].cover_image_path && (
+                      <>
+                        <Image
+                          src={getStorageUrl(data.sections.regional[0].cover_image_path)}
+                          alt={data.sections.regional[0].title_ar}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
+                      </>
+                    )}
+                    <div className="absolute right-0 bottom-0 left-0 p-8">
+                      <h3 className="mb-4 text-3xl leading-tight font-bold text-white">
+                        {data.sections.regional[0].title_ar}
+                      </h3>
+                      {data.sections.regional[0].excerpt_ar && (
+                        <p className="mb-3 line-clamp-2 text-base leading-relaxed text-white/90">
+                          {data.sections.regional[0].excerpt_ar}
+                        </p>
+                      )}
+                      {data.sections.regional[0].published_at && (
+                        <time className="text-sm text-white/70">
+                          {new Date(data.sections.regional[0].published_at).toLocaleDateString(
+                            'ar-EG',
+                            {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            }
+                          )}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
+
+              {/* Left: Secondary Feed (40%) */}
+              <div className="space-y-6 lg:col-span-2">
+                {/* Top: Two Small Cards Side-by-Side */}
+                <div className="grid grid-cols-2 gap-4">
+                  {data.sections.regional.slice(1, 3).map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/article/${article.slug}`}
+                      className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                    >
+                      {article.cover_image_path && (
+                        <div className="relative aspect-[4/3] overflow-hidden">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
                         </div>
+                      )}
+                      <div className="p-3">
+                        <h4 className="mb-1 line-clamp-2 text-xs leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                          {article.title_ar}
+                        </h4>
                       </div>
                     </Link>
-                  </AnimatedCard>
-                ))
-              ) : (
-                <div className="py-12 text-center text-gray-500">
+                  ))}
+                </div>
+
+                {/* Bottom: Quick Scan Text-Only List */}
+                <div className="rounded-2xl bg-[#f8f8f8] p-6 shadow-sm">
+                  <div className="space-y-4">
+                    {data.sections.regional.slice(3, 6).map((article, index) => (
+                      <div key={article.id}>
+                        {index > 0 && <div className="my-4 border-t border-gray-300" />}
+                        <Link href={`/article/${article.slug}`} className="group block">
+                          <h5 className="mb-2 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
+                            {article.title_ar}
+                          </h5>
+                          {article.published_at && (
+                            <time className="text-xs text-gray-500">
+                              {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                day: 'numeric',
+                                month: 'long',
+                              })}
+                            </time>
+                          )}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Writers Carousel - Our Writers */}
+      {data.writers && data.writers.length > 0 && (
+        <section className="bg-white py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            {/* Header */}
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/writers"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>جميع الكتاب</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+              <h2 className="text-3xl font-bold text-[#c61b23]">كتابنا</h2>
+            </div>
+
+            {/* Carousel Container */}
+            <WritersCarousel
+              writers={
+                data.writers as {
+                  id: string
+                  display_name_ar: string | null
+                  avatar_url: string | null
+                }[]
+              }
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Economy - 4-Column Card Grid */}
+      {data.sections.economy.length > 0 && (
+        <section className="bg-[#f9f9f9] py-12">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
+              <Link
+                href="/section/economy"
+                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+              >
+                <span>المزيد</span>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-bold text-[#c61b23]">اقتصاد</h2>
+                <div className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2">
                   <svg
-                    className="mx-auto mb-4 h-12 w-12 text-gray-400"
+                    className="h-6 w-6 text-white"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -300,772 +1208,73 @@ export default async function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p>لا توجد أخبار مهمة حالياً</p>
                 </div>
-              )}
+              </div>
             </div>
-            <Link
-              href="/important"
-              className="mt-6 block bg-gray-100 py-3 text-center font-bold text-[#830005] transition-colors hover:bg-gray-200"
-            >
-              + المزيــــــد
-            </Link>
-          </AnimatedSection>
-        </div>
-
-        {/* Section Blocks */}
-        <div className="space-y-12 md:space-y-16">
-          {/* رادار and بحث وتحرّي Section - Side by Side */}
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
-            {/* رادار Section */}
-            <div>
-              <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">{t('radar')}</h2>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {data.sections.economy.map((article) => (
                 <Link
-                  href="/section/radar"
-                  className="text-xs font-bold text-[#c61b23] hover:underline md:text-sm whitespace-nowrap"
+                  key={article.id}
+                  href={`/article/${article.slug}`}
+                  className="group overflow-hidden rounded-2xl border border-[#eeeeee] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
                 >
-                  {tButtons('more')} ←
-                </Link>
-              </div>
-              <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-              {data.sections.radar.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {data.sections.radar.slice(0, 4).map((article) => (
-                    <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                      {article.cover_image_path && (
-                        <div className="relative mb-2 h-28 w-full overflow-hidden rounded md:h-32">
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  {article.cover_image_path && (
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <Image
+                        src={getStorageUrl(article.cover_image_path)}
+                        alt={article.title_ar}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {/* Ticker Icon Overlay */}
+                      <div className="absolute top-3 left-3 rounded-lg bg-amber-500/90 p-1.5">
+                        <svg
+                          className="h-4 w-4 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                           />
-                        </div>
-                      )}
-                      <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                        {article.title_ar}
-                      </h3>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-sm text-gray-400">
-                  <p>لا توجد مقالات في هذا القسم</p>
-                </div>
-              )}
-            </div>
-
-            {/* بحث وتحرّي Section */}
-            <div>
-              <div className="mb-4 flex items-center gap-3">
-                <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">
-                  {t('investigation')}
-                </h2>
-                <Link
-                  href="/section/investigation"
-                  className="text-xs font-bold text-[#c61b23] hover:underline md:text-sm whitespace-nowrap"
-                >
-                  {tButtons('more')} ←
-                </Link>
-              </div>
-              <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-              {data.sections.investigation.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {data.sections.investigation.slice(0, 4).map((article) => (
-                    <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                      {article.cover_image_path && (
-                        <div className="relative mb-2 h-28 w-full overflow-hidden rounded md:h-32">
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
-                      )}
-                      <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                        {article.title_ar}
-                      </h3>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-sm text-gray-400">
-                  <p>لا توجد مقالات في هذا القسم</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* خاص Section - Pink Background List + Images */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">{t('special')}</h2>
-              <Link
-                href="/section/special"
-                className="text-xs font-bold text-[#c61b23] hover:underline md:text-sm whitespace-nowrap"
-              >
-                {tButtons('more')} ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.sections.special.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-                {/* Article List on Left - Pink Background */}
-                <div className="space-y-3 rounded-lg bg-[#f5e6e6] p-4 md:p-6">
-                  {data.sections.special.slice(0, 5).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group flex items-start gap-3 border-b border-gray-300 pb-3 last:border-0 last:pb-0"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                          {article.title_ar}
-                        </h3>
-                      </div>
-                      {article.cover_image_path && (
-                        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded md:h-16 md:w-16">
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-                {/* Featured Images on Right */}
-                <div className="grid grid-cols-2 gap-3 md:gap-4 lg:col-span-2">
-                  {data.sections.special.slice(0, 3).map((article, index) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className={`group ${index === 0 ? 'col-span-2' : ''}`}
-                    >
-                      <div
-                        className={`relative w-full ${index === 0 ? 'h-48 md:h-72' : 'h-32 md:h-44'} overflow-hidden rounded-lg`}
-                      >
-                        {article.cover_image_path && (
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-                      <h4 className="mt-2 line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mt-3 md:text-sm">
-                        {article.title_ar}
-                      </h4>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات في هذا القسم</p>
-              </div>
-            )}
-          </section>
-
-          {/* الأكثر قراءة - Most Read Section */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">
-                {t('mostRead')}
-              </h2>
-              <Link
-                href="/most-read"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                {tButtons('more')} ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.mostRead.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-3">
-                {/* Numbered List on Left */}
-                <div className="space-y-4">
-                  {data.mostRead.slice(1, 6).map((article, index) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group flex items-start gap-3 md:gap-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gray-800 text-base font-bold text-white md:h-12 md:w-12 md:text-lg">
-                          {String(index + 2).padStart(2, '0')}
-                        </div>
-                        {article.cover_image_path && (
-                          <div className="relative h-11 w-14 shrink-0 overflow-hidden rounded md:h-12 md:w-16">
-                            <Image
-                              src={getStorageUrl(article.cover_image_path)}
-                              alt={article.title_ar}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                          {article.title_ar}
-                        </h3>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                {/* Large Featured Article on Right */}
-                <div className="lg:col-span-2">
-                  {data.mostRead[0] && (
-                    <Link href={`/article/${data.mostRead[0].slug}`} className="group block">
-                      <div className="relative">
-                        <div className="relative h-56 w-full overflow-hidden rounded-lg md:h-80">
-                          {data.mostRead[0].cover_image_path && (
-                            <Image
-                              src={getStorageUrl(data.mostRead[0].cover_image_path)}
-                              alt={data.mostRead[0].title_ar}
-                              fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                          )}
-                        </div>
-                        <div className="absolute top-3 right-3 rounded bg-[#c61b23] px-3 py-1 text-2xl font-bold text-white md:top-4 md:right-4 md:px-4 md:py-2 md:text-3xl">
-                          01
-                        </div>
-                      </div>
-                      <h3 className="mt-3 line-clamp-2 text-base leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mt-4 md:text-xl">
-                        {data.mostRead[0].title_ar}
-                      </h3>
-                      {data.mostRead[0].excerpt_ar && (
-                        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-gray-600 md:text-sm">
-                          {data.mostRead[0].excerpt_ar}
-                        </p>
-                      )}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات</p>
-              </div>
-            )}
-          </section>
-
-          {/* SpotShot Section - Video Block */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">SpotShot</h2>
-              <Link
-                href="/section/spotshot"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                المزيد ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.mostRead.length > 0 || data.important.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-4">
-                {/* Article List on Left */}
-                <div className="space-y-4">
-                  {data.mostRead.slice(0, 4).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group flex items-start gap-3"
-                    >
-                      {article.cover_image_path && (
-                        <div className="relative h-11 w-16 shrink-0 overflow-hidden rounded md:h-14 md:w-20">
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="bg-opacity-30 absolute inset-0 flex items-center justify-center bg-black">
-                            <svg
-                              className="h-5 w-5 text-white md:h-6 md:w-6"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <h4 className="line-clamp-3 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                          {article.title_ar}
-                        </h4>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                {/* Large Video on Right */}
-                <div className="lg:col-span-3">
-                  {data.important[0] && (
-                    <div className="group relative h-56 w-full cursor-pointer overflow-hidden rounded-lg bg-gray-900 md:h-80">
-                      {data.important[0].cover_image_path ? (
-                        <Image
-                          src={getStorageUrl(data.important[0].cover_image_path)}
-                          alt={data.important[0].title_ar}
-                          fill
-                          className="object-cover opacity-80 transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-gray-800"></div>
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-opacity-90 flex h-16 w-16 items-center justify-center rounded-full bg-white transition-colors group-hover:bg-[#c61b23] md:h-20 md:w-20">
-                          <svg
-                            className="mr-1 h-8 w-8 text-gray-900 transition-colors group-hover:text-white md:h-10 md:w-10"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black via-black/50 to-transparent p-4 md:p-6">
-                        <p className="text-sm leading-tight font-bold text-white md:text-lg">
-                          {data.important[0].title_ar}
-                        </p>
-                        {data.important[0].excerpt_ar && (
-                          <p className="mt-1 line-clamp-2 text-xs text-white opacity-90 md:mt-2 md:text-sm">
-                            {data.important[0].excerpt_ar}
-                          </p>
-                        )}
+                        </svg>
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد فيديوهات</p>
-              </div>
-            )}
-          </section>
-
-          {/* المحلية Section - Multiple Images Layout */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">المحلية</h2>
-              <Link
-                href="/section/local"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                المزيد ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.sections.local.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
-                  {/* Large Featured - spans 2 columns */}
-                  {data.sections.local[0] && (
-                    <Link
-                      href={`/article/${data.sections.local[0].slug}`}
-                      className="group md:col-span-2"
-                    >
-                      <div className="relative h-48 w-full overflow-hidden rounded-lg md:h-64 lg:h-80">
-                        {data.sections.local[0].cover_image_path && (
-                          <Image
-                            src={getStorageUrl(data.sections.local[0].cover_image_path)}
-                            alt={data.sections.local[0].title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-                      <h3 className="mt-2 line-clamp-2 text-sm leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mt-3 md:text-base">
-                        {data.sections.local[0].title_ar}
-                      </h3>
-                    </Link>
-                  )}
-                  {/* Side Images */}
-                  {data.sections.local.slice(1, 3).map((article) => (
-                    <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                      <div className="relative h-32 w-full overflow-hidden rounded-lg md:h-36">
-                        {article.cover_image_path && (
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-                      <h4 className="mt-2 line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                        {article.title_ar}
-                      </h4>
-                    </Link>
-                  ))}
-                </div>
-                {/* Additional Text Links */}
-                {data.sections.local.length > 3 && (
-                  <div className="mt-4 space-y-3 md:mt-6">
-                    {data.sections.local.slice(3, 6).map((article) => (
-                      <Link
-                        key={article.id}
-                        href={`/article/${article.slug}`}
-                        className="group block border-b border-gray-200 pb-3 last:border-0"
-                      >
-                        <h4 className="line-clamp-1 text-xs font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                          {article.title_ar}
-                        </h4>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات في هذا القسم</p>
-              </div>
-            )}
-          </section>
-
-          {/* أمن وقضاء Section */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">
-                أمن وقضاء
-              </h2>
-              <Link
-                href="/section/security"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                المزيد ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.sections.security.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-                {data.sections.security.slice(0, 8).map((article) => (
-                  <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                    {article.cover_image_path && (
-                      <div className="relative mb-2 h-28 w-full overflow-hidden rounded-lg md:h-32">
-                        <Image
-                          src={getStorageUrl(article.cover_image_path)}
-                          alt={article.title_ar}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-                    <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                  <div className="p-5 leading-[1.6]">
+                    <span className="mb-2 inline-block text-xs font-bold text-amber-600">
+                      اقتصاد
+                    </span>
+                    <h3 className="mb-2 line-clamp-2 text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
                       {article.title_ar}
                     </h3>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات في هذا القسم</p>
-              </div>
-            )}
-          </section>
-
-          {/* إقليمي ودولي Section */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">
-                إقليمي ودولي
-              </h2>
-              <Link
-                href="/section/regional"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                المزيد ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.sections.regional.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-                {/* Large Image on Left */}
-                <div className="lg:col-span-2">
-                  {data.sections.regional[0] && (
-                    <Link href={`/article/${data.sections.regional[0].slug}`} className="group">
-                      <div className="relative h-56 w-full overflow-hidden rounded-lg md:h-80">
-                        {data.sections.regional[0].cover_image_path && (
-                          <Image
-                            src={getStorageUrl(data.sections.regional[0].cover_image_path)}
-                            alt={data.sections.regional[0].title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-                      <h3 className="mt-2 line-clamp-2 text-base font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mt-3 md:text-lg">
-                        {data.sections.regional[0].title_ar}
-                      </h3>
-                    </Link>
-                  )}
-                </div>
-                {/* Side Images */}
-                <div className="space-y-4">
-                  {data.sections.regional.slice(1, 3).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group block"
-                    >
-                      <div className="relative h-32 w-full overflow-hidden rounded-lg md:h-36">
-                        {article.cover_image_path && (
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        )}
-                      </div>
-                      <h4 className="mt-2 line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                        {article.title_ar}
-                      </h4>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات في هذا القسم</p>
-              </div>
-            )}
-          </section>
-
-          {/* كتّابنا Section (Writers) */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">كتّابنا</h2>
-              <Link
-                href="/authors"
-                className="text-xs font-bold text-[#c61b23] hover:underline md:text-sm whitespace-nowrap"
-              >
-                جميع كتّابنا ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.writers.length > 0 ? (
-              <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-                {data.writers.slice(0, 5).map((writer) => (
-                  <Link key={writer.id} href={`/author/${writer.id}`} className="group text-center">
-                    <div className="mx-auto mb-2 h-20 w-20 overflow-hidden rounded-full border-3 border-gray-300 transition-colors group-hover:border-[#c61b23] md:h-24 md:w-24">
-                      {writer.avatar_url ? (
-                        <Image
-                          src={writer.avatar_url}
-                          alt={writer.display_name_ar || 'كاتب'}
-                          width={96}
-                          height={96}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gray-200">
-                          <span className="text-xl font-bold text-gray-500 md:text-2xl">
-                            {writer.display_name_ar?.[0] || 'ك'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="text-xs font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-sm">
-                      {writer.display_name_ar || 'كاتب'}
-                    </h3>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا يوجد كتّاب حالياً</p>
-              </div>
-            )}
-          </section>
-
-          {/* اقتصاد Section */}
-          <section>
-            <div className="mb-4 flex items-center gap-3">
-              <h2 className="text-xl font-bold text-[#c61b23] md:text-2xl lg:text-3xl">اقتصاد</h2>
-              <Link
-                href="/section/economy"
-                className="whitespace-nowrap text-xs font-bold text-[#c61b23] hover:underline md:text-sm"
-              >
-                المزيد ←
-              </Link>
-            </div>
-            <div className="mb-4 h-0.5 bg-[#c61b23] md:mb-6"></div>
-            {data.sections.economy.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
-                {data.sections.economy.slice(0, 8).map((article) => (
-                  <Link key={article.id} href={`/article/${article.slug}`} className="group">
-                    {article.cover_image_path && (
-                      <div className="relative mb-2 h-28 w-full overflow-hidden rounded-lg md:h-32">
-                        <Image
-                          src={getStorageUrl(article.cover_image_path)}
-                          alt={article.title_ar}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-                    <h3 className="line-clamp-2 text-xs leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
-                      {article.title_ar}
-                    </h3>
-                    {article.published_at && (
-                      <p className="mt-1 text-xs text-gray-400">
-                        {formatDateAr(article.published_at, 'dd MMM')}
+                    {article.excerpt_ar && (
+                      <p className="mb-2 line-clamp-2 text-xs leading-[1.6] text-gray-600">
+                        {article.excerpt_ar}
                       </p>
                     )}
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-gray-400">
-                <p>لا توجد مقالات في هذا القسم</p>
-              </div>
-            )}
-          </section>
-
-          {/* Newsletter CTA Section */}
-          <AnimatedSection>
-            <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#c61b23] to-[#a01419] p-6 shadow-2xl md:p-10 lg:p-12">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                  }}
-                ></div>
-              </div>
-
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="mb-4 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                    <svg
-                      className="h-8 w-8 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
+                    {article.published_at && (
+                      <time className="text-xs text-gray-500">
+                        {new Date(article.published_at).toLocaleDateString('ar-EG', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </time>
+                    )}
                   </div>
-                </div>
-
-                <h2 className="mb-3 text-center text-xl font-bold text-white md:text-2xl lg:text-3xl">
-                  تسجّل في النشرة اليومية
-                </h2>
-                <p className="mx-auto mb-6 max-w-2xl text-center text-sm text-white/90 md:text-base">
-                  احصل على أحدث الأخبار والتحليلات مباشرة إلى بريدك الإلكتروني
-                </p>
-
-                {/* Email Form */}
-                <NewsletterForm />
-
-                {/* Social Media */}
-                <div className="text-center">
-                  <span className="mb-3 block text-sm text-white/80">تابعنا على</span>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    <a
-                      href="#facebook"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="Facebook"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                    </a>
-                    <a
-                      href="#twitter"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="Twitter"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                      </svg>
-                    </a>
-                    <a
-                      href="#instagram"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="Instagram"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                      </svg>
-                    </a>
-                    <a
-                      href="#youtube"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="YouTube"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                      </svg>
-                    </a>
-                    <a
-                      href="#telegram"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="Telegram"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-                      </svg>
-                    </a>
-                    <a
-                      href="#whatsapp"
-                      className="group flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white"
-                      aria-label="WhatsApp"
-                    >
-                      <svg
-                        className="h-5 w-5 text-white group-hover:text-[#c61b23]"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </AnimatedSection>
-        </div>
-      </main>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

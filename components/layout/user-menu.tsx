@@ -58,7 +58,7 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition-all hover:bg-gray-800 font-bold"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-black font-bold text-white transition-all hover:bg-[#c61b23] hover:text-white"
         aria-label="User Menu"
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

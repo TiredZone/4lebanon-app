@@ -112,7 +112,9 @@ export default async function SectionPage({ params, searchParams }: PageProps) {
       <div className="mx-auto max-w-7xl px-3 md:px-4">
         {/* Section Header - Mobile optimized */}
         <div className="mb-4 md:mb-8">
-          <h1 className="text-2xl font-bold text-[#c61b23] md:text-3xl">{section.name_ar}</h1>
+          <h1 className="section-heading text-2xl font-bold text-black md:text-3xl">
+            {section.name_ar}
+          </h1>
           {section.description_ar && (
             <p className="mt-1 text-sm text-gray-600 md:mt-2 md:text-base">
               {section.description_ar}

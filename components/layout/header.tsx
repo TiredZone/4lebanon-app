@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { formatDateAr } from '@/lib/utils'
 import { SearchForm } from './search-form'
+import { UserMenu } from './user-menu'
 import { useState } from 'react'
 import { NAV_ITEMS } from '@/lib/constants'
 import { usePathname } from 'next/navigation'
@@ -15,13 +16,13 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-[#c61b23] text-white">
+      <header className="sticky top-0 z-50 bg-[#f8f8f8] text-gray-900">
         <div className="mx-auto max-w-7xl px-3 py-2.5 md:px-4 md:py-3">
           <div className="flex items-center justify-between">
             {/* Mobile Menu Button (left side on mobile) */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="order-1 rounded-lg p-2 hover:bg-white/10 lg:hidden"
+              className="order-1 rounded-lg p-2 hover:bg-gray-200 lg:hidden"
               aria-label="فتح القائمة"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,39 +35,38 @@ export function Header() {
               </svg>
             </button>
 
-            {/* Logo - Center on mobile, left on desktop */}
-            <Link href="/" className="order-2 flex items-center gap-2 lg:order-1">
-              <Image src="/logo-transparent.png" alt="Logo" width={120} height={40} className="h-8 w-auto md:h-10" priority />
-            </Link>
-
-            {/* Center: Date only - Desktop only */}
-            <div className="order-2 hidden items-center gap-4 lg:flex">
-              <time className="text-sm opacity-90">{today}</time>
+            {/* Logo & Date - Left side */}
+            <div className="order-2 flex items-center gap-2 lg:order-1">
+              <Link href="/">
+                <Image
+                  src="/logo-transparent.png"
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  className="h-8 w-auto md:h-10"
+                  priority
+                />
+              </Link>
+              <time className="hidden text-xs font-bold text-gray-900 md:block">{today}</time>
             </div>
 
-            {/* Removed live button */}
-            <div className="order-2 hidden lg:flex">
-              <Link
-                href="#"
-                className="hidden"
-              >
-                <span className="live-indicator h-2 w-2 rounded-full bg-red-500"></span>
-                <span>مباشر</span>
-              </Link>
+            {/* Search - Center - Desktop only */}
+            <div className="order-3 hidden lg:flex">
+              <SearchForm />
             </div>
 
             {/* Live Button - Mobile */}
             <Link
               href="/"
-              className="order-3 flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs transition-colors hover:bg-white/20 lg:hidden"
+              className="order-3 flex items-center gap-1.5 rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-xs transition-colors hover:bg-gray-200 lg:hidden"
             >
               <span className="live-indicator h-1.5 w-1.5 rounded-full bg-red-500"></span>
               <span>مباشر</span>
             </Link>
 
-            {/* Search - Desktop only */}
-            <div className="order-3 hidden lg:block">
-              <SearchForm />
+            {/* Profile - Right side */}
+            <div className="order-4 hidden items-center gap-4 lg:flex">
+              <UserMenu />
             </div>
           </div>
         </div>

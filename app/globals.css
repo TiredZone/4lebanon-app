@@ -60,6 +60,11 @@ h6 {
   line-height: 1.4;
 }
 
+/* Force homepage section headings to black in case of overrides */
+.section-heading {
+  color: #000 !important;
+}
+
 p {
   line-height: 1.8;
 }
@@ -121,16 +126,27 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--muted);
+  background: #f8f8f8;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary);
+  background: #d1d5db;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+  background: #9ca3af;
+}
+
+/* Utility to hide scrollbars on specific elements (scoped) */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+  width: 0;
+  height: 0;
 }
 
 /* Focus styles for accessibility */
@@ -246,4 +262,12 @@ img {
 
 .ticker-content {
   animation: ticker 30s linear infinite;
+}
+
+/* Ensure all "more" buttons are bold black */
+a[href*='/section/'],
+a[href*='/important'],
+a[href*='/recent'] {
+  font-weight: 900 !important;
+  color: #000 !important;
 }

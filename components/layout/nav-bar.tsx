@@ -4,13 +4,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { NAV_ITEMS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { UserMenu } from './user-menu'
 
 export function NavBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="hidden border-t border-gray-200 bg-[#f8f8f8] lg:block">
+    <nav className="hidden border-t border-gray-200 bg-[#f8f8f8] shadow-sm lg:block">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-center justify-between">
           <ul className="scrollbar-hide flex flex-1 items-center gap-1 overflow-x-auto py-2">
@@ -23,10 +22,10 @@ export function NavBar() {
                   <Link
                     href={item.href}
                     className={cn(
-                      'rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+                      'border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors',
                       isActive
-                        ? 'bg-[#c61b23] text-white'
-                        : 'text-gray-700 hover:bg-gray-200 hover:text-gray-900'
+                        ? 'border-[#c61b23] font-bold text-[#c61b23] underline decoration-[#c61b23] decoration-2 underline-offset-4'
+                        : 'border-transparent font-normal text-gray-700 hover:text-gray-900'
                     )}
                   >
                     {item.label}
@@ -35,9 +34,6 @@ export function NavBar() {
               )
             })}
           </ul>
-          <div className="mr-4">
-            <UserMenu />
-          </div>
         </div>
       </div>
     </nav>
