@@ -49,6 +49,34 @@ body {
   text-align: right;
 }
 
+/* Global interactions - cursor and hover effects */
+a,
+button,
+[role='button'] {
+  cursor: pointer;
+}
+
+/* All clickable cards should have pointer cursor */
+.group {
+  cursor: pointer;
+}
+
+/* All images should be centered and cover properly */
+img,
+.next-image {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Hover effect for article titles */
+.group:hover h1,
+.group:hover h2,
+.group:hover h3,
+.group:hover h4 {
+  color: #c61b23 !important;
+  transition: color 0.3s ease;
+}
+
 /* Arabic typography improvements */
 h1,
 h2,

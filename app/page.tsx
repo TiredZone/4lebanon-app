@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getStorageUrl } from '@/lib/utils'
+import { getStorageUrl, toLatinNumbers } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import WritersCarousel from '@/components/writers-carousel'
@@ -129,7 +129,7 @@ export default async function Home() {
     <div className="min-h-screen bg-[#f8f8f8]">
       {/* First Section: 30% Recent + 70% Featured */}
       <section className="bg-white">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl px-4 md:px-0">
           <div className="grid grid-cols-1 gap-0 lg:grid-cols-[30%_70%]">
             {/* Right Sidebar - على مدار الساعة (Recent News) */}
             <div className="order-2 border-l border-gray-200 lg:order-1">
@@ -211,12 +211,12 @@ export default async function Home() {
                       className="group relative block overflow-hidden"
                     >
                       {/* Hero Image */}
-                      <div className="relative h-[450px] w-full lg:h-[550px]">
+                      <div className="relative h-[300px] w-full sm:h-[400px] lg:h-[550px]">
                         <Image
                           src={getStorageUrl(article.cover_image_path)}
                           alt={article.title_ar}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                           priority
                         />
 
@@ -225,30 +225,32 @@ export default async function Home() {
                       </div>
 
                       {/* Text Overlay at Bottom Right */}
-                      <div className="absolute right-0 bottom-0 left-0 p-8 lg:p-10">
+                      <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-6 lg:p-10">
                         {/* Category Badge */}
                         {article.section && (
-                          <div className="mb-3">
-                            <span className="inline-block rounded bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
+                          <div className="mb-2 sm:mb-3">
+                            <span className="inline-block rounded bg-[#c61b23] px-2 py-0.5 text-xs font-bold text-white sm:px-3 sm:py-1">
                               {article.section.name_ar}
                             </span>
                           </div>
                         )}
 
                         {/* Title */}
-                        <h2 className="mb-3 text-3xl leading-tight font-bold text-white transition-colors group-hover:text-gray-100 lg:text-4xl xl:text-5xl">
+                        <h2 className="mb-2 text-xl leading-tight font-bold text-white transition-colors group-hover:text-[#c61b23] sm:mb-3 sm:text-2xl lg:text-4xl xl:text-5xl">
                           {article.title_ar}
                         </h2>
 
                         {/* Date */}
                         <p className="text-sm font-medium text-white/90 lg:text-base">
                           {article.published_at &&
-                            new Date(article.published_at).toLocaleDateString('ar-EG', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
+                            toLatinNumbers(
+                              new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            )}
                         </p>
                       </div>
                     </Link>
@@ -264,7 +266,7 @@ export default async function Home() {
                       <Link
                         key={article.id}
                         href={`/article/${article.slug}`}
-                        className="group relative block overflow-hidden border-t border-l border-gray-200 first:border-l-0 sm:first:border-l"
+                        className="group relative block cursor-pointer overflow-hidden border-t border-l border-gray-200 first:border-l-0 sm:first:border-l"
                       >
                         {/* Image */}
                         <div className="relative h-64 w-full lg:h-72">
@@ -272,7 +274,7 @@ export default async function Home() {
                             src={getStorageUrl(article.cover_image_path)}
                             alt={article.title_ar}
                             fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                           />
 
                           {/* Gradient Overlay */}
@@ -313,27 +315,17 @@ export default async function Home() {
             {data.sections.radar.length > 0 && (
               <div className="rounded-xl bg-white shadow-sm" dir="rtl">
                 {/* Glass-Style Header */}
-                <div className="px-6 py-4">
+                <div className="px-4 py-3 sm:px-6 sm:py-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-bold text-[#c61b23]">رادار</h2>
+                    <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+                      رادار
+                    </h2>
                     <Link
                       href="/section/radar"
-                      className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                      className="flex min-h-[44px] items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
                     >
                       <span>المزيد</span>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
+                      <span>←</span>
                     </Link>
                   </div>
                   {/* Gradient Line Accent */}
@@ -341,7 +333,7 @@ export default async function Home() {
                 </div>
 
                 {/* Premium Grid: 1.6fr / 1fr */}
-                <div className="grid grid-cols-1 items-start gap-6 p-6 lg:grid-cols-[1.6fr_1fr]">
+                <div className="grid grid-cols-1 items-start gap-4 p-4 sm:gap-6 sm:p-6 lg:grid-cols-[1.6fr_1fr]">
                   {/* Left Column - Dual-Hero with Modern Gradients */}
                   <div className="flex flex-col gap-6">
                     {/* Hero Card 1 */}
@@ -407,8 +399,9 @@ export default async function Home() {
                     )}
                   </div>
 
-                  {/* Right Column - Clean Feed */}
-                  <div className="flex flex-col space-y-6 overflow-hidden">
+                  {/* Right Column - Desktop: Clean Feed | Mobile: Hero Cards */}
+                  {/* Desktop View (lg+) */}
+                  <div className="hidden flex-col space-y-6 overflow-hidden lg:flex">
                     {data.sections.radar.slice(2, 6).map((article) => (
                       <Link
                         key={article.id}
@@ -422,7 +415,7 @@ export default async function Home() {
                               src={getStorageUrl(article.cover_image_path)}
                               alt={article.title_ar}
                               fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                             />
                           </div>
                         )}
@@ -440,10 +433,48 @@ export default async function Home() {
                           {article.published_at && (
                             <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-gray-400">
                               <span className="truncate">
-                                {new Date(article.published_at).toLocaleDateString('ar-LB')}
+                                {toLatinNumbers(
+                                  new Date(article.published_at).toLocaleDateString('ar-LB')
+                                )}
                               </span>
                               <span className="h-1 w-1 flex-shrink-0 rounded-full bg-[#c61b23]"></span>
                             </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Mobile View (< lg) - Hero Cards */}
+                  <div className="flex flex-col gap-6 lg:hidden">
+                    {data.sections.radar.slice(2, 6).map((article) => (
+                      <Link
+                        key={article.id}
+                        href={`/article/${article.slug}`}
+                        className="group relative h-[240px] w-full cursor-pointer overflow-hidden rounded-2xl bg-gray-800"
+                      >
+                        {article.cover_image_path && (
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                          />
+                        )}
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Content at bottom-right */}
+                        <div className="absolute right-0 bottom-0 left-0 p-4 text-right">
+                          <h4 className="mb-2 line-clamp-3 text-base leading-tight font-bold text-white">
+                            {article.title_ar}
+                          </h4>
+                          {article.published_at && (
+                            <time className="text-xs text-white/70">
+                              {toLatinNumbers(
+                                new Date(article.published_at).toLocaleDateString('ar-LB')
+                              )}
+                            </time>
                           )}
                         </div>
                       </Link>
@@ -457,27 +488,17 @@ export default async function Home() {
             {data.sections.investigation.length > 0 && (
               <div className="rounded-xl bg-white shadow-sm" dir="rtl">
                 {/* Glass-Style Header */}
-                <div className="px-6 py-4">
+                <div className="px-4 py-3 sm:px-6 sm:py-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-bold text-[#c61b23]">بحث وتحرّي</h2>
+                    <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+                      بحث وتحرّي
+                    </h2>
                     <Link
                       href="/section/investigation"
                       className="flex items-center gap-1.5 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
                     >
                       <span>المزيد</span>
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
+                      <span>←</span>
                     </Link>
                   </div>
                   {/* Gradient Line Accent */}
@@ -551,8 +572,9 @@ export default async function Home() {
                     )}
                   </div>
 
-                  {/* Right Column - Clean Feed */}
-                  <div className="flex flex-col space-y-6 overflow-hidden">
+                  {/* Right Column - Desktop: Clean Feed | Mobile: Hero Cards */}
+                  {/* Desktop View (lg+) */}
+                  <div className="hidden flex-col space-y-6 overflow-hidden lg:flex">
                     {data.sections.investigation.slice(2, 6).map((article) => (
                       <Link
                         key={article.id}
@@ -566,7 +588,7 @@ export default async function Home() {
                               src={getStorageUrl(article.cover_image_path)}
                               alt={article.title_ar}
                               fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                             />
                           </div>
                         )}
@@ -584,10 +606,48 @@ export default async function Home() {
                           {article.published_at && (
                             <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-gray-400">
                               <span className="truncate">
-                                {new Date(article.published_at).toLocaleDateString('ar-LB')}
+                                {toLatinNumbers(
+                                  new Date(article.published_at).toLocaleDateString('ar-LB')
+                                )}
                               </span>
                               <span className="h-1 w-1 flex-shrink-0 rounded-full bg-[#c61b23]"></span>
                             </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+
+                  {/* Mobile View (< lg) - Hero Cards */}
+                  <div className="flex flex-col gap-6 lg:hidden">
+                    {data.sections.investigation.slice(2, 6).map((article) => (
+                      <Link
+                        key={article.id}
+                        href={`/article/${article.slug}`}
+                        className="group relative h-[240px] w-full cursor-pointer overflow-hidden rounded-2xl bg-gray-800"
+                      >
+                        {article.cover_image_path && (
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                          />
+                        )}
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Content at bottom-right */}
+                        <div className="absolute right-0 bottom-0 left-0 p-4 text-right">
+                          <h4 className="mb-2 line-clamp-3 text-base leading-tight font-bold text-white">
+                            {article.title_ar}
+                          </h4>
+                          {article.published_at && (
+                            <time className="text-xs text-white/70">
+                              {toLatinNumbers(
+                                new Date(article.published_at).toLocaleDateString('ar-LB')
+                              )}
+                            </time>
                           )}
                         </div>
                       </Link>
@@ -600,152 +660,164 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ==================== BOTTOM SECTION: KHAS (خاص) ==================== */}
+      {/* ==================== BOTTOM SECTION: KHAS (خاص) - BENTO GRID ==================== */}
       {data.sections.special && data.sections.special.length > 0 && (
         <section className="bg-[#f4f4f9] py-12">
           <div className="mx-auto max-w-7xl px-4">
-            {/* Header - Premium Magazine Style */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between pb-4">
-                {/* Title on far RIGHT */}
-                <h2 className="text-3xl font-bold text-[#c61b23]">خاص</h2>
-                {/* More button on far LEFT */}
+            {/* Header */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between pb-3 sm:pb-4">
+                <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">خاص</h2>
                 <Link
                   href="/section/special"
-                  className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
+                  className="flex min-h-[44px] items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
                 >
                   <span>المزيد</span>
                   <span>←</span>
                 </Link>
               </div>
-              {/* Elegant full-width red separator line */}
               <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* Premium Magazine Layout Container */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-[60%_40%] lg:p-8">
-                {/* Left Column - Featured Hero (60% Width) */}
-                {data.sections.special[0] && (
+            {/* Bento Grid: 3 columns on desktop - Hero RIGHT (2 cols x 2 rows) + 3 cards LEFT */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6">
+              {/* 3 Smaller Cards - LEFT side */}
+              <div className="grid grid-cols-1 gap-6 lg:order-1 lg:col-span-1">
+                {data.sections.special.slice(1, 4).map((article) => (
                   <Link
-                    href={`/article/${data.sections.special[0].slug}`}
-                    className="group order-2 lg:order-1"
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group relative cursor-pointer"
                   >
-                    {data.sections.special[0].cover_image_path && (
-                      <div className="relative aspect-video overflow-hidden rounded-3xl">
-                        {/* Background Image with object-cover */}
-                        <Image
-                          src={getStorageUrl(data.sections.special[0].cover_image_path)}
-                          alt={data.sections.special[0].title_ar}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {/* Dark bottom-to-top gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-                        {/* Text overlay at bottom right */}
-                        <div className="absolute right-0 bottom-0 left-0 p-6 text-right lg:p-8">
-                          {/* Headline */}
-                          <h3 className="mb-3 text-2xl leading-tight font-bold text-white lg:text-3xl">
-                            {data.sections.special[0].title_ar}
-                          </h3>
-
-                          {/* Article Summary */}
-                          {data.sections.special[0].excerpt_ar && (
-                            <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-white/90 lg:text-base">
-                              {data.sections.special[0].excerpt_ar}
-                            </p>
-                          )}
-
-                          {/* Date */}
-                          {data.sections.special[0].published_at && (
-                            <time className="block text-sm text-white/80">
-                              {new Date(data.sections.special[0].published_at).toLocaleDateString(
-                                'ar-EG',
-                                {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                }
-                              )}
-                            </time>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Link>
-                )}
-
-                {/* Right Column - The Feed (40% Width) */}
-                <div className="order-1 space-y-4 lg:order-2">
-                  {data.sections.special.slice(1, 4).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group flex gap-4 transition-all duration-300 hover:-translate-y-1"
-                    >
-                      {/* Text area with light gray background (on RIGHT in RTL) */}
-                      <div className="flex min-w-0 flex-1 flex-col justify-center rounded-lg bg-[#f9f9f9] p-4">
-                        {/* Headline - bold black */}
-                        <h4
-                          className="mb-2 text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]"
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {article.title_ar}
-                        </h4>
-
-                        {/* Article summary - muted gray, 2-line clamp */}
-                        {article.excerpt_ar && (
-                          <p
-                            className="text-sm leading-relaxed text-gray-600"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {article.excerpt_ar}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Small square thumbnail (on LEFT in RTL, ~100px) */}
-                      {article.cover_image_path && (
-                        <div className="relative h-[100px] w-[100px] shrink-0 overflow-hidden rounded-xl">
+                    <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-[188px]">
+                      {article.cover_image_path ? (
+                        <>
                           <Image
                             src={getStorageUrl(article.cover_image_path)}
                             alt={article.title_ar}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              className="h-16 w-16 text-white/20"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
                         </div>
                       )}
-                    </Link>
-                  ))}
-                </div>
+                      <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-6">
+                        <h3 className="mb-2 line-clamp-3 text-right text-base leading-tight font-bold text-white sm:text-lg">
+                          {article.title_ar}
+                        </h3>
+                        {article.published_at && (
+                          <time className="block text-right text-xs text-white/70 sm:text-sm">
+                            {toLatinNumbers(
+                              new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            )}
+                          </time>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
+
+              {/* Hero Card - RIGHT side spanning 2 columns and 2 rows */}
+              {data.sections.special[0] && (
+                <Link
+                  href={`/article/${data.sections.special[0].slug}`}
+                  className="group cursor-pointer lg:order-2 lg:col-span-2 lg:row-span-2"
+                >
+                  <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-full lg:min-h-[387px]">
+                    {data.sections.special[0].cover_image_path ? (
+                      <>
+                        <Image
+                          src={getStorageUrl(data.sections.special[0].cover_image_path)}
+                          alt={data.sections.special[0].title_ar}
+                          fill
+                          className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="h-24 w-24 text-white/20 lg:h-32 lg:w-32"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute right-0 bottom-0 left-0 p-6 sm:p-8 lg:p-10">
+                      <h3 className="mb-3 text-right text-2xl leading-tight font-bold text-white sm:text-3xl lg:mb-4 lg:text-4xl">
+                        {data.sections.special[0].title_ar}
+                      </h3>
+                      {data.sections.special[0].excerpt_ar && (
+                        <p className="mb-3 line-clamp-2 text-right text-sm leading-relaxed text-white/90 sm:text-base lg:mb-4 lg:text-lg">
+                          {data.sections.special[0].excerpt_ar}
+                        </p>
+                      )}
+                      {data.sections.special[0].published_at && (
+                        <time className="block text-right text-sm text-white/70 lg:text-base">
+                          {toLatinNumbers(
+                            new Date(data.sections.special[0].published_at).toLocaleDateString(
+                              'ar-EG',
+                              {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              }
+                            )
+                          )}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
         </section>
       )}
 
-      {/* ==================== MAHALIYA (المحلية) SECTION ==================== */}
+      {/* ==================== MAHALIYA (المحلية) SECTION - BENTO GRID ==================== */}
       {data.sections.local.length > 0 && (
         <section className="bg-[#fafafa] py-12" dir="rtl">
           <div className="mx-auto max-w-7xl overflow-hidden px-4">
-            {/* Header - Premium Magazine Style */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between pb-4">
-                {/* Title on far RIGHT */}
-                <h2 className="text-3xl font-bold text-[#c61b23]">المحلية</h2>
-                {/* More button on far LEFT */}
+            {/* Header */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between pb-3 sm:pb-4">
+                <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+                  المحلية
+                </h2>
                 <Link
                   href="/section/local"
                   className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
@@ -754,127 +826,133 @@ export default async function Home() {
                   <span>←</span>
                 </Link>
               </div>
-              {/* Elegant full-width red separator line */}
               <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* Premium Magazine Layout - 60/40 Power Split */}
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="grid grid-cols-1 gap-8 p-6 lg:grid-cols-[60%_40%] lg:p-8">
-                {/* Left Column - Featured Local Story (60% Width) */}
-                {data.sections.local[0] && (
+            {/* Bento Grid: 3 columns on desktop - Hero RIGHT (2 cols x 2 rows) + 3 cards LEFT */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6">
+              {/* 3 Smaller Cards - LEFT side */}
+              <div className="grid grid-cols-1 gap-6 lg:order-1 lg:col-span-1">
+                {data.sections.local.slice(1, 4).map((article) => (
                   <Link
-                    href={`/article/${data.sections.local[0].slug}`}
-                    className="group order-2 lg:order-1"
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group relative cursor-pointer"
                   >
-                    {data.sections.local[0].cover_image_path && (
-                      <div className="relative h-[350px] overflow-hidden rounded-3xl lg:aspect-video lg:h-auto">
-                        {/* Background Image with object-cover */}
-                        <Image
-                          src={getStorageUrl(data.sections.local[0].cover_image_path)}
-                          alt={data.sections.local[0].title_ar}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {/* Dark bottom-to-top gradient overlay (85% opacity at bottom) */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-                        {/* Text overlay at bottom right */}
-                        <div className="absolute right-0 bottom-0 left-0 p-6 text-right lg:p-8">
-                          {/* Headline - White */}
-                          <h3 className="mb-3 text-2xl leading-tight font-bold text-white lg:text-3xl">
-                            {data.sections.local[0].title_ar}
-                          </h3>
-
-                          {/* Article Summary - 2-line clamp - White/Gray */}
-                          {data.sections.local[0].excerpt_ar && (
-                            <p
-                              className="mb-3 text-sm leading-relaxed text-white/90 lg:text-base"
-                              style={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                              }}
-                            >
-                              {data.sections.local[0].excerpt_ar}
-                            </p>
-                          )}
-
-                          {/* Date */}
-                          {data.sections.local[0].published_at && (
-                            <time className="block text-sm text-white/80">
-                              {new Date(data.sections.local[0].published_at).toLocaleDateString(
-                                'ar-EG',
-                                {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                }
-                              )}
-                            </time>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Link>
-                )}
-
-                {/* Right Column - The Local News Feed (40% Width) */}
-                <div className="order-1 space-y-0 divide-y divide-gray-100 lg:order-2">
-                  {data.sections.local.slice(1, 4).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group flex gap-4 py-4 transition-all duration-300 first:pt-0 last:pb-0 hover:bg-gray-50"
-                    >
-                      {/* Text Content on RIGHT (in RTL flow) */}
-                      <div className="flex min-w-0 flex-1 flex-col justify-center space-y-2">
-                        {/* Headline - Bold black with line-clamp-2 */}
-                        <h4
-                          className="text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]"
-                          style={{
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {article.title_ar}
-                        </h4>
-
-                        {/* Article Summary - Muted gray with line-clamp-2 */}
-                        {article.excerpt_ar && (
-                          <p
-                            className="text-sm leading-relaxed text-gray-600"
-                            style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {article.excerpt_ar}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Small square thumbnail on LEFT (in RTL flow) - w-24 h-24 */}
-                      {article.cover_image_path && (
-                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl">
+                    <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-[188px]">
+                      {article.cover_image_path ? (
+                        <>
                           <Image
                             src={getStorageUrl(article.cover_image_path)}
                             alt={article.title_ar}
                             fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              className="h-16 w-16 text-white/20"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
                         </div>
                       )}
-                    </Link>
-                  ))}
-                </div>
+                      <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-6">
+                        <h3 className="mb-2 line-clamp-3 text-right text-base leading-tight font-bold text-white sm:text-lg">
+                          {article.title_ar}
+                        </h3>
+                        {article.published_at && (
+                          <time className="block text-right text-xs text-white/70 sm:text-sm">
+                            {toLatinNumbers(
+                              new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            )}
+                          </time>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
+
+              {/* Hero Card - RIGHT side spanning 2 columns and 2 rows */}
+              {data.sections.local[0] && (
+                <Link
+                  href={`/article/${data.sections.local[0].slug}`}
+                  className="group cursor-pointer lg:order-2 lg:col-span-2 lg:row-span-2"
+                >
+                  <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-full lg:min-h-[387px]">
+                    {data.sections.local[0].cover_image_path ? (
+                      <>
+                        <Image
+                          src={getStorageUrl(data.sections.local[0].cover_image_path)}
+                          alt={data.sections.local[0].title_ar}
+                          fill
+                          className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="h-24 w-24 text-white/20 lg:h-32 lg:w-32"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute right-0 bottom-0 left-0 p-6 sm:p-8 lg:p-10">
+                      <h3 className="mb-3 text-right text-2xl leading-tight font-bold text-white sm:text-3xl lg:mb-4 lg:text-4xl">
+                        {data.sections.local[0].title_ar}
+                      </h3>
+                      {data.sections.local[0].excerpt_ar && (
+                        <p className="mb-3 line-clamp-2 text-right text-sm leading-relaxed text-white/90 sm:text-base lg:mb-4 lg:text-lg">
+                          {data.sections.local[0].excerpt_ar}
+                        </p>
+                      )}
+                      {data.sections.local[0].published_at && (
+                        <time className="block text-right text-sm text-white/70 lg:text-base">
+                          {toLatinNumbers(
+                            new Date(data.sections.local[0].published_at).toLocaleDateString(
+                              'ar-EG',
+                              {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              }
+                            )
+                          )}
+                        </time>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
         </section>
@@ -884,19 +962,21 @@ export default async function Home() {
       <section className="bg-white py-12">
         <div className="mx-auto max-w-7xl px-4">
           {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-[#c61b23]">الأكثر قراءة</h2>
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+              الأكثر قراءة
+            </h2>
           </div>
 
-          {/* Asymmetric Grid: 65% Right (#1 Hero) + 35% Left (List 2-5) */}
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[65%_35%]">
-            {/* Right Side - #1 Ranked Hero */}
+          {/* Asymmetric Grid: 40% Right (#1 Hero) + 60% Left (List 2-5) */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[40%_60%] lg:gap-8">
+            {/* Right Side - #1 Ranked Hero (Half Size) */}
             {data.recent[0] && (
               <Link href={`/article/${data.recent[0].slug}`} className="group relative">
                 <div className="relative overflow-hidden rounded-3xl shadow-xl transition-shadow duration-300 group-hover:shadow-2xl">
-                  {/* Large Hero Image */}
-                  {data.recent[0].cover_image_path && (
-                    <div className="relative aspect-square overflow-hidden lg:aspect-[4/5]">
+                  {/* Hero Image - Reduced to Half Size */}
+                  {data.recent[0].cover_image_path ? (
+                    <div className="relative aspect-square overflow-hidden">
                       <Image
                         src={getStorageUrl(data.recent[0].cover_image_path)}
                         alt={data.recent[0].title_ar}
@@ -906,18 +986,38 @@ export default async function Home() {
                       {/* Dark gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                     </div>
+                  ) : (
+                    /* Fallback when no image */
+                    <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg
+                          className="h-16 w-16 text-white/30"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                    </div>
                   )}
 
                   {/* Ranking Number - Large, Semi-Transparent */}
-                  <div className="absolute top-6 left-6 text-8xl font-bold text-white/20 lg:text-9xl">
+                  <div className="absolute top-4 left-4 text-6xl font-bold text-white/20 lg:text-7xl">
                     01
                   </div>
 
                   {/* Content at Bottom */}
-                  <div className="absolute right-0 bottom-0 left-0 p-6 lg:p-8">
+                  <div className="absolute right-0 bottom-0 left-0 p-4 lg:p-6">
                     {/* Category Tag */}
                     {data.recent[0].section && (
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <span className="inline-block rounded-full bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
                           {data.recent[0].section.name_ar}
                         </span>
@@ -925,13 +1025,13 @@ export default async function Home() {
                     )}
 
                     {/* Headline */}
-                    <h3 className="mb-2 text-2xl leading-tight font-bold text-white lg:text-3xl">
+                    <h3 className="mb-2 text-lg leading-tight font-bold text-white lg:text-xl">
                       {data.recent[0].title_ar}
                     </h3>
 
                     {/* Excerpt */}
                     {data.recent[0].excerpt_ar && (
-                      <p className="line-clamp-2 text-sm text-white/80">
+                      <p className="line-clamp-2 text-xs text-white/80 lg:text-sm">
                         {data.recent[0].excerpt_ar}
                       </p>
                     )}
@@ -940,9 +1040,9 @@ export default async function Home() {
               </Link>
             )}
 
-            {/* Left Side - Ranked List (02-05) */}
-            <div className="space-y-4">
-              {data.recent.slice(1, 8).map((article, index) => {
+            {/* Left Side - Ranked List (02-05) - Only Top 5 */}
+            <div className="space-y-3 sm:space-y-4">
+              {data.recent.slice(1, 5).map((article, index) => {
                 const rankNumber = (index + 2).toString().padStart(2, '0')
                 return (
                   <Link
@@ -951,7 +1051,7 @@ export default async function Home() {
                     className="group flex gap-4 rounded-xl bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                   >
                     {/* Thumbnail with Rank Badge */}
-                    {article.cover_image_path && (
+                    {article.cover_image_path ? (
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                         <Image
                           src={getStorageUrl(article.cover_image_path)}
@@ -960,6 +1060,17 @@ export default async function Home() {
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                         {/* Glassmorphism Rank Badge */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
+                            <span className="text-lg font-bold text-[#c61b23] transition-colors group-hover:text-[#9a1519]">
+                              {rankNumber}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Fallback thumbnail */
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-gray-300 to-gray-400">
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
                             <span className="text-lg font-bold text-[#c61b23] transition-colors group-hover:text-[#9a1519]">
@@ -1056,9 +1167,11 @@ export default async function Home() {
         <section className="bg-white py-12" dir="rtl">
           <div className="mx-auto max-w-7xl px-4">
             {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between pb-4">
-                <h2 className="text-3xl font-bold text-[#c61b23]">أمن وقضاء</h2>
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between pb-3 sm:pb-4">
+                <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+                  أمن وقضاء
+                </h2>
                 <Link
                   href="/section/security"
                   className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
@@ -1070,31 +1183,76 @@ export default async function Home() {
               <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2">
-              {/* Hero Card - Spans 2 columns x 2 rows */}
+            {/* Bento Grid Layout - RTL: Hero on Right, 4 cards on Left */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              {/* Left Side: 4 Smaller Cards in 2x2 Grid */}
+              <div className="grid grid-cols-1 gap-6 md:col-span-2 md:grid-cols-2 lg:col-span-1">
+                {data.sections.security.slice(1, 5).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group relative cursor-pointer overflow-hidden rounded-2xl"
+                  >
+                    {article.cover_image_path && (
+                      <>
+                        {/* Full-bleed background image */}
+                        <div className="relative h-[240px]">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+
+                        {/* Dark gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Text overlay - bottom-right */}
+                        <div className="absolute right-3 bottom-3 left-3 text-right">
+                          <h4 className="mb-1 line-clamp-3 text-sm leading-tight font-bold text-white drop-shadow-lg">
+                            {article.title_ar}
+                          </h4>
+                          {article.published_at && (
+                            <time className="block text-xs text-white/70 drop-shadow-md">
+                              {toLatinNumbers(
+                                new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                })
+                              )}
+                            </time>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </Link>
+                ))}
+              </div>
+
+              {/* Right Side: Hero Card - Spans 2 columns x 2 rows */}
               {data.sections.security[0] && (
                 <Link
                   href={`/article/${data.sections.security[0].slug}`}
-                  className="group relative overflow-hidden rounded-2xl md:col-span-2 md:row-span-2"
+                  className="group relative cursor-pointer overflow-hidden rounded-2xl md:col-span-2 lg:col-span-2"
                 >
                   {data.sections.security[0].cover_image_path && (
                     <>
                       {/* Full-bleed background image */}
-                      <div className="relative h-[400px] md:h-full md:min-h-[500px]">
+                      <div className="relative h-[240px] md:h-[500px] lg:h-[500px]">
                         <Image
                           src={getStorageUrl(data.sections.security[0].cover_image_path)}
                           alt={data.sections.security[0].title_ar}
                           fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
                         />
                       </div>
 
-                      {/* Dark gradient overlay - bottom 60% */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-40% to-transparent" />
+                      {/* Dark gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                      {/* Text overlay - bottom-left */}
-                      <div className="absolute right-6 bottom-6 left-6 text-left">
+                      {/* Text overlay - bottom-right */}
+                      <div className="absolute right-6 bottom-6 left-6 text-right">
                         <h3 className="mb-3 text-2xl leading-tight font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
                           {data.sections.security[0].title_ar}
                         </h3>
@@ -1104,14 +1262,16 @@ export default async function Home() {
                           </p>
                         )}
                         {data.sections.security[0].published_at && (
-                          <time className="block text-sm text-white/90 drop-shadow-md">
-                            {new Date(data.sections.security[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
+                          <time className="block text-sm text-white/70 drop-shadow-md">
+                            {toLatinNumbers(
+                              new Date(data.sections.security[0].published_at).toLocaleDateString(
+                                'ar-EG',
+                                {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                }
+                              )
                             )}
                           </time>
                         )}
@@ -1120,117 +1280,149 @@ export default async function Home() {
                   )}
                 </Link>
               )}
-
-              {/* Smaller Cards - Grid items (1x1) */}
-              {data.sections.security.slice(1, 7).map((article) => (
-                <Link
-                  key={article.id}
-                  href={`/article/${article.slug}`}
-                  className="group relative overflow-hidden rounded-2xl"
-                >
-                  {article.cover_image_path && (
-                    <>
-                      {/* Full-bleed background image */}
-                      <div className="relative h-[250px] md:h-[240px]">
-                        <Image
-                          src={getStorageUrl(article.cover_image_path)}
-                          alt={article.title_ar}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-
-                      {/* Dark gradient overlay - bottom 60% */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 via-40% to-transparent" />
-
-                      {/* Text overlay - bottom-left */}
-                      <div className="absolute right-4 bottom-4 left-4 text-left">
-                        <h4 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-white drop-shadow-lg md:text-lg">
-                          {article.title_ar}
-                        </h4>
-                        {article.excerpt_ar && (
-                          <p className="mb-2 line-clamp-1 text-xs leading-relaxed text-white/90 drop-shadow-md">
-                            {article.excerpt_ar}
-                          </p>
-                        )}
-                        {article.published_at && (
-                          <time className="block text-xs text-white/90 drop-shadow-md">
-                            {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                              day: 'numeric',
-                              month: 'long',
-                            })}
-                          </time>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </Link>
-              ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* Regional & International - Premium 60/40 Power-Grid */}
+      {/* Regional & International (إقليمي ودولي) - BENTO GRID */}
       {data.sections.regional.length > 0 && (
-        <section className="bg-[#f8f8f8] py-12">
+        <section className="bg-[#f8f8f8] py-8 sm:py-10 lg:py-12">
           <div className="mx-auto max-w-7xl px-4">
-            {/* Header with Gradient Underline */}
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <h2 className="text-3xl font-bold text-[#c61b23]">إقليمي ودولي</h2>
-              <Link
-                href="/section/regional"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
+            {/* Header */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between pb-3 sm:pb-4">
+                <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">
+                  إقليمي ودولي
+                </h2>
+                <Link
+                  href="/section/regional"
+                  className="flex min-h-[44px] items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                >
+                  <span>المزيد</span>
+                  <span>←</span>
+                </Link>
+              </div>
+              <div className="h-px w-full bg-[#c61b23]" />
             </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-              {/* Right: Hero Article (60%) */}
+            {/* Bento Grid: 3 columns on desktop - Hero RIGHT (2 cols x 2 rows) + 3 cards LEFT */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-6">
+              {/* 3 Smaller Cards - LEFT side */}
+              <div className="grid grid-cols-1 gap-6 lg:order-1 lg:col-span-1">
+                {data.sections.regional.slice(1, 4).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group relative cursor-pointer"
+                  >
+                    <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-[188px]">
+                      {article.cover_image_path ? (
+                        <>
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              className="h-16 w-16 text-white/20"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-6">
+                        <h3 className="mb-2 line-clamp-3 text-right text-base leading-tight font-bold text-white sm:text-lg">
+                          {article.title_ar}
+                        </h3>
+                        {article.published_at && (
+                          <time className="block text-right text-xs text-white/70 sm:text-sm">
+                            {toLatinNumbers(
+                              new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              })
+                            )}
+                          </time>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Hero Card - RIGHT side spanning 2 columns and 2 rows */}
               {data.sections.regional[0] && (
                 <Link
                   href={`/article/${data.sections.regional[0].slug}`}
-                  className="group lg:col-span-3"
+                  className="group cursor-pointer lg:order-2 lg:col-span-2 lg:row-span-2"
                 >
-                  <div className="relative h-full min-h-[500px] overflow-hidden rounded-3xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl">
-                    {data.sections.regional[0].cover_image_path && (
+                  <div className="relative h-[180px] overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:shadow-2xl lg:h-full lg:min-h-[387px]">
+                    {data.sections.regional[0].cover_image_path ? (
                       <>
                         <Image
                           src={getStorageUrl(data.sections.regional[0].cover_image_path)}
                           alt={data.sections.regional[0].title_ar}
                           fill
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
                       </>
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg
+                            className="h-24 w-24 text-white/20 lg:h-32 lg:w-32"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     )}
-                    <div className="absolute right-0 bottom-0 left-0 p-8">
-                      <h3 className="mb-4 text-3xl leading-tight font-bold text-white">
+                    <div className="absolute right-0 bottom-0 left-0 p-6 sm:p-8 lg:p-10">
+                      <h3 className="mb-3 text-right text-2xl leading-tight font-bold text-white sm:text-3xl lg:mb-4 lg:text-4xl">
                         {data.sections.regional[0].title_ar}
                       </h3>
                       {data.sections.regional[0].excerpt_ar && (
-                        <p className="mb-3 line-clamp-2 text-base leading-relaxed text-white/90">
+                        <p className="mb-3 line-clamp-2 text-right text-sm leading-relaxed text-white/90 sm:text-base lg:mb-4 lg:text-lg">
                           {data.sections.regional[0].excerpt_ar}
                         </p>
                       )}
                       {data.sections.regional[0].published_at && (
-                        <time className="text-sm text-white/70">
-                          {new Date(data.sections.regional[0].published_at).toLocaleDateString(
-                            'ar-EG',
-                            {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            }
+                        <time className="block text-right text-sm text-white/70 lg:text-base">
+                          {toLatinNumbers(
+                            new Date(data.sections.regional[0].published_at).toLocaleDateString(
+                              'ar-EG',
+                              {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric',
+                              }
+                            )
                           )}
                         </time>
                       )}
@@ -1238,73 +1430,6 @@ export default async function Home() {
                   </div>
                 </Link>
               )}
-
-              {/* Left: Secondary Feed (40%) */}
-              <div className="space-y-6 lg:col-span-2">
-                {/* Top: Two Small Cards Side-by-Side */}
-                <div className="grid grid-cols-2 gap-4">
-                  {data.sections.regional.slice(1, 3).map((article) => (
-                    <Link
-                      key={article.id}
-                      href={`/article/${article.slug}`}
-                      className="group overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                    >
-                      {article.cover_image_path && (
-                        <div className="relative aspect-[4/3] overflow-hidden">
-                          <Image
-                            src={getStorageUrl(article.cover_image_path)}
-                            alt={article.title_ar}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        </div>
-                      )}
-                      <div className="p-3">
-                        <h4 className="mb-1 line-clamp-2 text-xs leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                          {article.title_ar}
-                        </h4>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Bottom: Quick Scan Text-Only List */}
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
-                  <div className="space-y-4">
-                    {data.sections.regional.slice(3, 7).map((article, index) => (
-                      <div key={article.id}>
-                        {index > 0 && <div className="my-4 border-t border-gray-300" />}
-                        <Link href={`/article/${article.slug}`} className="group flex gap-4">
-                          {/* Thumbnail if available */}
-                          {article.cover_image_path && (
-                            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                              <Image
-                                src={getStorageUrl(article.cover_image_path)}
-                                alt={article.title_ar}
-                                fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-110"
-                              />
-                            </div>
-                          )}
-                          <div className="flex min-w-0 flex-1 flex-col justify-center">
-                            <h5 className="mb-1 line-clamp-2 text-sm leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                              {article.title_ar}
-                            </h5>
-                            {article.published_at && (
-                              <time className="text-xs text-gray-500">
-                                {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                })}
-                              </time>
-                            )}
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -1312,24 +1437,17 @@ export default async function Home() {
 
       {/* Writers Carousel - Our Writers */}
       {data.writers && data.writers.length > 0 && (
-        <section className="bg-white py-12">
+        <section className="bg-white py-8 sm:py-10 lg:py-12">
           <div className="mx-auto max-w-7xl px-4">
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <h2 className="text-3xl font-bold text-[#c61b23]">كتابنا</h2>
+            <div className="mb-6 flex items-center justify-between border-b border-[#c61b23] pb-3 sm:mb-8 sm:pb-4">
+              <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">كتابنا</h2>
               <Link
                 href="/writers"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
+                className="flex min-h-[44px] items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
               >
                 <span>جميع الكتاب</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
+                <span>←</span>
               </Link>
             </div>
 
@@ -1347,101 +1465,122 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Economy - 4-Column Card Grid */}
+      {/* Economy - Bento Grid Layout */}
       {data.sections.economy.length > 0 && (
-        <section className="bg-[#f9f9f9] py-12">
+        <section className="bg-[#f9f9f9] py-12" dir="rtl">
           <div className="mx-auto max-w-7xl px-4">
-            <div className="mb-8 flex items-center justify-between border-b border-[#c61b23] pb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-bold text-[#c61b23]">اقتصاد</h2>
-                <div className="rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 p-2">
-                  <svg
-                    className="h-6 w-6 text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <Link
-                href="/section/economy"
-                className="flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors hover:text-[#c61b23]"
-              >
-                <span>المزيد</span>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {data.sections.economy.map((article) => (
+            {/* Header */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center justify-between pb-3 sm:pb-4">
+                <h2 className="text-xl font-bold text-[#c61b23] sm:text-2xl lg:text-3xl">اقتصاد</h2>
                 <Link
-                  key={article.id}
-                  href={`/article/${article.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-[#eeeeee] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  href="/section/economy"
+                  className="flex items-center gap-2 text-sm font-bold text-black transition-colors hover:text-[#c61b23]"
                 >
-                  {article.cover_image_path && (
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <Image
-                        src={getStorageUrl(article.cover_image_path)}
-                        alt={article.title_ar}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {/* Ticker Icon Overlay */}
-                      <div className="absolute top-3 left-3 rounded-lg bg-amber-500/90 p-1.5">
-                        <svg
-                          className="h-4 w-4 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-5 leading-[1.6]">
-                    <span className="mb-2 inline-block text-xs font-bold text-amber-600">
-                      اقتصاد
-                    </span>
-                    <h3 className="mb-2 line-clamp-2 text-base leading-snug font-bold text-black transition-colors group-hover:text-[#c61b23]">
-                      {article.title_ar}
-                    </h3>
-                    {article.excerpt_ar && (
-                      <p className="mb-2 line-clamp-2 text-xs leading-[1.6] text-gray-600">
-                        {article.excerpt_ar}
-                      </p>
-                    )}
-                    {article.published_at && (
-                      <time className="text-xs text-gray-500">
-                        {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                        })}
-                      </time>
-                    )}
-                  </div>
+                  <span>المزيد</span>
+                  <span>←</span>
                 </Link>
-              ))}
+              </div>
+              <div className="h-px w-full bg-[#c61b23]" />
+            </div>
+
+            {/* Bento Grid Layout - Hero on Left, 4 cards on Right */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              {/* Left Side: Hero Card - Spans 2 columns */}
+              {data.sections.economy[0] && (
+                <Link
+                  href={`/article/${data.sections.economy[0].slug}`}
+                  className="group relative cursor-pointer overflow-hidden rounded-2xl md:col-span-2 lg:order-1 lg:col-span-2"
+                >
+                  {data.sections.economy[0].cover_image_path && (
+                    <>
+                      {/* Full-bleed background image */}
+                      <div className="relative h-[240px] md:h-[500px] lg:h-[500px]">
+                        <Image
+                          src={getStorageUrl(data.sections.economy[0].cover_image_path)}
+                          alt={data.sections.economy[0].title_ar}
+                          fill
+                          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                        />
+                      </div>
+
+                      {/* Dark gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                      {/* Text overlay - bottom-right */}
+                      <div className="absolute right-6 bottom-6 left-6 text-right">
+                        <h3 className="mb-3 text-2xl leading-tight font-bold text-white drop-shadow-lg md:text-3xl lg:text-4xl">
+                          {data.sections.economy[0].title_ar}
+                        </h3>
+                        {data.sections.economy[0].excerpt_ar && (
+                          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-white/90 drop-shadow-md lg:text-base">
+                            {data.sections.economy[0].excerpt_ar}
+                          </p>
+                        )}
+                        {data.sections.economy[0].published_at && (
+                          <time className="block text-sm text-white/70 drop-shadow-md">
+                            {toLatinNumbers(
+                              new Date(data.sections.economy[0].published_at).toLocaleDateString(
+                                'ar-EG',
+                                {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                }
+                              )
+                            )}
+                          </time>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Link>
+              )}
+
+              {/* Right Side: 4 Smaller Cards in 2x2 Grid */}
+              <div className="grid grid-cols-1 gap-6 md:col-span-2 md:grid-cols-2 lg:order-2 lg:col-span-1">
+                {data.sections.economy.slice(1, 5).map((article) => (
+                  <Link
+                    key={article.id}
+                    href={`/article/${article.slug}`}
+                    className="group relative cursor-pointer overflow-hidden rounded-2xl"
+                  >
+                    {article.cover_image_path && (
+                      <>
+                        {/* Full-bleed background image */}
+                        <div className="relative h-[240px]">
+                          <Image
+                            src={getStorageUrl(article.cover_image_path)}
+                            alt={article.title_ar}
+                            fill
+                            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                          />
+                        </div>
+
+                        {/* Dark gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                        {/* Text overlay - bottom-right */}
+                        <div className="absolute right-3 bottom-3 left-3 text-right">
+                          <h4 className="mb-1 line-clamp-3 text-sm leading-tight font-bold text-white drop-shadow-lg">
+                            {article.title_ar}
+                          </h4>
+                          {article.published_at && (
+                            <time className="block text-xs text-white/70 drop-shadow-md">
+                              {toLatinNumbers(
+                                new Date(article.published_at).toLocaleDateString('ar-EG', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                })
+                              )}
+                            </time>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </section>

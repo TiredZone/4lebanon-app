@@ -22,10 +22,10 @@ export function NavBar() {
                   <Link
                     href={item.href}
                     className={cn(
-                      'border-b-2 px-3 py-2 text-sm whitespace-nowrap transition-colors',
+                      'cursor-pointer border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors',
                       isActive
-                        ? 'border-[#c61b23] font-bold text-[#c61b23] underline decoration-[#c61b23] decoration-2 underline-offset-4'
-                        : 'border-transparent font-normal text-gray-700 hover:text-gray-900'
+                        ? 'border-[#c61b23] font-bold text-[#c61b23]'
+                        : 'border-transparent font-normal text-gray-800 hover:text-[#c61b23]'
                     )}
                   >
                     {item.label}

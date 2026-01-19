@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { formatDateAr, getStorageUrl } from '@/lib/utils'
+import { getStorageUrl, formatLevantineDate } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { ArticleListItem } from '@/types/database'
@@ -40,77 +40,77 @@ export default async function ImportantNewsPage() {
   const articles = await getImportantArticles()
 
   return (
-    <div className="bg-muted min-h-screen">
+    <div className="min-h-screen bg-[#f8f8f8]" dir="rtl">
       <div className="mx-auto max-w-6xl px-4 py-8">
         <header className="mb-8">
-          <h1 className="text-primary text-4xl font-bold">الأخبار المهمة</h1>
-          <p className="text-muted-foreground mt-2">أهم الأخبار العاجلة والمميزة</p>
+          <h1 className="text-4xl font-bold text-[#c61b23]">الأخبار المهمة</h1>
+          <p className="mt-2 text-gray-600">أهم الأخبار العاجلة والمميزة</p>
         </header>
 
         {articles.length > 0 ? (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
             {articles.map((article) => (
-              <article
+              <Link
                 key={article.id}
-                className="group overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md"
+                href={`/article/${article.slug}`}
+                className="group cursor-pointer overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <Link href={`/article/${article.slug}`} className="flex gap-4 p-4">
-                  {/* Image */}
-                  {article.cover_image_path && (
-                    <div className="relative h-32 w-48 flex-shrink-0 overflow-hidden rounded-lg">
+                {/* Top Half: Image (50%) */}
+                <div className="relative aspect-video w-full overflow-hidden">
+                  {article.cover_image_path ? (
+                    <>
                       <Image
                         src={getStorageUrl(article.cover_image_path) || '/placeholder.png'}
                         alt={article.title_ar}
                         fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="192px"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 600px"
                       />
                       {article.is_breaking && (
-                        <span className="bg-primary absolute top-2 left-2 rounded px-2 py-1 text-xs font-bold text-white">
+                        <span className="absolute top-3 right-3 rounded-md bg-[#c61b23] px-3 py-1 text-xs font-bold text-white shadow-lg">
                           عاجل
                         </span>
                       )}
+                    </>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                      <svg
+                        className="h-16 w-16 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
                     </div>
                   )}
+                </div>
 
-                  {/* Content */}
-                  <div className="flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                      {article.section && (
-                        <span className="text-primary text-sm font-medium">
-                          {article.section.name_ar}
-                        </span>
-                      )}
-                      {article.published_at && (
-                        <span className="text-muted-foreground text-xs">
-                          {formatDateAr(new Date(article.published_at), 'dd MMMM yyyy')}
-                        </span>
-                      )}
-                    </div>
+                {/* Bottom Half: Text Container (50%) */}
+                <div className="flex min-h-[180px] flex-col justify-center bg-white p-4">
+                  {/* Title - Bold, Max 2 lines, RTL */}
+                  <h2 className="mb-2 line-clamp-2 text-right text-lg leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                    {article.title_ar}
+                  </h2>
 
-                    <h2 className="text-foreground group-hover:text-primary mb-2 text-xl leading-tight font-bold transition-colors">
-                      {article.title_ar}
-                    </h2>
-
-                    {article.excerpt_ar && (
-                      <p className="text-muted-foreground mb-2 line-clamp-2 text-sm">
-                        {article.excerpt_ar}
-                      </p>
-                    )}
-
-                    {article.author && (
-                      <p className="text-muted-foreground text-sm">
-                        {article.author.display_name_ar}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              </article>
+                  {/* Date - Levantine format with Latin numerals */}
+                  {article.published_at && (
+                    <time className="block text-right text-sm text-gray-500">
+                      {formatLevantineDate(new Date(article.published_at))}
+                    </time>
+                  )}
+                </div>
+              </Link>
             ))}
 
             <div className="py-6 text-center">
-              <button className="hover:bg-primary-dark bg-primary rounded-lg px-8 py-3 font-medium text-white transition-colors">
-                + المزيــــــد
+              <button className="rounded-lg bg-[#c61b23] px-8 py-3 font-medium text-white transition-colors hover:bg-[#a01820]">
+                المزيــــــد
               </button>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default async function ImportantNewsPage() {
           <div className="flex min-h-[400px] items-center justify-center rounded-lg bg-white p-8 text-center shadow-sm">
             <div>
               <svg
-                className="text-muted-foreground mx-auto mb-4 h-16 w-16"
+                className="mx-auto mb-4 h-16 w-16 text-gray-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -130,8 +130,8 @@ export default async function ImportantNewsPage() {
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h2 className="text-foreground mb-2 text-xl font-bold">لا توجد أخبار مهمة حالياً</h2>
-              <p className="text-muted-foreground">لم يتم تمييز أي أخبار كأخبار مهمة بعد</p>
+              <h2 className="mb-2 text-xl font-bold text-gray-900">لا توجد أخبار مهمة حالياً</h2>
+              <p className="text-gray-600">لم يتم تمييز أي أخبار كأخبار مهمة بعد</p>
             </div>
           </div>
         )}

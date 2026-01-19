@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { formatDateAr } from '@/lib/utils'
+import { formatDateAr, toLatinNumbers } from '@/lib/utils'
 import { SearchForm } from './search-form'
 import { UserMenu } from './user-menu'
 import { useState } from 'react'
@@ -10,7 +10,7 @@ import { NAV_ITEMS } from '@/lib/constants'
 import { usePathname } from 'next/navigation'
 
 export function Header() {
-  const today = formatDateAr(new Date(), 'EEEE، dd MMMM yyyy')
+  const today = toLatinNumbers(formatDateAr(new Date(), 'EEEE، dd MMMM yyyy'))
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
@@ -18,7 +18,7 @@ export function Header() {
     <>
       <header className="sticky top-0 z-50 bg-[#f8f8f8] text-gray-900">
         <div className="mx-auto max-w-7xl px-3 py-2.5 md:px-4 md:py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             {/* Mobile Menu Button (left side on mobile) */}
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -36,23 +36,25 @@ export function Header() {
             </button>
 
             {/* Logo & Date - Left side */}
-            <div className="order-2 flex items-center gap-2 lg:order-1">
+            <div className="order-2 flex items-center gap-3 lg:order-1">
               <Link href="/">
                 <Image
                   src="/logo-transparent.png"
                   alt="Logo"
-                  width={120}
-                  height={40}
-                  className="h-8 w-auto md:h-10"
+                  width={173}
+                  height={58}
+                  className="h-10 w-auto md:h-14"
                   priority
                 />
               </Link>
-              <time className="hidden text-xs font-bold text-gray-900 md:block">{today}</time>
+              <time className="hidden text-xs font-bold text-gray-900 lg:block">{today}</time>
             </div>
 
             {/* Search - Center - Desktop only */}
-            <div className="order-3 hidden lg:flex">
-              <SearchForm />
+            <div className="order-3 hidden flex-1 justify-center lg:flex">
+              <div className="w-full max-w-md">
+                <SearchForm />
+              </div>
             </div>
 
             {/* Live Button - Mobile */}
@@ -65,7 +67,7 @@ export function Header() {
             </Link>
 
             {/* Profile - Right side */}
-            <div className="order-4 hidden items-center gap-4 lg:flex">
+            <div className="order-4 hidden items-center lg:flex">
               <UserMenu />
             </div>
           </div>
@@ -75,7 +77,7 @@ export function Header() {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
@@ -95,7 +97,7 @@ export function Header() {
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg p-2 hover:bg-white/10"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 hover:bg-white/10"
                 aria-label="إغلاق القائمة"
               >
                 <svg

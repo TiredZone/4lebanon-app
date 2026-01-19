@@ -91,7 +91,7 @@ export function SearchForm({ onSearch }: SearchFormProps = {}) {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim().length >= 2 && setShowResults(true)}
           placeholder="بحث"
-          className="w-full rounded-full border-2 border-white bg-white px-4 py-2 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-white focus:ring-2 focus:ring-white/50 focus:outline-none lg:w-48 lg:py-1.5 lg:focus:w-64"
+          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-200 focus:outline-none"
           aria-label="بحث في الموقع"
         />
         <button

@@ -150,6 +150,42 @@ export function formatNumberAr(num: number): string {
   return num.toLocaleString('ar-EG')
 }
 
+// Convert Arabic-Indic numerals to Latin numerals (٠-٩ → 0-9)
+export function toLatinNumbers(str: string | number): string {
+  const arabicToLatinMap: Record<string, string> = {
+    '٠': '0',
+    '١': '1',
+    '٢': '2',
+    '٣': '3',
+    '٤': '4',
+    '٥': '5',
+    '٦': '6',
+    '٧': '7',
+    '٨': '8',
+    '٩': '9',
+  }
+
+  return String(str).replace(/[٠-٩]/g, (match) => arabicToLatinMap[match] || match)
+}
+
+// Format date with Latin numerals
+export function formatDateLatinAr(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const day = d.getDate()
+  const month = ARABIC_MONTHS[d.getMonth()]
+  const year = d.getFullYear()
+  return `${day} ${month} ${year}`
+}
+
+// Format date with Levantine month names and Latin numerals (for mobile cards)
+export function formatLevantineDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const day = d.getDate()
+  const month = ARABIC_MONTHS[d.getMonth()]
+  const year = d.getFullYear()
+  return `${day} ${month} ${year}`
+}
+
 // Get article status label in Arabic
 export function getStatusLabelAr(status: string): string {
   const labels: Record<string, string> = {
