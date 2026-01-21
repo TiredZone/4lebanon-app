@@ -114,7 +114,7 @@ export function truncateText(text: string, maxLength: number): string {
 export function getStorageUrl(path: string | null): string {
   if (!path) return '/placeholder.png'
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  return `${supabaseUrl}/storage/v1/object/public/images/${path}`
+  return `${supabaseUrl}/storage/v1/object/public/article-images/${path}`
 }
 
 // Validate email format

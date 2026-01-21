@@ -1,2 +1,8 @@
 export { ArticleCard } from './article-card'
 export { ArticleGrid, FeaturedGrid, SectionGrid } from './article-grid'
+export { ReadingProgressBar } from './reading-progress-bar'
+export { ImageLightbox } from './image-lightbox'
+export { SocialShareBar } from './social-share-bar'
+export { TrendingSidebar } from './trending-sidebar'
+export { ArticleHeroImage } from './article-hero-image'
+export { RecommendedArticles } from './recommended-articles'

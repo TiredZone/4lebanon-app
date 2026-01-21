@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
-import { Noto_Kufi_Arabic } from 'next/font/google'
+import { Cairo } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SITE_CONFIG, DEFAULT_METADATA } from '@/lib/constants'
 import { Header } from '@/components/layout/header'
 import { NavBar } from '@/components/layout/nav-bar'
 import { Footer } from '@/components/layout/footer'
+import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { ToastProvider } from '@/components/layout/toast-provider'
 import './globals.css'
 
-const notoKufiArabic = Noto_Kufi_Arabic({
-  subsets: ['arabic'],
-  weight: ['400', '500', '700'],
-  variable: '--font-noto-kufi-arabic',
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  weight: ['200', '300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-cairo',
   display: 'swap',
 })
 
@@ -60,14 +61,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={notoKufiArabic.variable}>
-      <body className="bg-background font-arabic text-foreground min-h-screen antialiased">
+    <html lang="ar" dir="rtl" className={cairo.variable}>
+      <body className="aura-full font-arabic text-foreground min-h-screen antialiased">
         <ToastProvider />
         <div className="flex min-h-screen flex-col">
           <Header />
           <NavBar />
           <main className="flex-1">{children}</main>
           <Footer />
+          <MobileTabBar />
         </div>
         {/* Vercel Analytics - automatically tracks Web Vitals */}
         <Analytics />

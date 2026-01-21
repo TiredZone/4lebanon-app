@@ -40,6 +40,7 @@ async function searchArticles(params: {
     `,
       { count: 'exact' }
     )
+    .eq('status', 'published')
     .order('published_at', { ascending: false })
 
   // Full-text search
@@ -86,6 +87,30 @@ async function searchArticles(params: {
     }
   }
 
+  // Topic filter - requires joining through article_topics
+  if (params.topic) {
+    const { data: topic } = await supabase
+      .from('topics')
+      .select('id')
+      .eq('slug', params.topic)
+      .single()
+    if (topic) {
+      const topicData = topic as { id: number }
+      // Get article IDs that have this topic
+      const { data: articleTopics } = await supabase
+        .from('article_topics')
+        .select('article_id')
+        .eq('topic_id', topicData.id)
+      if (articleTopics && articleTopics.length > 0) {
+        const articleIds = articleTopics.map((at) => (at as { article_id: string }).article_id)
+        query = query.in('id', articleIds)
+      } else {
+        // No articles with this topic, return empty
+        return { articles: [], total: 0 }
+      }
+    }
+  }
+
   const { data, count } = await query.range(offset, offset + perPage - 1)
 
   const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
@@ -107,10 +132,11 @@ async function searchArticles(params: {
 async function getFilters() {
   const supabase = await createClient()
 
-  const [sections, regions, countries] = await Promise.all([
+  const [sections, regions, countries, topics] = await Promise.all([
     supabase.from('sections').select('id, slug, name_ar').order('sort_order'),
     supabase.from('regions').select('id, slug, name_ar').order('sort_order'),
     supabase.from('countries').select('id, slug, name_ar, region_id').order('sort_order'),
+    supabase.from('topics').select('id, slug, name_ar').order('sort_order'),
   ])
 
   return {
@@ -122,6 +148,7 @@ async function getFilters() {
       name_ar: string
       region_id: number
     }[],
+    topics: (topics.data || []) as { id: number; slug: string; name_ar: string }[],
   }
 }
 
@@ -172,6 +199,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                 section: params.section || '',
                 region: params.region || '',
                 country: params.country || '',
+                topic: params.topic || '',
               }}
             />
           </div>
@@ -235,8 +263,9 @@ function SearchPageForm({
     sections: { id: number; slug: string; name_ar: string }[]
     regions: { id: number; slug: string; name_ar: string }[]
     countries: { id: number; slug: string; name_ar: string; region_id: number }[]
+    topics: { id: number; slug: string; name_ar: string }[]
   }
-  currentParams: { q: string; section: string; region: string; country: string }
+  currentParams: { q: string; section: string; region: string; country: string; topic: string }
 }) {
   return (
     <form method="get" className="space-y-4">
@@ -256,7 +285,7 @@ function SearchPageForm({
       </div>
 
       {/* Filters */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Section filter */}
         <div>
           <label htmlFor="section" className="text-foreground mb-2 block text-sm font-medium">
@@ -272,6 +301,26 @@ function SearchPageForm({
             {filters.sections.map((s) => (
               <option key={s.id} value={s.slug}>
                 {s.name_ar}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Topic filter */}
+        <div>
+          <label htmlFor="topic" className="text-foreground mb-2 block text-sm font-medium">
+            الموضوع
+          </label>
+          <select
+            id="topic"
+            name="topic"
+            defaultValue={currentParams.topic}
+            className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
+          >
+            <option value="">جميع المواضيع</option>
+            {filters.topics.map((t) => (
+              <option key={t.id} value={t.slug}>
+                {t.name_ar}
               </option>
             ))}
           </select>

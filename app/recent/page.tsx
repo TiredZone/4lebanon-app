@@ -17,6 +17,7 @@ async function getRecentArticles() {
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
+    .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(20)
 
@@ -101,7 +102,10 @@ export default async function RecentNewsPage() {
 
             {/* Load More Button */}
             <div className="border-border border-t p-6 text-center">
-              <button className="hover:bg-primary-dark bg-primary rounded-lg px-6 py-2 font-medium text-white transition-colors">
+              <button
+                type="button"
+                className="hover:bg-primary-dark bg-primary rounded-lg px-6 py-2 font-medium text-white transition-colors"
+              >
                 + المزيــــــد
               </button>
             </div>

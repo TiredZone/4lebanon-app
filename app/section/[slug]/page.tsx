@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
-import { ArticleGrid } from '@/components/article'
-import { MostReadStatic } from '@/components/sidebar'
+import { GlassEditorialCard } from '@/components/glass-editorial-card'
 import type { ArticleListItem, Section } from '@/types/database'
 
 export const revalidate = 180 // 3 minutes
@@ -40,6 +39,7 @@ async function getSectionArticles(
       { count: 'exact' }
     )
     .eq('section_id', sectionId)
+    .eq('status', 'published')
     .order('published_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 
@@ -59,16 +59,23 @@ async function getSectionArticles(
   return { articles, total: count || 0 }
 }
 
-async function getMostRead() {
-  const supabase = await createClient()
+// Determine page variant based on slug
+function getPageVariant(slug: string): 'default' | 'exclusive' | 'authors' {
+  if (slug === 'exclusive' || slug === 'خاص') return 'exclusive'
+  if (slug === 'authors' || slug === 'كتابنا') return 'authors'
+  return 'default'
+}
 
-  const { data } = await supabase
-    .from('articles')
-    .select('id, slug, title_ar, view_count')
-    .order('view_count', { ascending: false })
-    .limit(PAGINATION.mostReadCount)
-
-  return (data || []) as { id: string; slug: string; title_ar: string; view_count: number }[]
+// Get background class based on variant
+function getBackgroundClass(variant: 'default' | 'exclusive' | 'authors'): string {
+  switch (variant) {
+    case 'exclusive':
+      return 'exclusive-page-bg'
+    case 'authors':
+      return 'authors-page-bg'
+    default:
+      return 'category-page-bg'
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -100,71 +107,72 @@ export default async function SectionPage({ params, searchParams }: PageProps) {
     notFound()
   }
 
-  const [{ articles, total }, mostRead] = await Promise.all([
-    getSectionArticles(section.id, page),
-    getMostRead(),
-  ])
-
+  const { articles, total } = await getSectionArticles(section.id, page)
   const totalPages = Math.ceil(total / PAGINATION.defaultPageSize)
 
+  // Determine page variant
+  const variant = getPageVariant(slug)
+  const bgClass = getBackgroundClass(variant)
+  const isDark = variant === 'exclusive'
+
   return (
-    <div className="bg-gray-50 py-4 md:py-8">
-      <div className="mx-auto max-w-7xl px-3 md:px-4">
-        {/* Section Header - Mobile optimized */}
-        <div className="mb-4 md:mb-8">
-          <h1 className="section-heading text-2xl font-bold text-black md:text-3xl">
-            {section.name_ar}
-          </h1>
-          {section.description_ar && (
-            <p className="mt-1 text-sm text-gray-600 md:mt-2 md:text-base">
-              {section.description_ar}
-            </p>
-          )}
-        </div>
+    <div className={bgClass}>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16">
+        {/* Category Header */}
+        <header className={`category-header ${isDark ? 'category-header-dark' : ''}`}>
+          <h1>{section.name_ar}</h1>
+          {section.description_ar && <p>{section.description_ar}</p>}
+        </header>
 
-        <div className="grid gap-6 md:gap-8 lg:grid-cols-4">
-          {/* Articles Grid - Mobile: 1 column, Desktop: 3 columns */}
-          <div className="lg:col-span-3">
-            {articles.length > 0 ? (
-              <>
-                <ArticleGrid articles={articles} columns={3} showExcerpt />
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    baseUrl={`/section/${slug}`}
-                  />
-                )}
-              </>
-            ) : (
-              <div className="rounded-lg bg-white p-6 text-center shadow-sm md:p-8">
-                <p className="text-sm text-gray-500 md:text-base">
-                  لا توجد مقالات في هذا القسم حالياً.
-                </p>
-              </div>
+        {/* Articles Grid - 3x3 Fluid */}
+        {articles.length > 0 ? (
+          <>
+            <div className="category-grid">
+              {articles.map((article, index) => (
+                <GlassEditorialCard
+                  key={article.id}
+                  article={article}
+                  index={index}
+                  variant={variant === 'exclusive' ? 'exclusive' : 'default'}
+                />
+              ))}
+            </div>
+
+            {/* Glass Pagination */}
+            {totalPages > 1 && (
+              <GlassPagination
+                currentPage={page}
+                totalPages={totalPages}
+                baseUrl={`/section/${slug}`}
+                isDark={isDark}
+              />
             )}
+          </>
+        ) : (
+          <div
+            className={`glass-editorial-card mx-auto max-w-md p-8 text-center ${isDark ? 'glass-exclusive-card' : ''}`}
+          >
+            <p className={isDark ? 'text-slate-400' : 'text-gray-500'}>
+              لا توجد مقالات في هذا القسم حالياً.
+            </p>
           </div>
-
-          {/* Sidebar - Hidden on mobile, shown on desktop */}
-          <aside className="hidden space-y-6 lg:block">
-            <MostReadStatic articles={mostRead} />
-          </aside>
-        </div>
+        )}
       </div>
     </div>
   )
 }
 
-// Pagination component
-function Pagination({
+// Glass Pagination component
+function GlassPagination({
   currentPage,
   totalPages,
   baseUrl,
+  isDark = false,
 }: {
   currentPage: number
   totalPages: number
   baseUrl: string
+  isDark?: boolean
 }) {
   const pages = []
   const maxVisible = 5
@@ -180,13 +188,14 @@ function Pagination({
     pages.push(i)
   }
 
+  const darkStyles = isDark
+    ? 'bg-slate-800/70 border-slate-700 text-slate-300 hover:bg-violet-600 hover:border-violet-600 hover:text-white'
+    : ''
+
   return (
-    <nav className="mt-6 flex flex-wrap items-center justify-center gap-2 md:mt-8">
+    <nav className="pagination-glass">
       {currentPage > 1 && (
-        <a
-          href={`${baseUrl}?page=${currentPage - 1}`}
-          className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-[#c61b23] hover:text-white md:px-4 md:text-sm"
-        >
+        <a href={`${baseUrl}?page=${currentPage - 1}`} className={darkStyles}>
           السابق
         </a>
       )}
@@ -195,21 +204,14 @@ function Pagination({
         <a
           key={pageNum}
           href={`${baseUrl}?page=${pageNum}`}
-          className={`rounded-lg px-3 py-2 text-xs font-medium shadow-sm transition-colors md:px-4 md:text-sm ${
-            pageNum === currentPage
-              ? 'bg-[#c61b23] text-white'
-              : 'bg-white text-gray-900 hover:bg-[#c61b23] hover:text-white'
-          }`}
+          className={`${pageNum === currentPage ? 'active' : ''} ${isDark && pageNum !== currentPage ? darkStyles : ''}`}
         >
           {pageNum}
         </a>
       ))}
 
       {currentPage < totalPages && (
-        <a
-          href={`${baseUrl}?page=${currentPage + 1}`}
-          className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-900 shadow-sm transition-colors hover:bg-[#c61b23] hover:text-white md:px-4 md:text-sm"
-        >
+        <a href={`${baseUrl}?page=${currentPage + 1}`} className={darkStyles}>
           التالي
         </a>
       )}

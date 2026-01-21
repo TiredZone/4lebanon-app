@@ -1,6 +1,7 @@
 export { Header, HeaderMobile } from './header'
 export { NavBar } from './nav-bar'
 export { Footer } from './footer'
+export { MobileTabBar } from './mobile-tab-bar'
 export { LiveTicker, LiveTickerStatic } from './live-ticker'
 export { SearchForm } from './search-form'
 export { HeadlineScroller } from './headline-scroller'

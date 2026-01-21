@@ -9,6 +9,8 @@ import { getStorageUrl } from '@/lib/utils'
 
 interface SearchFormProps {
   onSearch?: () => void
+  onFocus?: () => void
+  onBlur?: () => void
 }
 
 interface SearchResult {
@@ -19,7 +21,7 @@ interface SearchResult {
   section: { name_ar: string; slug: string } | null
 }
 
-export function SearchForm({ onSearch }: SearchFormProps = {}) {
+export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) {
   const router = useRouter()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -89,9 +91,16 @@ export function SearchForm({ onSearch }: SearchFormProps = {}) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => query.trim().length >= 2 && setShowResults(true)}
+          onFocus={() => {
+            if (query.trim().length >= 2) setShowResults(true)
+            onFocus?.()
+          }}
+          onBlur={() => {
+            // Delay blur to allow click on results
+            setTimeout(() => onBlur?.(), 150)
+          }}
           placeholder="بحث"
-          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-900 placeholder-gray-500 transition-all focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-gray-200 focus:outline-none"
+          className="w-full rounded-xl border border-gray-200/80 bg-gray-50/80 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-[var(--aura-red)]/30 focus:bg-white focus:ring-2 focus:ring-[var(--aura-red)]/10 focus:outline-none"
           aria-label="بحث في الموقع"
         />
         <button

@@ -41,6 +41,7 @@ async function getAuthorArticles(
       { count: 'exact' }
     )
     .eq('author_id', authorId)
+    .eq('status', 'published')
     .order('published_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 

@@ -251,10 +251,12 @@ export async function uploadImage(
   const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`
 
   // Upload to Supabase Storage
-  const { error: uploadError } = await supabase.storage.from('images').upload(filename, file, {
-    cacheControl: '31536000', // 1 year
-    upsert: false,
-  })
+  const { error: uploadError } = await supabase.storage
+    .from('article-images')
+    .upload(filename, file, {
+      cacheControl: '31536000', // 1 year
+      upsert: false,
+    })
 
   if (uploadError) {
     console.error('Upload error:', uploadError)
