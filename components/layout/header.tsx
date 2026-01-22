@@ -102,13 +102,25 @@ export function Header() {
               </motion.div>
             </div>
 
-            {/* Live Button - Mobile */}
+            {/* Profile/Dashboard Button - Mobile */}
             <Link
-              href="/"
-              className="order-3 flex min-h-[44px] items-center gap-1.5 rounded-full border border-gray-200/50 bg-white/60 px-3 py-1.5 text-[11px] backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-sm active:scale-95 sm:px-4 sm:py-2 sm:text-xs lg:hidden"
+              href="/admin"
+              className="order-3 flex min-h-[44px] items-center justify-center rounded-full border border-gray-200/50 bg-white/60 p-2 backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-sm active:scale-95 lg:hidden"
+              aria-label="لوحة التحكم"
             >
-              <span className="live-indicator h-1.5 w-1.5 rounded-full bg-red-500"></span>
-              <span className="font-medium">مباشر</span>
+              <svg
+                className="h-5 w-5 text-slate-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                />
+              </svg>
             </Link>
 
             {/* Profile - Right side */}
@@ -133,111 +145,165 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             />
 
-            {/* Slide-in Panel */}
+            {/* Slide-in Panel - Premium White Design */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[85%] overflow-y-auto bg-gradient-to-b from-[#c61b23] to-[#9a1419] shadow-2xl lg:hidden"
+              className="fixed top-0 right-0 bottom-0 z-50 flex w-80 max-w-[85%] flex-col overflow-hidden bg-white shadow-2xl lg:hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Menu Header */}
-              <div className="flex items-center justify-between border-b border-white/20 p-3 sm:p-4">
-                <div className="flex items-center gap-2 sm:gap-3">
+              {/* Menu Header - Red accent bar */}
+              <div className="bg-gradient-to-l from-[#c61b23] to-[#9a1419] px-4 py-4">
+                <div className="flex items-center justify-between">
                   <Link
                     href="/"
-                    className="flex min-h-[44px] items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs backdrop-blur-sm transition-colors hover:bg-white/20"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="transition-opacity hover:opacity-90"
                   >
-                    <span className="live-indicator h-1.5 w-1.5 rounded-full bg-red-400"></span>
-                    <span className="text-white">مباشر</span>
+                    <Image
+                      src="/logo-transparent.png"
+                      alt="Logo"
+                      width={120}
+                      height={40}
+                      className="h-8 w-auto brightness-0 invert"
+                    />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-all hover:bg-white/30 active:scale-95"
+                    aria-label="إغلاق القائمة"
+                  >
+                    <svg
+                      className="h-5 w-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all duration-300 hover:bg-white/10 active:scale-95"
-                  aria-label="إغلاق القائمة"
-                >
+              </div>
+
+              {/* Dashboard Access */}
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="mx-4 mt-4 flex items-center gap-3 rounded-xl bg-gradient-to-l from-slate-50 to-slate-100 px-4 py-3 transition-all hover:shadow-md active:scale-[0.98]"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c61b23]">
                   <svg
-                    className="h-6 w-6 stroke-[1.5] text-white"
+                    className="h-5 w-5 text-white"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                    />
                   </svg>
-                </button>
-              </div>
+                </div>
+                <div className="flex-1">
+                  <span className="block text-sm font-bold text-slate-800">لوحة التحكم</span>
+                  <span className="text-xs text-slate-500">إدارة المقالات</span>
+                </div>
+                <svg
+                  className="h-5 w-5 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </Link>
 
               {/* Search in Menu */}
-              <div className="border-b border-white/20 p-4">
-                <SearchForm onSearch={() => setMobileMenuOpen(false)} />
+              <div className="px-4 py-4">
+                <div className="relative">
+                  <SearchForm onSearch={() => setMobileMenuOpen(false)} />
+                </div>
               </div>
 
-              {/* Navigation Links with Active Indicator */}
-              <nav className="py-2">
-                {NAV_ITEMS.map((item, index) => {
-                  const isActive = index === activeIndex
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={cn(
-                        'mobile-nav-link flex min-h-[52px] items-center justify-between border-b border-white/10 px-4 py-3 text-sm text-white transition-all sm:px-6 sm:py-3.5 sm:text-base',
-                        isActive ? 'mobile-nav-link-active' : 'hover:bg-white/5'
-                      )}
-                    >
-                      <span
+              {/* Navigation Links */}
+              <nav className="flex-1 overflow-y-auto px-4">
+                <p className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                  الأقسام
+                </p>
+                <div className="space-y-1">
+                  {NAV_ITEMS.map((item, index) => {
+                    const isActive = index === activeIndex
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
                         className={cn(
-                          'transition-transform duration-300',
-                          !isActive && 'hover:translate-x-1'
+                          'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
+                          isActive
+                            ? 'bg-[#c61b23] text-white shadow-md'
+                            : 'text-slate-700 hover:bg-slate-100'
                         )}
                       >
-                        ← {item.label}
-                      </span>
-                      {/* Vertical Active Indicator Bar (RTL = right side) */}
-                      {isActive && (
-                        <motion.span
-                          layoutId="mobile-active-indicator"
-                          className="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-l-full bg-white"
-                          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                        />
-                      )}
-                    </Link>
-                  )
-                })}
+                        <span className="flex-1">{item.label}</span>
+                        {isActive && (
+                          <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                      </Link>
+                    )
+                  })}
+                </div>
               </nav>
 
               {/* Footer Links */}
-              <div className="mt-4 border-t border-white/20 p-4 sm:p-6">
-                <div className="grid grid-cols-2 gap-2 text-center text-xs sm:gap-4 sm:text-sm">
+              <div className="border-t border-slate-200 bg-slate-50 p-4">
+                <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/about"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[44px] items-center justify-center rounded-lg px-2 py-2 text-white/90 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
                     من نحن
                   </Link>
                   <Link
                     href="/contact"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[44px] items-center justify-center rounded-lg px-2 py-2 text-white/90 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
                     اتصل بنا
                   </Link>
                   <Link
                     href="/privacy"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[44px] items-center justify-center rounded-lg px-2 py-2 text-white/90 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
-                    الشكاوى والتصحيحات
+                    الشكاوى
                   </Link>
                   <Link
                     href="/terms"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[44px] items-center justify-center rounded-lg px-2 py-2 text-white/90 transition-all duration-300 hover:bg-white/10 hover:text-white"
+                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
                     أعلن معنا
                   </Link>

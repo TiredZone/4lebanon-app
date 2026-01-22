@@ -26,19 +26,63 @@ const ARABIC_MONTHS = [
 
 const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 
-// Format date in Arabic with custom month names
+// Format date in Arabic with Levantine month names (كانون، شباط، آذار، etc.)
+// All formats use Levantine Arabic months - NOT Egyptian (يناير، فبراير)
 export function formatDateAr(date: string | Date, formatStr: string = 'dd MMMM yyyy') {
   const d = typeof date === 'string' ? new Date(date) : date
 
-  if (formatStr === 'EEEE، dd MMMM yyyy') {
-    const dayName = ARABIC_DAYS[d.getDay()]
-    const day = d.getDate()
-    const month = ARABIC_MONTHS[d.getMonth()]
-    const year = d.getFullYear()
-    return `${dayName}، ${day} ${month} ${year}`
-  }
+  const day = d.getDate()
+  const month = ARABIC_MONTHS[d.getMonth()]
+  const year = d.getFullYear()
+  const dayName = ARABIC_DAYS[d.getDay()]
+  const hours = d.getHours().toString().padStart(2, '0')
+  const minutes = d.getMinutes().toString().padStart(2, '0')
+  const monthNum = (d.getMonth() + 1).toString().padStart(2, '0')
+  const dayPadded = day.toString().padStart(2, '0')
 
-  return format(d, formatStr, { locale: ar })
+  switch (formatStr) {
+    // Full formats with weekday
+    case 'EEEE، dd MMMM yyyy':
+    case 'weekday-full':
+      return `${dayName}، ${day} ${month} ${year}`
+
+    // Standard date formats
+    case 'dd MMMM yyyy':
+    case 'full':
+      return `${day} ${month} ${year}`
+
+    // Day and month only
+    case 'd MMMM':
+    case 'day-month':
+      return `${day} ${month}`
+
+    // Numeric formats
+    case 'dd/MM':
+      return `${dayPadded}/${monthNum}`
+    case 'dd/MM/yyyy':
+      return `${dayPadded}/${monthNum}/${year}`
+    case 'dd/MM/yyyy HH:mm':
+      return `${dayPadded}/${monthNum}/${year} ${hours}:${minutes}`
+
+    // Month and year
+    case 'MMMM yyyy':
+    case 'month-year':
+      return `${month} ${year}`
+
+    // Month only
+    case 'MMMM':
+    case 'month':
+      return month
+
+    // Day only
+    case 'dd':
+    case 'day':
+      return day.toString()
+
+    default:
+      // Default to full date with Levantine months
+      return `${day} ${month} ${year}`
+  }
 }
 
 // Format relative time in Arabic (e.g., "منذ ساعتين")

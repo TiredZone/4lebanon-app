@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getStorageUrl, toLatinNumbers } from '@/lib/utils'
+import { getStorageUrl, toLatinNumbers, formatDateAr } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import WritersCarousel from '@/components/writers-carousel'
@@ -264,14 +264,7 @@ export default async function Home() {
                         {/* Date */}
                         <p className="text-xs font-medium text-white/90 text-shadow-sm sm:text-sm lg:text-base">
                           {article.published_at &&
-                            toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                weekday: 'long',
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            formatDateAr(article.published_at, 'weekday-full')}
                         </p>
                       </div>
                     </Link>
@@ -394,13 +387,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-[10px] text-white/70 text-shadow-sm sm:text-xs">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -456,16 +443,7 @@ export default async function Home() {
                       )}
                       {data.sections.radar[0].published_at && (
                         <time className="block text-right text-xs text-white/70 text-shadow-sm sm:text-sm">
-                          {toLatinNumbers(
-                            new Date(data.sections.radar[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
-                            )
-                          )}
+                          {formatDateAr(data.sections.radar[0].published_at, 'full')}
                         </time>
                       )}
                     </div>
@@ -543,13 +521,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-[10px] text-white/70 text-shadow-sm sm:text-xs">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -605,15 +577,7 @@ export default async function Home() {
                       )}
                       {data.sections.investigation[0].published_at && (
                         <time className="block text-right text-xs text-white/70 text-shadow-sm sm:text-sm">
-                          {toLatinNumbers(
-                            new Date(
-                              data.sections.investigation[0].published_at
-                            ).toLocaleDateString('ar-EG', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          )}
+                          {formatDateAr(data.sections.investigation[0].published_at, 'full')}
                         </time>
                       )}
                     </div>
@@ -691,13 +655,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-xs text-white/70 sm:text-sm">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -753,16 +711,7 @@ export default async function Home() {
                       )}
                       {data.sections.special[0].published_at && (
                         <time className="block text-right text-sm text-white/70 lg:text-base">
-                          {toLatinNumbers(
-                            new Date(data.sections.special[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
-                            )
-                          )}
+                          {formatDateAr(data.sections.special[0].published_at, 'full')}
                         </time>
                       )}
                     </div>
@@ -840,13 +789,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-xs text-white/70 sm:text-sm">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -902,16 +845,7 @@ export default async function Home() {
                       )}
                       {data.sections.local[0].published_at && (
                         <time className="block text-right text-sm text-white/70 lg:text-base">
-                          {toLatinNumbers(
-                            new Date(data.sections.local[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
-                            )
-                          )}
+                          {formatDateAr(data.sections.local[0].published_at, 'full')}
                         </time>
                       )}
                     </div>
@@ -1118,10 +1052,7 @@ export default async function Home() {
                   <div className={index === 0 ? 'p-6' : 'p-4'}>
                     {article.published_at && (
                       <time className="text-xs text-gray-500">
-                        {new Date(article.published_at).toLocaleDateString('ar-EG', {
-                          day: '2-digit',
-                          month: 'long',
-                        })}
+                        {formatDateAr(article.published_at, 'day-month')}
                       </time>
                     )}
                   </div>
@@ -1184,12 +1115,7 @@ export default async function Home() {
                           </h4>
                           {article.published_at && (
                             <time className="block text-xs text-white/70 drop-shadow-md">
-                              {toLatinNumbers(
-                                new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                  day: 'numeric',
-                                  month: 'long',
-                                })
-                              )}
+                              {formatDateAr(article.published_at, 'day-month')}
                             </time>
                           )}
                         </div>
@@ -1232,16 +1158,7 @@ export default async function Home() {
                         )}
                         {data.sections.security[0].published_at && (
                           <time className="block text-sm text-white/70 drop-shadow-md">
-                            {toLatinNumbers(
-                              new Date(data.sections.security[0].published_at).toLocaleDateString(
-                                'ar-EG',
-                                {
-                                  day: 'numeric',
-                                  month: 'long',
-                                  year: 'numeric',
-                                }
-                              )
-                            )}
+                            {formatDateAr(data.sections.security[0].published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -1320,13 +1237,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-xs text-white/70 sm:text-sm">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -1382,16 +1293,7 @@ export default async function Home() {
                       )}
                       {data.sections.regional[0].published_at && (
                         <time className="block text-right text-sm text-white/70 lg:text-base">
-                          {toLatinNumbers(
-                            new Date(data.sections.regional[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
-                            )
-                          )}
+                          {formatDateAr(data.sections.regional[0].published_at, 'full')}
                         </time>
                       )}
                     </div>
@@ -1503,13 +1405,7 @@ export default async function Home() {
                         </h3>
                         {article.published_at && (
                           <time className="block text-right text-xs text-white/70 sm:text-sm">
-                            {toLatinNumbers(
-                              new Date(article.published_at).toLocaleDateString('ar-EG', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              })
-                            )}
+                            {formatDateAr(article.published_at, 'full')}
                           </time>
                         )}
                       </div>
@@ -1565,16 +1461,7 @@ export default async function Home() {
                       )}
                       {data.sections.economy[0].published_at && (
                         <time className="block text-right text-sm text-white/70 lg:text-base">
-                          {toLatinNumbers(
-                            new Date(data.sections.economy[0].published_at).toLocaleDateString(
-                              'ar-EG',
-                              {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric',
-                              }
-                            )
-                          )}
+                          {formatDateAr(data.sections.economy[0].published_at, 'full')}
                         </time>
                       )}
                     </div>

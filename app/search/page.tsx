@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
-import { ArticleGrid } from '@/components/article'
+import { formatDateAr, getStorageUrl } from '@/lib/utils'
+import { SearchFilters } from '@/components/search/search-filters'
 import type { ArticleListItem } from '@/types/database'
 
 // Search is dynamic - no caching
@@ -43,11 +46,9 @@ async function searchArticles(params: {
     .eq('status', 'published')
     .order('published_at', { ascending: false })
 
-  // Full-text search
-  if (params.q) {
-    query = query.textSearch('search_vector', params.q.split(' ').join(' & '), {
-      config: 'simple',
-    })
+  // Search by title - using ilike for instant single-character search (works with Arabic and English)
+  if (params.q && params.q.trim().length > 0) {
+    query = query.ilike('title_ar', `%${params.q.trim()}%`)
   }
 
   // Filters
@@ -182,41 +183,91 @@ export default async function SearchPage({ searchParams }: PageProps) {
   ])
 
   const totalPages = Math.ceil(total / PAGINATION.searchPageSize)
+  const hasActiveFilters =
+    params.q || params.section || params.region || params.country || params.topic
 
   return (
-    <div className="bg-muted py-8">
-      <div className="mx-auto max-w-7xl px-4">
+    <div className="search-page-bg">
+      <div className="mx-auto max-w-7xl px-4 py-8 md:py-12">
         {/* Search Header */}
-        <div className="mb-8">
-          <h1 className="text-foreground mb-4 text-3xl font-bold">بحث</h1>
+        <header className="search-header">
+          <h1 className="search-title">بحث</h1>
+          <p className="search-subtitle">ابحث في آلاف المقالات والتقارير الإخبارية</p>
+        </header>
 
-          {/* Search Form */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <SearchPageForm
+        {/* Search Form */}
+        <div className="search-form-container">
+          <form method="get">
+            {/* Main search input */}
+            <div className="search-input-wrapper">
+              <svg
+                className="search-input-icon"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="search"
+                name="q"
+                defaultValue={params.q || ''}
+                placeholder="ابحث عن المقالات، الكتّاب، المواضيع..."
+                className="search-main-input"
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Filters */}
+            <SearchFilters
               filters={filters}
               currentParams={{
-                q: params.q || '',
                 section: params.section || '',
                 region: params.region || '',
                 country: params.country || '',
                 topic: params.topic || '',
               }}
             />
-          </div>
+
+            {/* Submit button */}
+            <button type="submit" className="search-submit-btn">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              بحث
+            </button>
+          </form>
         </div>
 
         {/* Results */}
-        {params.q || params.section || params.region || params.country ? (
+        {hasActiveFilters ? (
           <>
-            <div className="mb-6">
-              <p className="text-muted-foreground">
+            {/* Results header */}
+            <div className="search-results-header">
+              <p className="search-results-count">
                 {total > 0 ? (
                   <>
-                    تم العثور على <span className="text-foreground font-bold">{total}</span> نتيجة
+                    تم العثور على <strong>{total}</strong> نتيجة
                     {params.q && (
                       <>
                         {' '}
-                        لـ &quot;<span className="text-foreground font-bold">{params.q}</span>&quot;
+                        لـ &quot;<span className="search-results-query">{params.q}</span>&quot;
                       </>
                     )}
                   </>
@@ -228,156 +279,107 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
             {articles.length > 0 ? (
               <>
-                <ArticleGrid articles={articles} columns={3} showExcerpt />
+                {/* Results grid */}
+                <div className="search-results-grid">
+                  {articles.map((article) => (
+                    <SearchResultCard key={article.id} article={article} />
+                  ))}
+                </div>
+
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <SearchPagination currentPage={page} totalPages={totalPages} params={params} />
                 )}
               </>
             ) : (
-              <div className="rounded-lg bg-white p-8 text-center">
-                <p className="text-muted-foreground">
-                  لم يتم العثور على نتائج. حاول تغيير معايير البحث.
-                </p>
-              </div>
+              <SearchEmptyState query={params.q} />
             )}
           </>
         ) : (
-          <div className="rounded-lg bg-white p-8 text-center">
-            <p className="text-muted-foreground">
-              أدخل كلمة البحث أو اختر فلتر للعثور على المقالات.
-            </p>
-          </div>
+          <SearchEmptyState />
         )}
       </div>
     </div>
   )
 }
 
-// Client search form component
-function SearchPageForm({
-  filters,
-  currentParams,
-}: {
-  filters: {
-    sections: { id: number; slug: string; name_ar: string }[]
-    regions: { id: number; slug: string; name_ar: string }[]
-    countries: { id: number; slug: string; name_ar: string; region_id: number }[]
-    topics: { id: number; slug: string; name_ar: string }[]
-  }
-  currentParams: { q: string; section: string; region: string; country: string; topic: string }
-}) {
+// Search result card component
+function SearchResultCard({ article }: { article: ArticleListItem }) {
+  const imageUrl = getStorageUrl(article.cover_image_path)
+
   return (
-    <form method="get" className="space-y-4">
-      {/* Search input */}
-      <div>
-        <label htmlFor="q" className="text-foreground mb-2 block text-sm font-medium">
-          كلمة البحث
-        </label>
-        <input
-          type="search"
-          id="q"
-          name="q"
-          defaultValue={currentParams.q}
-          placeholder="ابحث في المقالات..."
-          className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
-        />
-      </div>
+    <article className="search-result-card">
+      {/* Image */}
+      <Link href={`/article/${article.slug}`} className="search-card-image">
+        {imageUrl && imageUrl !== '/placeholder.png' ? (
+          <Image
+            src={imageUrl}
+            alt={article.title_ar}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-slate-100 to-slate-200" />
+        )}
+        {article.is_breaking && <span className="search-card-badge">عاجل</span>}
+      </Link>
 
-      {/* Filters */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Section filter */}
-        <div>
-          <label htmlFor="section" className="text-foreground mb-2 block text-sm font-medium">
-            القسم
-          </label>
-          <select
-            id="section"
-            name="section"
-            defaultValue={currentParams.section}
-            className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
-          >
-            <option value="">جميع الأقسام</option>
-            {filters.sections.map((s) => (
-              <option key={s.id} value={s.slug}>
-                {s.name_ar}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Content */}
+      <div className="search-card-content">
+        {article.section && (
+          <Link href={`/section/${article.section.slug}`} className="search-card-section">
+            {article.section.name_ar}
+          </Link>
+        )}
 
-        {/* Topic filter */}
-        <div>
-          <label htmlFor="topic" className="text-foreground mb-2 block text-sm font-medium">
-            الموضوع
-          </label>
-          <select
-            id="topic"
-            name="topic"
-            defaultValue={currentParams.topic}
-            className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
-          >
-            <option value="">جميع المواضيع</option>
-            {filters.topics.map((t) => (
-              <option key={t.id} value={t.slug}>
-                {t.name_ar}
-              </option>
-            ))}
-          </select>
-        </div>
+        <h3 className="search-card-title">
+          <Link href={`/article/${article.slug}`}>{article.title_ar}</Link>
+        </h3>
 
-        {/* Region filter */}
-        <div>
-          <label htmlFor="region" className="text-foreground mb-2 block text-sm font-medium">
-            المنطقة
-          </label>
-          <select
-            id="region"
-            name="region"
-            defaultValue={currentParams.region}
-            className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
-          >
-            <option value="">جميع المناطق</option>
-            {filters.regions.map((r) => (
-              <option key={r.id} value={r.slug}>
-                {r.name_ar}
-              </option>
-            ))}
-          </select>
-        </div>
+        {article.excerpt_ar && <p className="search-card-excerpt">{article.excerpt_ar}</p>}
 
-        {/* Country filter */}
-        <div>
-          <label htmlFor="country" className="text-foreground mb-2 block text-sm font-medium">
-            الدولة
-          </label>
-          <select
-            id="country"
-            name="country"
-            defaultValue={currentParams.country}
-            className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-1 focus:outline-none"
-          >
-            <option value="">جميع الدول</option>
-            {filters.countries.map((c) => (
-              <option key={c.id} value={c.slug}>
-                {c.name_ar}
-              </option>
-            ))}
-          </select>
+        <div className="search-card-meta">
+          <Link href={`/author/${article.author.id}`} className="search-card-author">
+            {article.author.display_name_ar}
+          </Link>
+          {article.published_at && (
+            <time>{formatDateAr(article.published_at, 'dd MMMM yyyy')}</time>
+          )}
         </div>
       </div>
-
-      <button
-        type="submit"
-        className="bg-primary hover:bg-primary-dark rounded-lg px-6 py-2 font-medium text-white"
-      >
-        بحث
-      </button>
-    </form>
+    </article>
   )
 }
 
-// Pagination with params preservation
+// Empty state component
+function SearchEmptyState({ query }: { query?: string }) {
+  return (
+    <div className="search-empty-state">
+      <svg
+        className="search-empty-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+        <path d="M8 8h6" />
+      </svg>
+      <h2 className="search-empty-title">{query ? 'لم يتم العثور على نتائج' : 'ابدأ البحث'}</h2>
+      <p className="search-empty-text">
+        {query
+          ? 'حاول تغيير كلمات البحث أو استخدام فلاتر مختلفة للحصول على نتائج أفضل.'
+          : 'أدخل كلمة البحث أو اختر من الفلاتر أعلاه للعثور على المقالات.'}
+      </p>
+    </div>
+  )
+}
+
+// Pagination component
 function SearchPagination({
   currentPage,
   totalPages,
@@ -398,52 +400,126 @@ function SearchPagination({
     return `/search?${searchParams.toString()}`
   }
 
-  const pages = []
+  const pages: (number | 'dots')[] = []
   const maxVisible = 5
 
-  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
-  const end = Math.min(totalPages, start + maxVisible - 1)
+  // Always show first page
+  pages.push(1)
 
-  if (end - start + 1 < maxVisible) {
-    start = Math.max(1, end - maxVisible + 1)
+  // Calculate range around current page
+  const start = Math.max(2, currentPage - 1)
+  const end = Math.min(totalPages - 1, currentPage + 1)
+
+  // Add dots after first page if needed
+  if (start > 2) {
+    pages.push('dots')
   }
 
+  // Add pages in range
   for (let i = start; i <= end; i++) {
-    pages.push(i)
+    if (!pages.includes(i)) {
+      pages.push(i)
+    }
+  }
+
+  // Add dots before last page if needed
+  if (end < totalPages - 1) {
+    pages.push('dots')
+  }
+
+  // Always show last page if more than 1 page
+  if (totalPages > 1 && !pages.includes(totalPages)) {
+    pages.push(totalPages)
   }
 
   return (
-    <nav className="mt-8 flex items-center justify-center gap-2">
-      {currentPage > 1 && (
-        <a
-          href={buildUrl(currentPage - 1)}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
-        >
+    <nav className="search-pagination" aria-label="التنقل بين الصفحات">
+      {/* Previous button */}
+      {currentPage > 1 ? (
+        <Link href={buildUrl(currentPage - 1)} className="pagination-btn">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
           السابق
-        </a>
+        </Link>
+      ) : (
+        <button type="button" className="pagination-btn" disabled>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+          السابق
+        </button>
       )}
 
-      {pages.map((pageNum) => (
-        <a
-          key={pageNum}
-          href={buildUrl(pageNum)}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
-            pageNum === currentPage
-              ? 'bg-primary text-white'
-              : 'text-foreground hover:bg-primary bg-white hover:text-white'
-          }`}
-        >
-          {pageNum}
-        </a>
-      ))}
+      {/* Page numbers */}
+      {pages.map((pageNum, idx) =>
+        pageNum === 'dots' ? (
+          <span key={`dots-${idx}`} className="pagination-dots">
+            ...
+          </span>
+        ) : (
+          <Link
+            key={pageNum}
+            href={buildUrl(pageNum)}
+            className={`pagination-btn ${pageNum === currentPage ? 'active' : ''}`}
+            aria-current={pageNum === currentPage ? 'page' : undefined}
+          >
+            {pageNum}
+          </Link>
+        )
+      )}
 
-      {currentPage < totalPages && (
-        <a
-          href={buildUrl(currentPage + 1)}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
-        >
+      {/* Next button */}
+      {currentPage < totalPages ? (
+        <Link href={buildUrl(currentPage + 1)} className="pagination-btn">
           التالي
-        </a>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </Link>
+      ) : (
+        <button type="button" className="pagination-btn" disabled>
+          التالي
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
       )}
     </nav>
   )

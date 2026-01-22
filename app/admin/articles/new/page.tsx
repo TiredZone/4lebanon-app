@@ -37,12 +37,10 @@ export default async function NewArticlePage() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-3">
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Page Header */}
+      <div className="editor-page-header">
+        <Link href="/admin" className="editor-back-btn">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -52,16 +50,9 @@ export default async function NewArticlePage() {
           </svg>
           العودة إلى لوحة التحكم
         </Link>
-        <Link
-          href="/admin/articles/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#c61b23] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#a01519]"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          إنشاء مقال جديد
-        </Link>
+        <h1 className="editor-page-title">إنشاء مقال جديد</h1>
       </div>
+
       <ArticleEditor
         mode="create"
         sections={formData.sections}

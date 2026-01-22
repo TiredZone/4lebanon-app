@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { formatDateAr, getStatusLabelAr, getStatusBadgeClass } from '@/lib/utils'
 import { ArticlesTable } from '@/components/admin/articles-table'
 import type { Article, Section, Profile } from '@/types/database'
 
@@ -57,45 +56,11 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      {/* Welcome Section */}
-      <div className="mb-8 rounded-lg bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-foreground mb-2 text-3xl font-bold">
-              مرحباً، {profile?.display_name_ar || 'الكاتب'}
-            </h1>
-            <p className="text-muted-foreground">لوحة التحكم - إدارة مقالاتك ومحتواك</p>
-          </div>
-          <Link
-            href="/admin/articles/new"
-            className="bg-primary hover:bg-primary-dark flex items-center gap-2 rounded-lg px-6 py-3 text-lg font-medium text-white transition-colors"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            إنشاء مقال جديد
-          </Link>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mb-8 grid gap-4 md:grid-cols-3">
-        <Link
-          href="/admin/articles/new"
-          className="group rounded-lg bg-white p-6 shadow-sm transition-all hover:shadow-md"
-        >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
-            <svg
-              className="h-6 w-6 text-green-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+      {/* Quick Actions - Only 2 Cards */}
+      <div className="admin-quick-actions">
+        <Link href="/admin/articles/new" className="admin-action-card primary-card">
+          <div className="admin-action-icon green">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -104,22 +69,13 @@ export default async function AdminDashboardPage() {
               />
             </svg>
           </div>
-          <h3 className="mb-1 text-lg font-bold">كتابة مقال</h3>
-          <p className="text-muted-foreground text-sm">ابدأ بكتابة مقال جديد ونشره على الموقع</p>
+          <h3>كتابة مقال</h3>
+          <p>ابدأ بكتابة مقال جديد ونشره على الموقع</p>
         </Link>
 
-        <Link
-          href="/"
-          target="_blank"
-          className="group rounded-lg bg-white p-6 shadow-sm transition-all hover:shadow-md"
-        >
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-            <svg
-              className="h-6 w-6 text-blue-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+        <Link href="/" target="_blank" className="admin-action-card">
+          <div className="admin-action-icon blue">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -128,35 +84,13 @@ export default async function AdminDashboardPage() {
               />
             </svg>
           </div>
-          <h3 className="mb-1 text-lg font-bold">زيارة الموقع</h3>
-          <p className="text-muted-foreground text-sm">شاهد مقالاتك المنشورة على الموقع الرئيسي</p>
+          <h3>زيارة الموقع</h3>
+          <p>شاهد مقالاتك المنشورة على الموقع الرئيسي</p>
         </Link>
-
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100">
-            <svg
-              className="h-6 w-6 text-purple-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </div>
-          <h3 className="mb-1 text-lg font-bold">ملفك الشخصي</h3>
-          <p className="text-muted-foreground text-sm">
-            {profile?.display_name_ar || 'قم بتحديث معلوماتك'}
-          </p>
-        </div>
       </div>
 
-      {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-6">
+      {/* Stats Grid */}
+      <div className="admin-stats-grid">
         <StatCard label="الإجمالي" value={articles.length} color="blue" icon="total" />
         <StatCard label="منشور" value={publishedCount} color="green" icon="published" />
         <StatCard label="مسودات" value={draftCount} color="gray" icon="draft" />
@@ -165,9 +99,9 @@ export default async function AdminDashboardPage() {
         <StatCard label="مميز" value={featuredCount} color="purple" icon="featured" />
       </div>
 
-      {/* Articles header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-foreground text-xl font-bold">مقالاتي ({articles.length})</h2>
+      {/* Articles Section Header */}
+      <div className="admin-section-header">
+        <h2 className="admin-section-title">مقالاتي ({articles.length})</h2>
       </div>
 
       {/* Articles Table with Search & Filter */}
@@ -187,24 +121,6 @@ function StatCard({
   color?: 'blue' | 'gray' | 'yellow' | 'green' | 'red' | 'purple'
   icon?: 'total' | 'draft' | 'scheduled' | 'published' | 'breaking' | 'featured'
 }) {
-  const colorClasses = {
-    blue: 'bg-blue-50 border-blue-200',
-    gray: 'bg-gray-50 border-gray-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    green: 'bg-green-50 border-green-200',
-    red: 'bg-red-50 border-red-200',
-    purple: 'bg-purple-50 border-purple-200',
-  }
-
-  const textColors = {
-    blue: 'text-blue-600',
-    gray: 'text-gray-600',
-    yellow: 'text-yellow-600',
-    green: 'text-green-600',
-    red: 'text-red-600',
-    purple: 'text-purple-600',
-  }
-
   const icons = {
     total: (
       <path
@@ -257,11 +173,11 @@ function StatCard({
   }
 
   return (
-    <div className={`rounded-lg border p-4 ${colorClasses[color]}`}>
-      <div className="mb-2 flex items-center justify-between">
-        <p className={`text-sm font-medium ${textColors[color]}`}>{label}</p>
+    <div className={`admin-stat-card ${color}`}>
+      <div className="admin-stat-header">
+        <p className={`admin-stat-label ${color}`}>{label}</p>
         <svg
-          className={`h-5 w-5 ${textColors[color]} opacity-60`}
+          className={`admin-stat-icon ${color}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -269,7 +185,7 @@ function StatCard({
           {icons[icon]}
         </svg>
       </div>
-      <p className={`text-3xl font-bold ${textColors[color]}`}>{value}</p>
+      <p className={`admin-stat-value ${color}`}>{value}</p>
     </div>
   )
 }

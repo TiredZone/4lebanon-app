@@ -40,10 +40,10 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Real-time search
+  // Real-time search - works with single character (Arabic and English)
   useEffect(() => {
     const searchArticles = async () => {
-      if (query.trim().length < 2) {
+      if (query.trim().length < 1) {
         setResults([])
         setShowResults(false)
         return
@@ -61,7 +61,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
           section:sections!articles_section_id_fkey(name_ar, slug)
         `
         )
-        .ilike('title_ar', `%${query}%`)
+        .ilike('title_ar', `%${query.trim()}%`)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
         .limit(5)
@@ -70,7 +70,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
       setIsSearching(false)
     }
 
-    const debounce = setTimeout(searchArticles, 300)
+    const debounce = setTimeout(searchArticles, 200)
     return () => clearTimeout(debounce)
   }, [query])
 
@@ -92,7 +92,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => {
-            if (query.trim().length >= 2) setShowResults(true)
+            if (query.trim().length >= 1) setShowResults(true)
             onFocus?.()
           }}
           onBlur={() => {
@@ -100,7 +100,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
             setTimeout(() => onBlur?.(), 150)
           }}
           placeholder="بحث"
-          className="w-full rounded-xl border border-gray-200/80 bg-gray-50/80 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-[var(--aura-red)]/30 focus:bg-white focus:ring-2 focus:ring-[var(--aura-red)]/10 focus:outline-none"
+          className="header-search-input w-full rounded-xl border border-gray-200/80 bg-gray-50/80 py-2.5 pr-4 pl-10 text-right text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-[var(--aura-red)]/30 focus:bg-white focus:ring-2 focus:ring-[var(--aura-red)]/10 focus:outline-none"
           aria-label="بحث في الموقع"
         />
         <button
@@ -173,7 +173,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
                 عرض جميع النتائج ←
               </button>
             </div>
-          ) : query.trim().length >= 2 ? (
+          ) : query.trim().length >= 1 ? (
             <div className="p-4 text-center text-sm text-gray-500">
               لا توجد نتائج لـ &ldquo;{query}&rdquo;
             </div>

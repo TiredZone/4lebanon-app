@@ -5,7 +5,6 @@ import { SITE_CONFIG, DEFAULT_METADATA } from '@/lib/constants'
 import { Header } from '@/components/layout/header'
 import { NavBar } from '@/components/layout/nav-bar'
 import { Footer } from '@/components/layout/footer'
-import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { ToastProvider } from '@/components/layout/toast-provider'
 import './globals.css'
 
@@ -69,7 +68,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NavBar />
           <main className="flex-1">{children}</main>
           <Footer />
-          <MobileTabBar />
         </div>
         {/* Vercel Analytics - automatically tracks Web Vitals */}
         <Analytics />
