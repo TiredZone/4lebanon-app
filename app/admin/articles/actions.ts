@@ -4,6 +4,14 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { generateSlug } from '@/lib/utils'
+import {
+  ArticleSchema,
+  UUIDSchema,
+  checkRateLimit,
+  getClientIdentifier,
+  logSecurityEvent,
+  sanitizeFilename,
+} from '@/lib/security'
 import type { ArticleFormData } from '@/types/database'
 
 interface ActionResult {
@@ -21,31 +29,56 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
   } = await supabase.auth.getUser()
 
   if (!user) {
+    await logSecurityEvent('unauthorized_access', { action: 'createArticle' })
     return { error: 'يجب تسجيل الدخول' }
   }
 
-  // Generate slug from title
-  const slug = generateSlug(formData.title_ar, crypto.randomUUID().slice(0, 8))
+  // Rate limiting
+  const clientId = await getClientIdentifier()
+  const rateLimit = checkRateLimit(clientId, 'create')
+  if (!rateLimit.allowed) {
+    await logSecurityEvent('rate_limit_exceeded', { action: 'createArticle', userId: user.id })
+    return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
+  }
 
-  // Insert article
+  // Validate and sanitize input with Zod
+  const validationResult = ArticleSchema.safeParse(formData)
+  if (!validationResult.success) {
+    await logSecurityEvent('invalid_input', {
+      action: 'createArticle',
+      userId: user.id,
+      errors: validationResult.error.flatten().fieldErrors,
+    })
+    const firstError = validationResult.error.issues[0]
+    return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
+  }
+
+  const validatedData = validationResult.data
+
+  // Generate slug from sanitized title
+  const slug = generateSlug(validatedData.title_ar, crypto.randomUUID().slice(0, 8))
+
+  // Insert article with validated data
   const { data: article, error: insertError } = await supabase
     .from('articles')
     .insert({
       author_id: user.id,
       slug,
-      title_ar: formData.title_ar,
-      excerpt_ar: formData.excerpt_ar || null,
-      body_md: formData.body_md,
-      cover_image_path: formData.cover_image_path,
-      section_id: formData.section_id,
-      region_id: formData.region_id,
-      country_id: formData.country_id,
-      status: formData.status,
+      title_ar: validatedData.title_ar,
+      excerpt_ar: validatedData.excerpt_ar || null,
+      body_md: validatedData.body_md,
+      cover_image_path: validatedData.cover_image_path,
+      section_id: validatedData.section_id,
+      region_id: validatedData.region_id,
+      country_id: validatedData.country_id,
+      status: validatedData.status,
       published_at:
-        formData.status !== 'draft' ? formData.published_at || new Date().toISOString() : null,
-      is_breaking: formData.is_breaking,
-      is_featured: formData.is_featured,
-      sources: formData.sources,
+        validatedData.status !== 'draft'
+          ? validatedData.published_at || new Date().toISOString()
+          : null,
+      is_breaking: validatedData.is_breaking,
+      is_featured: validatedData.is_featured,
+      sources: validatedData.sources,
     })
     .select('id')
     .single()
@@ -58,9 +91,9 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
   const articleId = (article as { id: string }).id
 
   // Insert article topics
-  if (formData.topic_ids.length > 0) {
+  if (validatedData.topic_ids.length > 0) {
     await supabase.from('article_topics').insert(
-      formData.topic_ids.map((topic_id) => ({
+      validatedData.topic_ids.map((topic_id) => ({
         article_id: articleId,
         topic_id,
       }))
@@ -70,7 +103,7 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
   // Revalidate paths
   revalidatePath('/')
   revalidatePath('/admin')
-  if (formData.status === 'published') {
+  if (validatedData.status === 'published') {
     revalidatePath(`/article/${slug}`)
   }
 
@@ -88,8 +121,42 @@ export async function updateArticle(
   } = await supabase.auth.getUser()
 
   if (!user) {
+    await logSecurityEvent('unauthorized_access', { action: 'updateArticle' })
     return { error: 'يجب تسجيل الدخول' }
   }
+
+  // Validate article ID
+  const idValidation = UUIDSchema.safeParse(articleId)
+  if (!idValidation.success) {
+    await logSecurityEvent('invalid_input', {
+      action: 'updateArticle',
+      userId: user.id,
+      error: 'Invalid article ID format',
+    })
+    return { error: 'معرف المقال غير صالح' }
+  }
+
+  // Rate limiting
+  const clientId = await getClientIdentifier()
+  const rateLimit = checkRateLimit(clientId, 'create')
+  if (!rateLimit.allowed) {
+    await logSecurityEvent('rate_limit_exceeded', { action: 'updateArticle', userId: user.id })
+    return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
+  }
+
+  // Validate and sanitize input with Zod
+  const validationResult = ArticleSchema.safeParse(formData)
+  if (!validationResult.success) {
+    await logSecurityEvent('invalid_input', {
+      action: 'updateArticle',
+      userId: user.id,
+      errors: validationResult.error.flatten().fieldErrors,
+    })
+    const firstError = validationResult.error.issues[0]
+    return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
+  }
+
+  const validatedData = validationResult.data
 
   // Verify ownership
   const { data: existingArticle } = await supabase
@@ -110,6 +177,11 @@ export async function updateArticle(
   }
 
   if (existing.author_id !== user.id) {
+    await logSecurityEvent('unauthorized_access', {
+      action: 'updateArticle',
+      userId: user.id,
+      attemptedArticleId: articleId,
+    })
     return { error: 'ليس لديك صلاحية لتعديل هذا المقال' }
   }
 
@@ -118,28 +190,30 @@ export async function updateArticle(
 
   // Generate new slug if title changed
   let newSlug = oldSlug
-  if (existing.title_ar !== formData.title_ar) {
-    newSlug = generateSlug(formData.title_ar, articleId.slice(0, 8))
+  if (existing.title_ar !== validatedData.title_ar) {
+    newSlug = generateSlug(validatedData.title_ar, articleId.slice(0, 8))
   }
 
-  // Update article
+  // Update article with validated data
   const { error: updateError } = await supabase
     .from('articles')
     .update({
       slug: newSlug,
-      title_ar: formData.title_ar,
-      excerpt_ar: formData.excerpt_ar || null,
-      body_md: formData.body_md,
-      cover_image_path: formData.cover_image_path,
-      section_id: formData.section_id,
-      region_id: formData.region_id,
-      country_id: formData.country_id,
-      status: formData.status,
+      title_ar: validatedData.title_ar,
+      excerpt_ar: validatedData.excerpt_ar || null,
+      body_md: validatedData.body_md,
+      cover_image_path: validatedData.cover_image_path,
+      section_id: validatedData.section_id,
+      region_id: validatedData.region_id,
+      country_id: validatedData.country_id,
+      status: validatedData.status,
       published_at:
-        formData.status !== 'draft' ? formData.published_at || new Date().toISOString() : null,
-      is_breaking: formData.is_breaking,
-      is_featured: formData.is_featured,
-      sources: formData.sources,
+        validatedData.status !== 'draft'
+          ? validatedData.published_at || new Date().toISOString()
+          : null,
+      is_breaking: validatedData.is_breaking,
+      is_featured: validatedData.is_featured,
+      sources: validatedData.sources,
     })
     .eq('id', articleId)
 
@@ -151,9 +225,9 @@ export async function updateArticle(
   // Update article topics (delete existing, insert new)
   await supabase.from('article_topics').delete().eq('article_id', articleId)
 
-  if (formData.topic_ids.length > 0) {
+  if (validatedData.topic_ids.length > 0) {
     await supabase.from('article_topics').insert(
-      formData.topic_ids.map((topic_id) => ({
+      validatedData.topic_ids.map((topic_id) => ({
         article_id: articleId,
         topic_id,
       }))
@@ -179,7 +253,19 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
   } = await supabase.auth.getUser()
 
   if (!user) {
+    await logSecurityEvent('unauthorized_access', { action: 'deleteArticle' })
     return { error: 'يجب تسجيل الدخول' }
+  }
+
+  // Validate article ID
+  const idValidation = UUIDSchema.safeParse(articleId)
+  if (!idValidation.success) {
+    await logSecurityEvent('invalid_input', {
+      action: 'deleteArticle',
+      userId: user.id,
+      error: 'Invalid article ID format',
+    })
+    return { error: 'معرف المقال غير صالح' }
   }
 
   // Verify ownership and get slug for revalidation
@@ -196,6 +282,11 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
   const articleData = article as { author_id: string; slug: string }
 
   if (articleData.author_id !== user.id) {
+    await logSecurityEvent('unauthorized_access', {
+      action: 'deleteArticle',
+      userId: user.id,
+      attemptedArticleId: articleId,
+    })
     return { error: 'ليس لديك صلاحية لحذف هذا المقال' }
   }
 
@@ -225,7 +316,16 @@ export async function uploadImage(
   } = await supabase.auth.getUser()
 
   if (!user) {
+    await logSecurityEvent('unauthorized_access', { action: 'uploadImage' })
     return { error: 'يجب تسجيل الدخول' }
+  }
+
+  // Rate limiting for uploads
+  const clientId = await getClientIdentifier()
+  const rateLimit = checkRateLimit(clientId, 'upload')
+  if (!rateLimit.allowed) {
+    await logSecurityEvent('rate_limit_exceeded', { action: 'uploadImage', userId: user.id })
+    return { error: 'تم تجاوز حد الرفع. يرجى المحاولة لاحقاً' }
   }
 
   const file = formData.get('file') as File
@@ -234,9 +334,23 @@ export async function uploadImage(
     return { error: 'لم يتم اختيار ملف' }
   }
 
-  // Validate file type
+  // Validate file type - check both MIME type and extension
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-  if (!allowedTypes.includes(file.type)) {
+  const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+  const fileExtension = file.name.split('.').pop()?.toLowerCase()
+
+  if (
+    !allowedTypes.includes(file.type) ||
+    !fileExtension ||
+    !allowedExtensions.includes(fileExtension)
+  ) {
+    await logSecurityEvent('suspicious_activity', {
+      action: 'uploadImage',
+      userId: user.id,
+      reason: 'Invalid file type',
+      providedType: file.type,
+      fileName: file.name,
+    })
     return { error: 'نوع الملف غير مدعوم' }
   }
 
@@ -246,9 +360,28 @@ export async function uploadImage(
     return { error: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }
   }
 
-  // Generate unique filename
-  const ext = file.name.split('.').pop()
-  const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`
+  // Validate file size minimum (prevent empty files)
+  if (file.size < 100) {
+    await logSecurityEvent('suspicious_activity', {
+      action: 'uploadImage',
+      userId: user.id,
+      reason: 'File too small',
+      fileSize: file.size,
+    })
+    return { error: 'الملف فارغ أو صغير جداً' }
+  }
+
+  // Sanitize filename and generate secure unique name
+  const sanitizedExt = sanitizeFilename(fileExtension)
+  const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${sanitizedExt}`
+
+  // Log file upload
+  await logSecurityEvent('file_upload', {
+    userId: user.id,
+    originalName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+  })
 
   // Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
