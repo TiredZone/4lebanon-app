@@ -362,9 +362,11 @@ p {
   }
 }
 
-/* Hover - subtle color change with underline preview */
+/* Hover - visible color change with background */
 .nav-link-item:hover {
-  color: #1e293b;
+  color: var(--aura-red);
+  background: rgba(198, 27, 35, 0.08);
+  border-radius: 0.5rem;
 }
 
 .nav-link-item::after {
@@ -397,6 +399,11 @@ p {
 .nav-link-item.nav-link-item-active {
   font-weight: 700 !important;
   color: var(--aura-red) !important;
+}
+
+/* Active item hover - subtle brightness */
+.nav-link-item.nav-link-item-active:hover {
+  background: rgba(198, 27, 35, 0.12);
 }
 
 /* Hide the pseudo-element for active (using motion div instead) */
@@ -3957,10 +3964,10 @@ section a[href*='/recent'] {
   }
 }
 
-/* Quick Action Cards - Only 2 cards */
+/* Quick Action Cards - 3 cards in a row */
 .admin-quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-lg);
   margin-bottom: var(--space-xl);
 }
@@ -4026,6 +4033,11 @@ section a[href*='/recent'] {
 .admin-action-icon.blue {
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
   color: #2563eb;
+}
+
+.admin-action-icon.purple {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+  color: #9333ea;
 }
 
 .admin-action-card:hover .admin-action-icon {

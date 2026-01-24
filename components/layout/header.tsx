@@ -105,11 +105,11 @@ export function Header() {
             {/* Profile/Dashboard Button - Mobile */}
             <Link
               href="/admin"
-              className="order-3 flex min-h-[44px] items-center justify-center rounded-full border border-gray-200/50 bg-white/60 p-2 backdrop-blur-sm transition-all hover:bg-white/80 hover:shadow-sm active:scale-95 lg:hidden"
+              className="group order-3 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-[#c61b23] p-2.5 shadow-md transition-all hover:scale-105 hover:bg-[#8a1219] hover:shadow-lg active:scale-95 lg:hidden"
               aria-label="لوحة التحكم"
             >
               <svg
-                className="h-5 w-5 text-slate-600"
+                className="h-5 w-5 text-white transition-transform group-hover:scale-110"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -117,7 +117,7 @@ export function Header() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
                 />
               </svg>

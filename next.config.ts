@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
   },
@@ -54,10 +58,29 @@ const nextConfig: NextConfig = {
         key: 'Strict-Transport-Security',
         value: 'max-age=63072000; includeSubDomains; preload',
       },
-      // Restrict browser features
+      // Restrict browser features - MAXIMUM RESTRICTIONS
       {
         key: 'Permissions-Policy',
-        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+        value: [
+          'camera=()',
+          'microphone=()',
+          'geolocation=()',
+          'interest-cohort=()',
+          'accelerometer=()',
+          'autoplay=()',
+          'encrypted-media=()',
+          'fullscreen=(self)',
+          'gyroscope=()',
+          'magnetometer=()',
+          'midi=()',
+          'payment=()',
+          'picture-in-picture=()',
+          'sync-xhr=()',
+          'usb=()',
+          'xr-spatial-tracking=()',
+          'clipboard-read=()',
+          'clipboard-write=(self)',
+        ].join(', '),
       },
       // XSS protection for legacy browsers
       {
@@ -73,22 +96,48 @@ const nextConfig: NextConfig = {
         key: 'Cross-Origin-Resource-Policy',
         value: 'same-origin',
       },
-      // Content Security Policy
+      // Content Security Policy - MAXIMUM SECURITY
       {
         key: 'Content-Security-Policy',
         value: [
+          // Default: only same origin
           "default-src 'self'",
+          // Scripts: self + Vercel analytics (unsafe-inline needed for Next.js hydration)
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+          // Styles: self + inline (needed for Tailwind) + Google Fonts
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          // Fonts: self + Google Fonts
           "font-src 'self' https://fonts.gstatic.com data:",
-          `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co`,
+          // Images: self + Supabase storage + Unsplash
+          `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://images.unsplash.com`,
+          // Connections: self + Supabase + Vercel
           `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com wss://${supabaseHost}`,
+          // No iframes allowed to embed this site
           "frame-ancestors 'none'",
+          // No iframes from external sources
+          "frame-src 'none'",
+          // Base URI restriction
           "base-uri 'self'",
+          // Form submissions only to same origin
           "form-action 'self'",
+          // No plugins (Flash, Java, etc.)
           "object-src 'none'",
+          // No media except from self and Supabase
+          `media-src 'self' https://${supabaseHost}`,
+          // Workers only from self
+          "worker-src 'self' blob:",
+          // Manifests only from self
+          "manifest-src 'self'",
+          // Upgrade HTTP to HTTPS
           'upgrade-insecure-requests',
+          // Block all mixed content
+          'block-all-mixed-content',
         ].join('; '),
+      },
+      // Cross-Origin-Embedder-Policy for enhanced isolation
+      {
+        key: 'Cross-Origin-Embedder-Policy',
+        value: 'credentialless',
       },
     ]
 

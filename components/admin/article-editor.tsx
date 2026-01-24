@@ -153,6 +153,19 @@ export function ArticleEditor({
       return
     }
 
+    // Convert datetime-local format (YYYY-MM-DDTHH:MM) to full ISO format
+    const getISODate = (dateStr: string | null): string | null => {
+      if (!dateStr) return new Date().toISOString()
+      try {
+        // datetime-local gives "2024-01-25T14:30", convert to ISO
+        const date = new Date(dateStr)
+        if (isNaN(date.getTime())) return new Date().toISOString()
+        return date.toISOString()
+      } catch {
+        return new Date().toISOString()
+      }
+    }
+
     const formData = {
       title_ar: title.trim(),
       excerpt_ar: excerpt.trim(),
@@ -162,7 +175,7 @@ export function ArticleEditor({
       region_id: regionId,
       country_id: countryId,
       status,
-      published_at: status !== 'draft' ? publishedAt || new Date().toISOString() : null,
+      published_at: status !== 'draft' ? getISODate(publishedAt) : null,
       is_breaking: isBreaking,
       is_featured: isFeatured,
       sources: sources.filter((s) => s.title && s.url),

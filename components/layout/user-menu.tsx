@@ -40,16 +40,29 @@ export function UserMenu() {
   }
 
   if (loading) {
-    return <div className="h-8 w-8 animate-pulse rounded-full bg-white/20"></div>
+    return <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200"></div>
   }
 
   if (!user) {
     return (
       <Link
         href="/admin/login"
-        className="rounded-full border-2 border-white px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-white hover:text-[#c61b23]"
+        className="group flex flex-row-reverse items-center gap-2 rounded-full bg-[#c61b23] px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:scale-105 hover:bg-[#1e293b] hover:shadow-lg"
       >
-        تسجيل الدخول
+        <svg
+          className="h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+        <span>تسجيل الدخول</span>
       </Link>
     )
   }
@@ -58,10 +71,15 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-black font-bold text-white transition-all hover:bg-[#c61b23] hover:text-white"
+        className="group flex h-10 w-10 items-center justify-center rounded-full bg-[#c61b23] font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-[#8a1219] hover:shadow-lg"
         aria-label="User Menu"
       >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="h-5 w-5 transition-transform group-hover:scale-110"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

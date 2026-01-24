@@ -154,9 +154,13 @@ export function truncateText(text: string, maxLength: number): string {
   return text.slice(0, maxLength).trim() + '...'
 }
 
-// Get Supabase storage public URL
+// Get Supabase storage public URL (also supports external URLs)
 export function getStorageUrl(path: string | null): string {
   if (!path) return '/placeholder.png'
+  // If it's already a full URL, return as-is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path
+  }
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   return `${supabaseUrl}/storage/v1/object/public/article-images/${path}`
 }

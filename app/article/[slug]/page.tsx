@@ -23,33 +23,42 @@ interface PageProps {
 
 async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
   const supabase = await createClient()
+  const decodedSlug = decodeURIComponent(slug)
 
-  const { data } = await supabase
+  console.log('=== ARTICLE FETCH DEBUG ===')
+  console.log('Raw slug:', slug)
+  console.log('Decoded slug:', decodedSlug)
+
+  // Use explicit foreign key names like homepage does
+  const { data, error } = await supabase
     .from('articles')
     .select(
       `
       *,
-      author:profiles!articles_author_id_fkey(*),
-      section:sections!articles_section_id_fkey(*),
-      region:regions!articles_region_id_fkey(*),
-      country:countries!articles_country_id_fkey(*),
-      article_topics(topic:topics(*))
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar),
+      section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar)
     `
     )
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
     .eq('status', 'published')
     .single()
 
+  console.log('Query result - data:', data ? 'found' : 'null')
+  console.log('Query result - error:', error ? JSON.stringify(error) : 'none')
+
+  if (error) {
+    console.error('Error fetching article:', error.message, error.details, error.hint)
+    return null
+  }
+
   if (!data) return null
 
-  // Transform topics
-  const articleData = data as Record<string, unknown>
-  const articleTopics = (articleData.article_topics as Array<{ topic: Topic }>) || []
-  const topics = articleTopics.map((at) => at.topic)
-
+  // Return with empty defaults for unused relations
   return {
-    ...articleData,
-    topics,
+    ...data,
+    region: null,
+    country: null,
+    topics: [],
   } as ArticleWithRelations
 }
 

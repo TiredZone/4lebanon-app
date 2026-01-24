@@ -56,7 +56,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
-      {/* Quick Actions - Only 2 Cards */}
+      {/* Quick Actions - 3 Cards */}
       <div className="admin-quick-actions">
         <Link href="/admin/articles/new" className="admin-action-card primary-card">
           <div className="admin-action-icon green">
@@ -71,6 +71,21 @@ export default async function AdminDashboardPage() {
           </div>
           <h3>كتابة مقال</h3>
           <p>ابدأ بكتابة مقال جديد ونشره على الموقع</p>
+        </Link>
+
+        <Link href="/admin/sections/new" className="admin-action-card primary-card">
+          <div className="admin-action-icon purple">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+          </div>
+          <h3>إضافة قسم</h3>
+          <p>أنشئ قسم جديد لتصنيف المقالات</p>
         </Link>
 
         <Link href="/" target="_blank" className="admin-action-card">

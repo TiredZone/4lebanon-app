@@ -1,10 +1,145 @@
 /**
  * Security Utilities Library
  * Provides comprehensive security functions for the application
+ * MAXIMUM SECURITY MODE
  */
 
 import { z } from 'zod'
 import { headers } from 'next/headers'
+
+// ============================================================================
+// IP BLOCKING & THREAT DETECTION
+// ============================================================================
+
+// Blocked IPs store (in production, use Redis or database)
+const blockedIPs = new Map<string, { until: number; reason: string }>()
+
+// Suspicious activity tracker
+const suspiciousActivity = new Map<
+  string,
+  { count: number; lastActivity: number; violations: string[] }
+>()
+
+// Known malicious patterns
+const MALICIOUS_PATTERNS = [
+  /(\.\.|\/\.\.)/i, // Path traversal
+  /<script/i, // XSS attempt
+  /javascript:/i, // JavaScript protocol
+  /on\w+\s*=/i, // Event handlers
+  /union\s+select/i, // SQL injection
+  /;\s*drop\s+/i, // SQL drop
+  /--\s*$/i, // SQL comment
+  /\/\*.*\*\//i, // SQL block comment
+  /\bexec\s*\(/i, // Command execution
+  /\beval\s*\(/i, // Eval execution
+  /base64_decode/i, // PHP attacks
+  /\$\{.*\}/i, // Template injection
+  /\{\{.*\}\}/i, // Template injection
+  /__proto__/i, // Prototype pollution
+  /constructor\s*\[/i, // Prototype pollution
+]
+
+// Known bad user agents (bots, scanners, etc.)
+const BAD_USER_AGENTS = [
+  /sqlmap/i,
+  /nikto/i,
+  /nessus/i,
+  /nmap/i,
+  /masscan/i,
+  /dirbuster/i,
+  /gobuster/i,
+  /wfuzz/i,
+  /burpsuite/i,
+  /havij/i,
+  /acunetix/i,
+  /netsparker/i,
+  /w3af/i,
+  /whatweb/i,
+  /nuclei/i,
+]
+
+/**
+ * Check if an IP is blocked
+ */
+export function isIPBlocked(ip: string): { blocked: boolean; reason?: string; until?: number } {
+  const block = blockedIPs.get(ip)
+  if (!block) return { blocked: false }
+
+  if (block.until < Date.now()) {
+    blockedIPs.delete(ip)
+    return { blocked: false }
+  }
+
+  return { blocked: true, reason: block.reason, until: block.until }
+}
+
+/**
+ * Block an IP address
+ */
+export function blockIP(ip: string, durationMs: number, reason: string): void {
+  blockedIPs.set(ip, {
+    until: Date.now() + durationMs,
+    reason,
+  })
+  console.warn(`[SECURITY] IP BLOCKED: ${ip} for ${durationMs / 1000}s - Reason: ${reason}`)
+}
+
+/**
+ * Track suspicious activity and auto-block repeat offenders
+ */
+export function trackSuspiciousActivity(ip: string, violation: string): boolean {
+  const now = Date.now()
+  let activity = suspiciousActivity.get(ip)
+
+  if (!activity || now - activity.lastActivity > 3600000) {
+    // Reset after 1 hour of no activity
+    activity = { count: 0, lastActivity: now, violations: [] }
+  }
+
+  activity.count++
+  activity.lastActivity = now
+  activity.violations.push(violation)
+
+  // Keep only last 10 violations
+  if (activity.violations.length > 10) {
+    activity.violations = activity.violations.slice(-10)
+  }
+
+  suspiciousActivity.set(ip, activity)
+
+  // Progressive blocking
+  if (activity.count >= 50) {
+    blockIP(ip, 86400000, `Excessive violations (${activity.count}): ${violation}`) // 24 hours
+    return true
+  } else if (activity.count >= 20) {
+    blockIP(ip, 3600000, `Multiple violations (${activity.count}): ${violation}`) // 1 hour
+    return true
+  } else if (activity.count >= 10) {
+    blockIP(ip, 600000, `Repeated violations (${activity.count}): ${violation}`) // 10 minutes
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Check for malicious patterns in input
+ */
+export function containsMaliciousPattern(input: string): { malicious: boolean; pattern?: string } {
+  for (const pattern of MALICIOUS_PATTERNS) {
+    if (pattern.test(input)) {
+      return { malicious: true, pattern: pattern.toString() }
+    }
+  }
+  return { malicious: false }
+}
+
+/**
+ * Check if user agent is from known bad sources
+ */
+export function isBadUserAgent(userAgent: string): boolean {
+  return BAD_USER_AGENTS.some((pattern) => pattern.test(userAgent))
+}
 
 // ============================================================================
 // INPUT SANITIZATION
@@ -207,17 +342,76 @@ export interface RateLimitConfig {
 }
 
 export const RATE_LIMITS = {
-  // General API requests
-  api: { windowMs: 60000, maxRequests: 100 },
-  // Authentication attempts
-  auth: { windowMs: 300000, maxRequests: 5 },
-  // File uploads
-  upload: { windowMs: 60000, maxRequests: 10 },
-  // Article creation
-  create: { windowMs: 60000, maxRequests: 10 },
+  // General API requests - strict limit
+  api: { windowMs: 60000, maxRequests: 60 },
+  // Authentication attempts - very strict
+  auth: { windowMs: 900000, maxRequests: 3 }, // 3 attempts per 15 minutes
+  // File uploads - limited
+  upload: { windowMs: 60000, maxRequests: 5 },
+  // Article creation - limited
+  create: { windowMs: 60000, maxRequests: 5 },
   // Search requests
-  search: { windowMs: 60000, maxRequests: 30 },
+  search: { windowMs: 60000, maxRequests: 20 },
+  // Password reset
+  passwordReset: { windowMs: 3600000, maxRequests: 3 }, // 3 per hour
+  // Admin actions
+  admin: { windowMs: 60000, maxRequests: 30 },
+  // Login page views (prevent enumeration)
+  loginPage: { windowMs: 60000, maxRequests: 10 },
 } as const
+
+// Brute force tracking
+const bruteForceAttempts = new Map<string, { attempts: number; firstAttempt: number }>()
+
+/**
+ * Track failed authentication attempts for brute force protection
+ */
+export function trackAuthFailure(identifier: string): {
+  blocked: boolean
+  attemptsRemaining: number
+  lockoutUntil?: number
+} {
+  const now = Date.now()
+  const MAX_ATTEMPTS = 5
+  const LOCKOUT_DURATION = 1800000 // 30 minutes
+  const ATTEMPT_WINDOW = 900000 // 15 minutes
+
+  let record = bruteForceAttempts.get(identifier)
+
+  // Reset if outside window
+  if (record && now - record.firstAttempt > ATTEMPT_WINDOW) {
+    record = undefined
+  }
+
+  if (!record) {
+    record = { attempts: 0, firstAttempt: now }
+  }
+
+  record.attempts++
+  bruteForceAttempts.set(identifier, record)
+
+  if (record.attempts >= MAX_ATTEMPTS) {
+    // Block the IP
+    blockIP(identifier, LOCKOUT_DURATION, 'Brute force attack detected')
+    return {
+      blocked: true,
+      attemptsRemaining: 0,
+      lockoutUntil: now + LOCKOUT_DURATION,
+    }
+  }
+
+  return {
+    blocked: false,
+    attemptsRemaining: MAX_ATTEMPTS - record.attempts,
+  }
+}
+
+/**
+ * Clear auth failure record on successful login
+ */
+export function clearAuthFailures(identifier: string): void {
+  bruteForceAttempts.delete(identifier)
+}
 
 /**
  * Check rate limit for a given key
@@ -474,3 +668,263 @@ export function secureErrorResponse(message: string, status: number = 500): Resp
 
   return secureJsonResponse({ error: safeMessage }, status)
 }
+
+// ============================================================================
+// HONEYPOT DETECTION
+// ============================================================================
+
+/**
+ * Check if honeypot field was filled (indicates bot)
+ */
+export function isHoneypotTriggered(formData: Record<string, unknown>): boolean {
+  // Common honeypot field names
+  const honeypotFields = [
+    'website',
+    'url',
+    'phone2',
+    'fax',
+    'company',
+    'address2',
+    'hp_field',
+    'bot_check',
+  ]
+
+  for (const field of honeypotFields) {
+    if (formData[field] && String(formData[field]).trim() !== '') {
+      return true
+    }
+  }
+
+  return false
+}
+
+// ============================================================================
+// REQUEST FINGERPRINTING
+// ============================================================================
+
+/**
+ * Generate a request fingerprint for tracking
+ */
+export async function getRequestFingerprint(): Promise<string> {
+  const headersList = await headers()
+
+  const components = [
+    await getClientIdentifier(),
+    headersList.get('user-agent') || '',
+    headersList.get('accept-language') || '',
+    headersList.get('accept-encoding') || '',
+  ]
+
+  // Simple hash
+  const str = components.join('|')
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash
+  }
+
+  return Math.abs(hash).toString(36)
+}
+
+// ============================================================================
+// COMPREHENSIVE SECURITY CHECK
+// ============================================================================
+
+export interface SecurityCheckResult {
+  passed: boolean
+  blocked: boolean
+  reason?: string
+  ip: string
+  fingerprint: string
+}
+
+/**
+ * Perform comprehensive security check on incoming request
+ */
+export async function performSecurityCheck(
+  input?: string | Record<string, unknown>
+): Promise<SecurityCheckResult> {
+  const ip = await getClientIdentifier()
+  const fingerprint = await getRequestFingerprint()
+  const headersList = await headers()
+  const userAgent = headersList.get('user-agent') || ''
+
+  // Check if IP is blocked
+  const blockStatus = isIPBlocked(ip)
+  if (blockStatus.blocked) {
+    return {
+      passed: false,
+      blocked: true,
+      reason: `IP blocked: ${blockStatus.reason}`,
+      ip,
+      fingerprint,
+    }
+  }
+
+  // Check for bad user agents
+  if (isBadUserAgent(userAgent)) {
+    trackSuspiciousActivity(ip, 'Bad user agent detected')
+    await logSecurityEvent('suspicious_activity', { reason: 'Bad user agent', userAgent })
+    return {
+      passed: false,
+      blocked: false,
+      reason: 'Suspicious request detected',
+      ip,
+      fingerprint,
+    }
+  }
+
+  // Check input for malicious patterns
+  if (input) {
+    const inputStr = typeof input === 'string' ? input : JSON.stringify(input)
+    const maliciousCheck = containsMaliciousPattern(inputStr)
+    if (maliciousCheck.malicious) {
+      trackSuspiciousActivity(ip, `Malicious pattern: ${maliciousCheck.pattern}`)
+      await logSecurityEvent('suspicious_activity', {
+        reason: 'Malicious pattern detected',
+        pattern: maliciousCheck.pattern,
+      })
+      return {
+        passed: false,
+        blocked: false,
+        reason: 'Invalid input detected',
+        ip,
+        fingerprint,
+      }
+    }
+  }
+
+  // Check honeypot if form data
+  if (input && typeof input === 'object' && isHoneypotTriggered(input as Record<string, unknown>)) {
+    trackSuspiciousActivity(ip, 'Honeypot triggered')
+    await logSecurityEvent('suspicious_activity', { reason: 'Honeypot triggered' })
+    return {
+      passed: false,
+      blocked: false,
+      reason: 'Bot detected',
+      ip,
+      fingerprint,
+    }
+  }
+
+  return {
+    passed: true,
+    blocked: false,
+    ip,
+    fingerprint,
+  }
+}
+
+// ============================================================================
+// SECURE TOKEN GENERATION
+// ============================================================================
+
+/**
+ * Generate a cryptographically secure random token
+ */
+export function generateSecureToken(length: number = 32): string {
+  const array = new Uint8Array(length)
+  crypto.getRandomValues(array)
+  return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * Generate a time-limited token with expiry
+ */
+export function generateTimedToken(expiresInMs: number = 3600000): {
+  token: string
+  expires: number
+} {
+  const token = generateSecureToken(32)
+  const expires = Date.now() + expiresInMs
+  return { token, expires }
+}
+
+// ============================================================================
+// INPUT LENGTH LIMITS (DoS Prevention)
+// ============================================================================
+
+export const INPUT_LIMITS = {
+  title: 500,
+  excerpt: 1000,
+  body: 100000,
+  comment: 5000,
+  search: 200,
+  url: 2000,
+  email: 254,
+  password: 128,
+  username: 50,
+  filename: 255,
+} as const
+
+/**
+ * Check if input exceeds safe length limits
+ */
+export function exceedsLengthLimit(value: string, type: keyof typeof INPUT_LIMITS): boolean {
+  return value.length > INPUT_LIMITS[type]
+}
+
+// ============================================================================
+// ADDITIONAL VALIDATION SCHEMAS
+// ============================================================================
+
+/**
+ * Strict email validation schema
+ */
+export const EmailSchema = z
+  .string()
+  .email('بريد إلكتروني غير صالح')
+  .max(254, 'البريد الإلكتروني طويل جداً')
+  .transform((val) => val.toLowerCase().trim())
+
+/**
+ * Strict password validation schema
+ */
+export const PasswordSchema = z
+  .string()
+  .min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل')
+  .max(128, 'كلمة المرور طويلة جداً')
+  .refine((val) => /[a-z]/.test(val), 'يجب أن تحتوي على حرف صغير')
+  .refine((val) => /[A-Z]/.test(val), 'يجب أن تحتوي على حرف كبير')
+  .refine((val) => /[0-9]/.test(val), 'يجب أن تحتوي على رقم')
+  .refine((val) => /[^a-zA-Z0-9]/.test(val), 'يجب أن تحتوي على رمز خاص')
+
+/**
+ * Slug validation schema
+ */
+export const SlugSchema = z
+  .string()
+  .min(1, 'الرابط مطلوب')
+  .max(200, 'الرابط طويل جداً')
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'الرابط يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط')
+
+// ============================================================================
+// CLEANUP ROUTINES
+// ============================================================================
+
+// Clean up expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+
+  // Clean blocked IPs
+  for (const [ip, block] of blockedIPs.entries()) {
+    if (block.until < now) {
+      blockedIPs.delete(ip)
+    }
+  }
+
+  // Clean suspicious activity older than 2 hours
+  for (const [ip, activity] of suspiciousActivity.entries()) {
+    if (now - activity.lastActivity > 7200000) {
+      suspiciousActivity.delete(ip)
+    }
+  }
+
+  // Clean brute force records older than 1 hour
+  for (const [id, record] of bruteForceAttempts.entries()) {
+    if (now - record.firstAttempt > 3600000) {
+      bruteForceAttempts.delete(id)
+    }
+  }
+}, 300000)

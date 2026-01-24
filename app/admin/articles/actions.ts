@@ -306,6 +306,114 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
   redirect('/admin')
 }
 
+// Magic bytes for image format verification
+const IMAGE_MAGIC_BYTES: Record<string, number[][]> = {
+  jpeg: [
+    [0xff, 0xd8, 0xff], // JPEG/JFIF
+  ],
+  jpg: [
+    [0xff, 0xd8, 0xff], // JPEG/JFIF
+  ],
+  png: [
+    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], // PNG
+  ],
+  gif: [
+    [0x47, 0x49, 0x46, 0x38, 0x37, 0x61], // GIF87a
+    [0x47, 0x49, 0x46, 0x38, 0x39, 0x61], // GIF89a
+  ],
+  webp: [
+    [0x52, 0x49, 0x46, 0x46], // RIFF (WebP starts with RIFF)
+  ],
+}
+
+/**
+ * Verify file content matches its claimed type using magic bytes
+ */
+async function verifyImageMagicBytes(
+  file: File,
+  extension: string
+): Promise<{ valid: boolean; detectedType?: string }> {
+  const expectedMagicBytes = IMAGE_MAGIC_BYTES[extension]
+  if (!expectedMagicBytes) {
+    return { valid: false }
+  }
+
+  try {
+    // Read first 12 bytes for magic byte detection
+    const buffer = await file.slice(0, 12).arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+
+    for (const magic of expectedMagicBytes) {
+      let matches = true
+      for (let i = 0; i < magic.length; i++) {
+        if (bytes[i] !== magic[i]) {
+          matches = false
+          break
+        }
+      }
+      if (matches) {
+        return { valid: true, detectedType: extension }
+      }
+    }
+
+    // Check if it matches any other image type (possible extension spoofing)
+    for (const [type, magicList] of Object.entries(IMAGE_MAGIC_BYTES)) {
+      for (const magic of magicList) {
+        let matches = true
+        for (let i = 0; i < magic.length; i++) {
+          if (bytes[i] !== magic[i]) {
+            matches = false
+            break
+          }
+        }
+        if (matches) {
+          return { valid: false, detectedType: type }
+        }
+      }
+    }
+
+    return { valid: false }
+  } catch {
+    return { valid: false }
+  }
+}
+
+/**
+ * Check for embedded scripts or malicious content in image files
+ */
+async function scanForMaliciousContent(file: File): Promise<{ safe: boolean; reason?: string }> {
+  try {
+    // Read file as text to check for embedded scripts
+    const textContent = await file.slice(0, 50000).text()
+
+    // Check for common attack patterns
+    const maliciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /on\w+\s*=/i, // Event handlers
+      /<\?php/i, // PHP tags
+      /<%/i, // ASP tags
+      /eval\s*\(/i,
+      /document\./i,
+      /window\./i,
+      /alert\s*\(/i,
+      /__proto__/i,
+      /constructor\s*\[/i,
+    ]
+
+    for (const pattern of maliciousPatterns) {
+      if (pattern.test(textContent)) {
+        return { safe: false, reason: `Malicious pattern detected: ${pattern}` }
+      }
+    }
+
+    return { safe: true }
+  } catch {
+    // If we can't read the file as text, assume it's binary (likely safe)
+    return { safe: true }
+  }
+}
+
 export async function uploadImage(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean; path?: string }> {
@@ -320,7 +428,7 @@ export async function uploadImage(
     return { error: 'يجب تسجيل الدخول' }
   }
 
-  // Rate limiting for uploads
+  // Rate limiting for uploads - stricter limit
   const clientId = await getClientIdentifier()
   const rateLimit = checkRateLimit(clientId, 'upload')
   if (!rateLimit.allowed) {
@@ -334,7 +442,7 @@ export async function uploadImage(
     return { error: 'لم يتم اختيار ملف' }
   }
 
-  // Validate file type - check both MIME type and extension
+  // 1. Validate file type - check both MIME type and extension
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
   const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
   const fileExtension = file.name.split('.').pop()?.toLowerCase()
@@ -354,13 +462,13 @@ export async function uploadImage(
     return { error: 'نوع الملف غير مدعوم' }
   }
 
-  // Validate file size (max 5MB)
+  // 2. Validate file size (max 5MB)
   const maxSize = 5 * 1024 * 1024
   if (file.size > maxSize) {
     return { error: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }
   }
 
-  // Validate file size minimum (prevent empty files)
+  // 3. Validate file size minimum (prevent empty files)
   if (file.size < 100) {
     await logSecurityEvent('suspicious_activity', {
       action: 'uploadImage',
@@ -371,24 +479,52 @@ export async function uploadImage(
     return { error: 'الملف فارغ أو صغير جداً' }
   }
 
-  // Sanitize filename and generate secure unique name
+  // 4. SECURITY: Verify magic bytes match claimed extension
+  const magicByteCheck = await verifyImageMagicBytes(file, fileExtension)
+  if (!magicByteCheck.valid) {
+    await logSecurityEvent('suspicious_activity', {
+      action: 'uploadImage',
+      userId: user.id,
+      reason: 'Magic byte mismatch - possible file spoofing',
+      claimedExtension: fileExtension,
+      detectedType: magicByteCheck.detectedType || 'unknown',
+      fileName: file.name,
+    })
+    return { error: 'محتوى الملف لا يتطابق مع نوعه - يرجى رفع صورة صالحة' }
+  }
+
+  // 5. SECURITY: Scan for embedded malicious content
+  const malwareCheck = await scanForMaliciousContent(file)
+  if (!malwareCheck.safe) {
+    await logSecurityEvent('suspicious_activity', {
+      action: 'uploadImage',
+      userId: user.id,
+      reason: malwareCheck.reason,
+      fileName: file.name,
+    })
+    return { error: 'تم اكتشاف محتوى مشبوه في الملف' }
+  }
+
+  // 6. Sanitize filename and generate secure unique name
   const sanitizedExt = sanitizeFilename(fileExtension)
   const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${sanitizedExt}`
 
-  // Log file upload
+  // Log successful file upload
   await logSecurityEvent('file_upload', {
     userId: user.id,
     originalName: file.name,
     fileSize: file.size,
     fileType: file.type,
+    storedAs: filename,
   })
 
-  // Upload to Supabase Storage
+  // 7. Upload to Supabase Storage with strict settings
   const { error: uploadError } = await supabase.storage
     .from('article-images')
     .upload(filename, file, {
       cacheControl: '31536000', // 1 year
-      upsert: false,
+      upsert: false, // Never overwrite existing files
+      contentType: file.type, // Enforce content type
     })
 
   if (uploadError) {
