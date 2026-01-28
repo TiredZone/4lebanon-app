@@ -6,6 +6,7 @@ export const revalidate = 60
 
 async function getImportantArticles() {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
   const { data } = await supabase
     .from('articles')
@@ -17,6 +18,8 @@ async function getImportantArticles() {
     `
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .or('is_featured.eq.true,is_breaking.eq.true')
     .order('published_at', { ascending: false })
     .limit(18)

@@ -7,6 +7,7 @@ export const revalidate = 60 // Revalidate every minute for recent news
 
 async function getRecentArticles() {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
   const { data } = await supabase
     .from('articles')
@@ -18,6 +19,8 @@ async function getRecentArticles() {
     `
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
     .limit(20)
 

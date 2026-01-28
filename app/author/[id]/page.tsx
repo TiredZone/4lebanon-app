@@ -29,6 +29,7 @@ async function getAuthorArticles(
   const supabase = await createClient()
   const perPage = PAGINATION.defaultPageSize
   const offset = (page - 1) * perPage
+  const now = new Date().toISOString()
 
   const { data, count } = await supabase
     .from('articles')
@@ -42,6 +43,8 @@ async function getAuthorArticles(
     )
     .eq('author_id', authorId)
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 

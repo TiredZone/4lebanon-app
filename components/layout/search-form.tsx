@@ -53,6 +53,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
       setShowResults(true)
 
       const supabase = createClient()
+      const now = new Date().toISOString()
       const { data } = await supabase
         .from('articles')
         .select(
@@ -63,6 +64,8 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
         )
         .ilike('title_ar', `%${query.trim()}%`)
         .eq('status', 'published')
+        .not('published_at', 'is', null)
+        .lte('published_at', now)
         .order('published_at', { ascending: false })
         .limit(5)
 

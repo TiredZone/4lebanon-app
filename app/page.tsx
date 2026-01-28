@@ -17,6 +17,8 @@ export async function generateMetadata() {
 async function getHomepageData() {
   const supabase = await createClient()
 
+  const now = new Date().toISOString()
+
   const { data: recentArticles } = await supabase
     .from('articles')
     .select(
@@ -26,6 +28,8 @@ async function getHomepageData() {
     `
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
     .limit(10)
 
@@ -39,6 +43,8 @@ async function getHomepageData() {
     `
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .or('is_featured.eq.true,is_breaking.eq.true')
     .order('published_at', { ascending: false })
     .limit(6)
@@ -77,6 +83,8 @@ async function getHomepageData() {
     .from('articles')
     .select('id, slug, title_ar')
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .eq('is_breaking', true)
     .order('published_at', { ascending: false })
     .limit(10)
@@ -95,6 +103,7 @@ async function getSectionArticles(
   limit: number = 6
 ): Promise<ArticleListItem[]> {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
   const { data: sectionData } = await supabase
     .from('sections')
@@ -115,6 +124,8 @@ async function getSectionArticles(
     )
     .eq('section_id', sectionData.id)
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
     .limit(limit)
 

@@ -55,9 +55,15 @@ export function ArticleEditor({
   const [countryId, setCountryId] = useState<number | null>(article?.country_id || null)
   const [selectedTopics, setSelectedTopics] = useState<number[]>(topicIds)
   const [status, setStatus] = useState<ArticleStatus>(article?.status || 'draft')
-  const [publishedAt, setPublishedAt] = useState(
-    article?.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : ''
-  )
+  // Default to current date/time for new articles, or existing date for editing
+  const getDefaultPublishDate = () => {
+    if (article?.published_at) {
+      return new Date(article.published_at).toISOString().slice(0, 16)
+    }
+    // For new articles, default to current time
+    return new Date().toISOString().slice(0, 16)
+  }
+  const [publishedAt, setPublishedAt] = useState(getDefaultPublishDate())
   const [isBreaking, setIsBreaking] = useState(article?.is_breaking || false)
   const [isFeatured, setIsFeatured] = useState(article?.is_featured || false)
   const [sources, setSources] = useState<ArticleSource[]>(article?.sources || [])
@@ -113,9 +119,7 @@ export function ArticleEditor({
     setCountryId(article?.country_id || null)
     setSelectedTopics(topicIds)
     setStatus(article?.status || 'draft')
-    setPublishedAt(
-      article?.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : ''
-    )
+    setPublishedAt(getDefaultPublishDate())
     setIsBreaking(article?.is_breaking || false)
     setIsFeatured(article?.is_featured || false)
     setSources(article?.sources || [])
@@ -387,7 +391,7 @@ export function ArticleEditor({
               </select>
             </div>
 
-            {/* Publish date (for scheduled) */}
+            {/* Publish date (for scheduled/published) */}
             {status !== 'draft' && (
               <div className="mb-4">
                 <label htmlFor="publishedAt" className="editor-label">
@@ -397,11 +401,43 @@ export function ArticleEditor({
                   type="datetime-local"
                   id="publishedAt"
                   value={publishedAt}
-                  onChange={(e) => setPublishedAt(e.target.value)}
+                  onChange={(e) => {
+                    setPublishedAt(e.target.value)
+                    // Auto-switch to scheduled if future date is selected
+                    if (e.target.value) {
+                      const selectedDate = new Date(e.target.value)
+                      const now = new Date()
+                      if (selectedDate > now && status === 'published') {
+                        setStatus('scheduled')
+                      }
+                    }
+                  }}
                   className="editor-input"
                   dir="ltr"
                 />
-                <p className="mt-1 text-xs text-gray-500">اتركه فارغاً للنشر الفوري</p>
+                {/* Helper text based on date selection */}
+                {(() => {
+                  const selectedDate = publishedAt ? new Date(publishedAt) : null
+                  const now = new Date()
+                  const isFuture = selectedDate && selectedDate > now
+
+                  if (isFuture && status === 'scheduled') {
+                    return (
+                      <p className="mt-1 text-xs text-amber-600">
+                        ⏰ سيتم نشر المقال تلقائياً في التاريخ المحدد
+                      </p>
+                    )
+                  } else if (isFuture && status === 'published') {
+                    return (
+                      <p className="mt-1 text-xs text-amber-600">
+                        ⚠️ التاريخ في المستقبل - سيُنشر المقال عند وصول هذا التاريخ
+                      </p>
+                    )
+                  } else if (status === 'published') {
+                    return <p className="mt-1 text-xs text-green-600">✓ سيتم نشر المقال فوراً</p>
+                  }
+                  return null
+                })()}
               </div>
             )}
 

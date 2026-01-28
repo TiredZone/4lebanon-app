@@ -29,6 +29,11 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
     ...filters.topics.map((t) => ({ value: t.slug, label: t.name_ar })),
   ]
 
+  const regionOptions = [
+    { value: '', label: 'جميع المناطق' },
+    ...filters.regions.map((r) => ({ value: r.slug, label: r.name_ar })),
+  ]
+
   const countryOptions = [
     { value: '', label: 'جميع الدول' },
     ...filters.countries.map((c) => ({ value: c.slug, label: c.name_ar })),
@@ -56,25 +61,15 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
         searchPlaceholder="ابحث عن موضوع..."
       />
 
-      {/* Region filter - Regular select (no search) */}
-      <div className="filter-group">
-        <label htmlFor="region" className="filter-label">
-          المنطقة
-        </label>
-        <select
-          id="region"
-          name="region"
-          defaultValue={currentParams.region}
-          className="filter-select"
-        >
-          <option value="">جميع المناطق</option>
-          {filters.regions.map((r) => (
-            <option key={r.id} value={r.slug}>
-              {r.name_ar}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Region filter - Searchable */}
+      <SearchableSelect
+        name="region"
+        label="المنطقة"
+        options={regionOptions}
+        defaultValue={currentParams.region}
+        placeholder="جميع المناطق"
+        searchPlaceholder="ابحث عن منطقة..."
+      />
 
       {/* Country filter - Searchable */}
       <SearchableSelect

@@ -9,11 +9,14 @@ interface TrendingArticle {
 
 async function getTrendingArticles(): Promise<TrendingArticle[]> {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
   const { data } = await supabase
     .from('articles')
     .select('id, slug, title_ar')
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('view_count', { ascending: false })
     .limit(5)
 

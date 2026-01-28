@@ -666,6 +666,19 @@ a:hover {
   transform: scale(1.05);
 }
 
+/* Prevent .group:hover img from conflicting with bento-card's own hover effect */
+.group .bento-card img {
+  transform: none;
+}
+
+.group:hover .bento-card img {
+  transform: none;
+}
+
+.group .bento-card:hover img {
+  transform: scale(1.05);
+}
+
 /* ============================================
    IMAGE FALLBACK SYSTEM
    ============================================ */
@@ -919,6 +932,13 @@ a[class*='btn']:active {
 :focus-visible {
   outline: 2px solid var(--aura-red);
   outline-offset: 2px;
+}
+
+/* Remove focus outline from card links that have visual hover feedback */
+.group:focus-visible .bento-card,
+.group:focus-visible .news-card,
+a.group:focus-visible {
+  outline: none;
 }
 
 /* ============================================
@@ -2316,12 +2336,9 @@ section a[href*='/recent'] {
   color: #334155;
 }
 
-/* Reading mode cursor */
+/* Article body - normal text cursor */
 .article-content-body {
-  cursor:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23E11D48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E")
-      12 12,
-    text;
+  cursor: auto;
 }
 
 /* Drop cap for first paragraph */
@@ -2918,6 +2935,8 @@ section a[href*='/recent'] {
   grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-bottom: 1rem;
+  position: relative;
+  z-index: 50;
 }
 
 @media (min-width: 480px) {
@@ -3025,6 +3044,16 @@ section a[href*='/recent'] {
 /* Searchable Select Component */
 .searchable-select-container {
   position: relative;
+  z-index: 1;
+}
+
+/* Bring open dropdown container to front */
+.searchable-select-container:has(.searchable-select-trigger.open) {
+  z-index: 100;
+}
+
+.filter-group:has(.filter-select:focus) {
+  z-index: 100;
 }
 
 .searchable-select-trigger {
@@ -3092,7 +3121,7 @@ section a[href*='/recent'] {
   top: calc(100% + 0.5rem);
   right: 0;
   left: 0;
-  z-index: 50;
+  z-index: 9999;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -4379,24 +4408,40 @@ section a[href*='/recent'] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 0.5rem;
-  background: transparent;
+  background: #f1f5f9;
   border: none;
   cursor: pointer;
   color: #64748b;
   transition: all 0.2s ease;
 }
 
-.admin-action-btn:hover {
-  background: rgba(248, 250, 252, 0.8);
-  color: var(--primary);
+.admin-action-btn svg {
+  width: 1rem;
+  height: 1rem;
+  transition: color 0.2s ease;
 }
 
-.admin-action-btn svg {
-  width: 1.125rem;
-  height: 1.125rem;
+/* Red variant - edit button */
+.admin-action-btn-red:hover {
+  background: #c61b23;
+}
+
+.admin-action-btn-red:hover svg {
+  color: white;
+  stroke: white;
+}
+
+/* Green variant - view button */
+.admin-action-btn-green:hover {
+  background: #10b981;
+}
+
+.admin-action-btn-green:hover svg {
+  color: white;
+  stroke: white;
 }
 
 /* Empty State */

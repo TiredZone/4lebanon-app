@@ -32,6 +32,7 @@ async function searchArticles(params: {
   const supabase = await createClient()
   const perPage = PAGINATION.searchPageSize
   const offset = ((params.page || 1) - 1) * perPage
+  const now = new Date().toISOString()
 
   let query = supabase
     .from('articles')
@@ -44,6 +45,8 @@ async function searchArticles(params: {
       { count: 'exact' }
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
 
   // Search by title - using ilike for instant single-character search (works with Arabic and English)

@@ -24,6 +24,7 @@ interface PageProps {
 async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
   const supabase = await createClient()
   const decodedSlug = decodeURIComponent(slug)
+  const now = new Date().toISOString()
 
   console.log('=== ARTICLE FETCH DEBUG ===')
   console.log('Raw slug:', slug)
@@ -41,6 +42,8 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
     )
     .eq('slug', decodedSlug)
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .single()
 
   console.log('Query result - data:', data ? 'found' : 'null')
@@ -67,6 +70,7 @@ async function getRelatedArticles(
   sectionId: number | null
 ): Promise<ArticleListItem[]> {
   const supabase = await createClient()
+  const now = new Date().toISOString()
 
   let query = supabase
     .from('articles')
@@ -78,6 +82,8 @@ async function getRelatedArticles(
     `
     )
     .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .neq('id', articleId)
     .order('published_at', { ascending: false })
     .limit(PAGINATION.relatedArticlesCount)

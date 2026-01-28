@@ -106,50 +106,95 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-3">
           {/* Status Filter */}
-          <select
-            id="status"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-[#c61b23]"
-            aria-label="فلتر الحالة"
-          >
-            <option value="all">كل الحالات</option>
-            <option value="published">منشور</option>
-            <option value="draft">مسودة</option>
-            <option value="scheduled">مجدول</option>
-          </select>
+          <div className="relative">
+            <select
+              id="status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
+              aria-label="فلتر الحالة"
+            >
+              <option value="all">كل الحالات</option>
+              <option value="published">منشور</option>
+              <option value="draft">مسودة</option>
+              <option value="scheduled">مجدول</option>
+            </select>
+            <svg
+              className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
 
           {/* Section Filter */}
-          <select
-            id="section"
-            value={filterSection}
-            onChange={(e) => setFilterSection(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-[#c61b23]"
-            aria-label="فلتر القسم"
-          >
-            <option value="all">كل الأقسام</option>
-            {sections.map((section) => (
-              <option key={section.id} value={section.id}>
-                {section.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id="section"
+              value={filterSection}
+              onChange={(e) => setFilterSection(e.target.value)}
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
+              aria-label="فلتر القسم"
+            >
+              <option value="all">كل الأقسام</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
 
           {/* Type Filter */}
-          <select
-            id="type"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-[#c61b23]"
-            aria-label="فلتر النوع"
-          >
-            <option value="all">كل الأنواع</option>
-            <option value="breaking">عاجل</option>
-            <option value="featured">مميز</option>
-            <option value="regular">عادي</option>
-          </select>
+          <div className="relative">
+            <select
+              id="type"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
+              aria-label="فلتر النوع"
+            >
+              <option value="all">كل الأنواع</option>
+              <option value="breaking">عاجل</option>
+              <option value="featured">مميز</option>
+              <option value="regular">عادي</option>
+            </select>
+            <svg
+              className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
 
           {/* Clear filters button */}
           {(searchTerm ||
@@ -184,24 +229,24 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
           {filteredArticles.map((article) => (
             <div
               key={article.id}
-              className="group rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-slate-300 hover:shadow-sm"
+              className="group rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-slate-300 hover:shadow-sm"
             >
               {/* Top Row: Title and Actions */}
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/admin/articles/${article.id}/edit`}
-                    className="line-clamp-2 block text-sm leading-relaxed font-bold text-slate-800 transition-colors hover:text-[#c61b23]"
+                    className="line-clamp-2 block text-base leading-relaxed font-bold text-slate-800 transition-colors hover:text-[#c61b23]"
                   >
                     {article.title_ar}
                   </Link>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex shrink-0 items-center gap-1.5">
+                <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={`/admin/articles/${article.id}/edit`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-all hover:bg-[#c61b23] hover:text-white"
+                    className="admin-action-btn admin-action-btn-red"
                     title="تعديل"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,7 +261,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
                   {article.status === 'published' && (
                     <Link
                       href={`/article/${article.slug}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 transition-all hover:bg-emerald-500 hover:text-white"
+                      className="admin-action-btn admin-action-btn-green"
                       target="_blank"
                       title="عرض"
                     >
@@ -239,7 +284,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
               </div>
 
               {/* Bottom Row: Badges and Meta */}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 {/* Status Badge */}
                 <span
                   className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getStatusClass(article.status)}`}
