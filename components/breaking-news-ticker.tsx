@@ -73,22 +73,22 @@ export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
         </div>
       </div>
 
-      {/* CSS for ticker animation */}
+      {/* CSS for ticker animation - RTL direction (right to left for Arabic) */}
       <style jsx>{`
         .ticker-scroll {
-          animation: ticker 60s linear infinite;
+          animation: ticker-rtl 60s linear infinite;
         }
 
         .ticker-scroll.paused {
           animation-play-state: paused;
         }
 
-        @keyframes ticker {
+        @keyframes ticker-rtl {
           0% {
-            transform: translateX(0);
+            transform: translateX(-33.333%);
           }
           100% {
-            transform: translateX(-33.333%);
+            transform: translateX(0);
           }
         }
       `}</style>

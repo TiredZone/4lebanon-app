@@ -2,7 +2,7 @@
 
 export const SITE_CONFIG = {
   name: '4Lebanon',
-  nameAr: '٤ لبنان',
+  nameAr: '4Lebanon',
   description: 'موقع إخباري لبناني مستقل',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://4lebanon.com',
   locale: 'ar',
@@ -26,16 +26,10 @@ export const NAV_ITEMS = [
 // Footer navigation
 export const FOOTER_NAV = {
   sections: [
-    { href: '/section/breaking', label: 'أخبار عاجلة' },
-    { href: '/section/news', label: 'الأخبار' },
-    { href: '/section/analysis', label: 'تحليل' },
+    { href: '/important', label: 'أخبار عاجلة' },
+    { href: '/section/local', label: 'المحليّة' },
+    { href: '/section/security', label: 'أمن وقضاء' },
     { href: '/section/economy', label: 'اقتصاد' },
-  ],
-  about: [
-    { href: '/about', label: 'من نحن' },
-    { href: '/contact', label: 'اتصل بنا' },
-    { href: '/privacy', label: 'سياسة الخصوصية' },
-    { href: '/terms', label: 'الشروط والأحكام' },
   ],
 }
 
