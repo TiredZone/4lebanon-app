@@ -73,11 +73,11 @@ export function SectionGrid({ title, titleHref, articles, columns = 3 }: Section
   return (
     <section className="py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-foreground text-xl font-bold">{title}</h2>
+        <h2 className="section-heading text-xl font-bold text-black">{title}</h2>
         {titleHref && (
           <a
             href={titleHref}
-            className="text-primary flex items-center gap-1 text-sm font-medium hover:underline"
+            className="flex items-center gap-1 text-sm font-bold text-black hover:underline"
           >
             <span>المزيد</span>
             <svg

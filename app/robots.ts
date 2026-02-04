@@ -9,7 +9,35 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/'],
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/_next/',
+          '/private/',
+          '/*.json$',
+          '/*?*', // Query strings
+        ],
+      },
+      // Block aggressive bots
+      {
+        userAgent: 'AhrefsBot',
+        disallow: '/',
+      },
+      {
+        userAgent: 'SemrushBot',
+        disallow: '/',
+      },
+      {
+        userAgent: 'MJ12bot',
+        disallow: '/',
+      },
+      {
+        userAgent: 'DotBot',
+        disallow: '/',
+      },
+      {
+        userAgent: 'BLEXBot',
+        disallow: '/',
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ArticleEditor } from '@/components/admin/article-editor'
@@ -71,7 +72,20 @@ export default async function EditArticlePage({ params }: PageProps) {
 
   return (
     <div>
-      <h1 className="text-foreground mb-8 text-2xl font-bold">تعديل المقال</h1>
+      <div className="editor-page-header">
+        <Link href="/admin" className="editor-back-btn">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          العودة إلى لوحة التحكم
+        </Link>
+        <h1 className="editor-page-title">تعديل المقال</h1>
+      </div>
       <ArticleEditor
         mode="edit"
         article={article}

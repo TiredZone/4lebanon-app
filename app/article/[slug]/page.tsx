@@ -2,12 +2,18 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { SITE_CONFIG, PAGINATION } from '@/lib/constants'
 import { formatDateAr, calculateReadingTime, getStorageUrl } from '@/lib/utils'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
-import { ArticleCard } from '@/components/article'
-import type { ArticleWithRelations, ArticleListItem, Topic } from '@/types/database'
+import {
+  ReadingProgressBar,
+  SocialShareBar,
+  TrendingSidebar,
+  ArticleHeroImage,
+  RecommendedArticles,
+} from '@/components/article'
+import type { ArticleWithRelations, ArticleListItem } from '@/types/database'
 
 export const revalidate = 600 // 10 minutes
 
@@ -17,32 +23,42 @@ interface PageProps {
 
 async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
   const supabase = await createClient()
+  const decodedSlug = decodeURIComponent(slug)
 
-  const { data } = await supabase
+  console.log('=== ARTICLE FETCH DEBUG ===')
+  console.log('Raw slug:', slug)
+  console.log('Decoded slug:', decodedSlug)
+
+  // Use explicit foreign key names like homepage does
+  const { data, error } = await supabase
     .from('articles')
     .select(
       `
       *,
-      author:profiles!articles_author_id_fkey(*),
-      section:sections!articles_section_id_fkey(*),
-      region:regions!articles_region_id_fkey(*),
-      country:countries!articles_country_id_fkey(*),
-      article_topics(topic:topics(*))
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar),
+      section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar)
     `
     )
-    .eq('slug', slug)
+    .eq('slug', decodedSlug)
+    .eq('status', 'published')
     .single()
+
+  console.log('Query result - data:', data ? 'found' : 'null')
+  console.log('Query result - error:', error ? JSON.stringify(error) : 'none')
+
+  if (error) {
+    console.error('Error fetching article:', error.message, error.details, error.hint)
+    return null
+  }
 
   if (!data) return null
 
-  // Transform topics
-  const articleData = data as Record<string, unknown>
-  const articleTopics = (articleData.article_topics as Array<{ topic: Topic }>) || []
-  const topics = articleTopics.map((at) => at.topic)
-
+  // Return with empty defaults for unused relations
   return {
-    ...articleData,
-    topics,
+    ...data,
+    region: null,
+    country: null,
+    topics: [],
   } as ArticleWithRelations
 }
 
@@ -61,6 +77,7 @@ async function getRelatedArticles(
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `
     )
+    .eq('status', 'published')
     .neq('id', articleId)
     .order('published_at', { ascending: false })
     .limit(PAGINATION.relatedArticlesCount)
@@ -88,7 +105,7 @@ async function getRelatedArticles(
 // Increment view count (fire and forget)
 async function incrementViewCount(articleId: string) {
   try {
-    const supabase = await createServiceClient()
+    const supabase = await createClient()
     await supabase.rpc('increment_view_count', { article_id: articleId })
   } catch {
     // Silently fail - view count is not critical
@@ -139,214 +156,160 @@ export default async function ArticlePage({ params }: PageProps) {
   const relatedArticles = await getRelatedArticles(article.id, article.section_id)
   const imageUrl = getStorageUrl(article.cover_image_path)
   const readingTime = calculateReadingTime(article.body_md)
+  const articleUrl = `${SITE_CONFIG.url}/article/${article.slug}`
 
   return (
-    <article className="bg-muted pb-12">
-      {/* Header */}
-      <div className="bg-white py-6">
-        <div className="mx-auto max-w-4xl px-4">
-          {/* Breadcrumb */}
-          <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
-            <Link href="/" className="hover:text-primary">
-              الرئيسية
-            </Link>
-            {article.section && (
-              <>
-                <span>/</span>
-                <Link href={`/section/${article.section.slug}`} className="hover:text-primary">
-                  {article.section.name_ar}
-                </Link>
-              </>
-            )}
-          </nav>
+    <>
+      {/* Reading Progress Bar */}
+      <ReadingProgressBar />
 
-          {/* Title */}
-          <h1 className="text-foreground mb-4 text-3xl leading-tight font-bold md:text-4xl">
-            {article.title_ar}
-          </h1>
+      <article className="article-page-bg">
+        <div className="article-layout py-8">
+          {/* Left Sidebar - Social Share (Desktop only) */}
+          <SocialShareBar url={articleUrl} title={article.title_ar} variant="sidebar" />
 
-          {/* Breaking badge */}
-          {article.is_breaking && (
-            <span className="bg-primary mb-4 inline-block rounded px-3 py-1 text-sm font-bold text-white">
-              عاجل
-            </span>
-          )}
-
-          {/* Meta */}
-          <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
-            <Link
-              href={`/author/${article.author.id}`}
-              className="hover:text-primary flex items-center gap-2"
-            >
-              {article.author.avatar_url ? (
-                <Image
-                  src={getStorageUrl(article.author.avatar_url)!}
-                  alt={article.author.display_name_ar}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              ) : (
-                <span className="bg-primary flex h-8 w-8 items-center justify-center rounded-full text-white">
-                  {article.author.display_name_ar.charAt(0)}
-                </span>
+          {/* Main Reading Column */}
+          <div className="article-reading-column">
+            {/* Breadcrumbs */}
+            <nav className="article-breadcrumbs">
+              <Link href="/">الرئيسية</Link>
+              {article.section && (
+                <>
+                  <span>/</span>
+                  <Link href={`/section/${article.section.slug}`} className="category-link">
+                    {article.section.name_ar}
+                  </Link>
+                </>
               )}
-              <span className="font-medium">{article.author.display_name_ar}</span>
-            </Link>
-            <span>•</span>
-            {article.published_at && (
-              <time>{formatDateAr(article.published_at, 'dd MMMM yyyy، HH:mm')}</time>
-            )}
-            <span>•</span>
-            <span>{readingTime}</span>
-          </div>
+            </nav>
 
-          {/* Topics/Tags */}
-          {article.topics.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {article.topics.map((topic) => (
-                <Link
-                  key={topic.id}
-                  href={`/search?topic=${topic.slug}`}
-                  className="bg-muted text-foreground hover:bg-primary rounded-full px-3 py-1 text-xs font-medium hover:text-white"
+            {/* Breaking Badge */}
+            {article.is_breaking && (
+              <span className="article-breaking-badge">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-4 w-4"
                 >
-                  {topic.name_ar}
-                </Link>
-              ))}
+                  <path
+                    fillRule="evenodd"
+                    d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                عاجل
+              </span>
+            )}
+
+            {/* Headline */}
+            <h1 className="article-headline">{article.title_ar}</h1>
+
+            {/* Metadata Glass Pill */}
+            <div className="article-meta-pill">
+              <Link
+                href={`/author/${article.author.id}`}
+                className="flex items-center gap-2 hover:opacity-80"
+              >
+                <div className="author-avatar">
+                  {article.author.avatar_url ? (
+                    <Image
+                      src={getStorageUrl(article.author.avatar_url)!}
+                      alt={article.author.display_name_ar}
+                      width={36}
+                      height={36}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
+                      {article.author.display_name_ar.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <span className="author-name">{article.author.display_name_ar}</span>
+              </Link>
+
+              <span className="separator" />
+
+              {article.published_at && (
+                <time>{formatDateAr(article.published_at, 'dd MMMM yyyy')}</time>
+              )}
+
+              <span className="separator" />
+
+              <span className="reading-time">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                {readingTime}
+              </span>
             </div>
-          )}
 
-          {/* Share buttons */}
-          <div className="mt-6 flex items-center gap-3">
-            <span className="text-muted-foreground text-sm font-medium">مشاركة:</span>
-            <ShareButton platform="facebook" url={`${SITE_CONFIG.url}/article/${article.slug}`} />
-            <ShareButton
-              platform="twitter"
-              url={`${SITE_CONFIG.url}/article/${article.slug}`}
-              title={article.title_ar}
-            />
-            <ShareButton
-              platform="whatsapp"
-              url={`${SITE_CONFIG.url}/article/${article.slug}`}
-              title={article.title_ar}
-            />
-            <ShareButton
-              platform="telegram"
-              url={`${SITE_CONFIG.url}/article/${article.slug}`}
-              title={article.title_ar}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Cover Image */}
-      {imageUrl && (
-        <div className="mx-auto max-w-4xl px-4 py-6">
-          <div className="relative aspect-video overflow-hidden rounded-lg">
-            <Image
-              src={imageUrl}
-              alt={article.title_ar}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 900px"
-              priority
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Article Body */}
-      <div className="mx-auto max-w-4xl px-4">
-        <div className="rounded-lg bg-white p-6 shadow-sm md:p-8">
-          <MarkdownRenderer content={article.body_md} />
-
-          {/* Sources */}
-          {article.sources && article.sources.length > 0 && (
-            <div className="border-border mt-8 border-t pt-6">
-              <h2 className="text-foreground mb-4 text-lg font-bold">المصادر</h2>
-              <ul className="space-y-2">
-                {article.sources.map((source, index) => (
-                  <li key={index}>
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {source.title}
-                    </a>
-                  </li>
+            {/* Topics/Tags */}
+            {article.topics.length > 0 && (
+              <div className="article-topics">
+                {article.topics.map((topic) => (
+                  <Link
+                    key={topic.id}
+                    href={`/search?topic=${topic.slug}`}
+                    className="article-topic-tag"
+                  >
+                    {topic.name_ar}
+                  </Link>
                 ))}
-              </ul>
+              </div>
+            )}
+
+            {/* Hero Image */}
+            {imageUrl && imageUrl !== '/placeholder.png' && (
+              <ArticleHeroImage src={imageUrl} alt={article.title_ar} />
+            )}
+
+            {/* Article Glass Container */}
+            <div className="article-glass-container">
+              {/* Article Body */}
+              <div className="article-content-body">
+                <MarkdownRenderer content={article.body_md} />
+              </div>
+
+              {/* Sources */}
+              {article.sources && article.sources.length > 0 && (
+                <div className="article-sources">
+                  <h2 className="article-sources-title">المصادر</h2>
+                  <ul>
+                    {article.sources.map((source, index) => (
+                      <li key={index}>
+                        <a href={source.url} target="_blank" rel="noopener noreferrer">
+                          {source.title}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Related Articles */}
-      {relatedArticles.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12">
-          <h2 className="text-foreground mb-6 text-xl font-bold">اخترنا لكم</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {relatedArticles.map((related) => (
-              <ArticleCard key={related.id} article={related} />
-            ))}
+            {/* Mobile Social Bar */}
+            <SocialShareBar url={articleUrl} title={article.title_ar} variant="mobile" />
+
+            {/* Recommended Articles */}
+            <RecommendedArticles articles={relatedArticles} />
           </div>
-        </section>
-      )}
-    </article>
-  )
-}
 
-// Share button component
-function ShareButton({
-  platform,
-  url,
-  title,
-}: {
-  platform: 'facebook' | 'twitter' | 'whatsapp' | 'telegram'
-  url: string
-  title?: string
-}) {
-  const shareUrls: Record<string, string> = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title || '')}`,
-    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${title || ''} ${url}`)}`,
-    telegram: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title || '')}`,
-  }
-
-  const icons: Record<string, React.ReactNode> = {
-    facebook: (
-      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-      </svg>
-    ),
-    twitter: (
-      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    ),
-    whatsapp: (
-      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-      </svg>
-    ),
-    telegram: (
-      <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-      </svg>
-    ),
-  }
-
-  return (
-    <a
-      href={shareUrls[platform]}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="bg-muted text-muted-foreground hover:bg-primary flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:text-white"
-      aria-label={`مشاركة على ${platform}`}
-    >
-      {icons[platform]}
-    </a>
+          {/* Right Sidebar - Trending (Desktop only) */}
+          <TrendingSidebar />
+        </div>
+      </article>
+    </>
   )
 }

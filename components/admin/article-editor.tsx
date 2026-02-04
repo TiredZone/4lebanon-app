@@ -11,6 +11,8 @@ import {
 } from '@/app/admin/articles/actions'
 import { getStorageUrl } from '@/lib/utils'
 import { ARTICLE_STATUSES, SUCCESS_MESSAGES } from '@/lib/constants'
+import { EditorSelect } from './editor-select'
+import { EditorTopics } from './editor-topics'
 import type {
   Article,
   Section,
@@ -69,6 +71,11 @@ export function ArticleEditor({
   // Filter countries by selected region
   const filteredCountries = regionId ? countries.filter((c) => c.region_id === regionId) : countries
 
+  // Convert data to select options
+  const sectionOptions = sections.map((s) => ({ value: s.id, label: s.name_ar }))
+  const regionOptions = regions.map((r) => ({ value: r.id, label: r.name_ar }))
+  const countryOptions = filteredCountries.map((c) => ({ value: c.id, label: c.name_ar }))
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -96,6 +103,26 @@ export function ArticleEditor({
     setSources([...sources, { title: '', url: '' }])
   }
 
+  const handleReset = () => {
+    setTitle(article?.title_ar || '')
+    setExcerpt(article?.excerpt_ar || '')
+    setBody(article?.body_md || '')
+    setCoverImage(article?.cover_image_path || '')
+    setSectionId(article?.section_id || null)
+    setRegionId(article?.region_id || null)
+    setCountryId(article?.country_id || null)
+    setSelectedTopics(topicIds)
+    setStatus(article?.status || 'draft')
+    setPublishedAt(
+      article?.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : ''
+    )
+    setIsBreaking(article?.is_breaking || false)
+    setIsFeatured(article?.is_featured || false)
+    setSources(article?.sources || [])
+    setError(null)
+    setSuccess(null)
+  }
+
   const handleRemoveSource = (index: number) => {
     setSources(sources.filter((_, i) => i !== index))
   }
@@ -106,10 +133,9 @@ export function ArticleEditor({
     setSources(newSources)
   }
 
-  const handleTopicToggle = (topicId: number) => {
-    setSelectedTopics((prev) =>
-      prev.includes(topicId) ? prev.filter((id) => id !== topicId) : [...prev, topicId]
-    )
+  const handleRegionChange = (value: number | string | null) => {
+    setRegionId(value as number | null)
+    setCountryId(null) // Reset country when region changes
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,6 +153,19 @@ export function ArticleEditor({
       return
     }
 
+    // Convert datetime-local format (YYYY-MM-DDTHH:MM) to full ISO format
+    const getISODate = (dateStr: string | null): string | null => {
+      if (!dateStr) return new Date().toISOString()
+      try {
+        // datetime-local gives "2024-01-25T14:30", convert to ISO
+        const date = new Date(dateStr)
+        if (isNaN(date.getTime())) return new Date().toISOString()
+        return date.toISOString()
+      } catch {
+        return new Date().toISOString()
+      }
+    }
+
     const formData = {
       title_ar: title.trim(),
       excerpt_ar: excerpt.trim(),
@@ -136,7 +175,7 @@ export function ArticleEditor({
       region_id: regionId,
       country_id: countryId,
       status,
-      published_at: status !== 'draft' ? publishedAt || new Date().toISOString() : null,
+      published_at: status !== 'draft' ? getISODate(publishedAt) : null,
       is_breaking: isBreaking,
       is_featured: isFeatured,
       sources: sources.filter((s) => s.title && s.url),
@@ -179,20 +218,42 @@ export function ArticleEditor({
   const coverImageUrl = coverImage ? getStorageUrl(coverImage) : null
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Error/Success messages */}
-      {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+      {error && (
+        <div className="editor-message error">
+          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          {error}
+        </div>
+      )}
       {success && (
-        <div className="rounded-lg bg-green-50 p-4 text-sm text-green-600">{success}</div>
+        <div className="editor-message success">
+          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          {success}
+        </div>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-6 lg:col-span-2">
           {/* Title */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <label htmlFor="title" className="text-foreground mb-2 block text-sm font-medium">
-              العنوان *
+          <div className="editor-card">
+            <label htmlFor="title" className="editor-label editor-label-required">
+              العنوان
             </label>
             <input
               type="text"
@@ -200,14 +261,14 @@ export function ArticleEditor({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-3 text-lg focus:ring-1 focus:outline-none"
+              className="editor-input editor-input-lg"
               placeholder="أدخل عنوان المقال..."
             />
           </div>
 
           {/* Excerpt */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <label htmlFor="excerpt" className="text-foreground mb-2 block text-sm font-medium">
+          <div className="editor-card">
+            <label htmlFor="excerpt" className="editor-label">
               الملخص
             </label>
             <textarea
@@ -215,15 +276,15 @@ export function ArticleEditor({
               value={excerpt}
               onChange={(e) => setExcerpt(e.target.value)}
               rows={3}
-              className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-3 focus:ring-1 focus:outline-none"
+              className="editor-input editor-textarea"
               placeholder="ملخص قصير للمقال (اختياري)..."
             />
           </div>
 
           {/* Body */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <label htmlFor="body" className="text-foreground mb-2 block text-sm font-medium">
-              محتوى المقال * (يدعم Markdown)
+          <div className="editor-card">
+            <label htmlFor="body" className="editor-label editor-label-required">
+              محتوى المقال (يدعم Markdown)
             </label>
             <textarea
               id="body"
@@ -231,55 +292,72 @@ export function ArticleEditor({
               onChange={(e) => setBody(e.target.value)}
               required
               rows={20}
-              className="border-border focus:border-primary focus:ring-primary w-full rounded-lg border px-4 py-3 font-mono text-sm focus:ring-1 focus:outline-none"
+              className="editor-input editor-textarea editor-textarea-code"
               placeholder="اكتب محتوى المقال هنا..."
               dir="rtl"
             />
           </div>
 
           {/* Sources */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <label className="text-foreground text-sm font-medium">المصادر</label>
-              <button
-                type="button"
-                onClick={handleAddSource}
-                className="text-primary text-sm font-medium hover:underline"
-              >
-                + إضافة مصدر
+          <div className="editor-card">
+            <div className="editor-sources-header">
+              <h3 className="editor-card-title-inline">المصادر</h3>
+              <button type="button" onClick={handleAddSource} className="editor-add-source-btn">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                إضافة مصدر
               </button>
             </div>
             {sources.length > 0 ? (
-              <div className="space-y-4">
+              <div>
                 {sources.map((source, index) => (
-                  <div key={index} className="flex gap-4">
+                  <div key={index} className="editor-source-item">
                     <input
                       type="text"
                       value={source.title}
                       onChange={(e) => handleSourceChange(index, 'title', e.target.value)}
                       placeholder="عنوان المصدر"
-                      className="border-border focus:border-primary flex-1 rounded-lg border px-4 py-2 focus:outline-none"
+                      className="editor-source-input"
                     />
                     <input
                       type="url"
                       value={source.url}
                       onChange={(e) => handleSourceChange(index, 'url', e.target.value)}
                       placeholder="رابط المصدر"
-                      className="border-border focus:border-primary flex-1 rounded-lg border px-4 py-2 focus:outline-none"
+                      className="editor-source-input"
                       dir="ltr"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveSource(index)}
-                      className="text-red-500 hover:text-red-700"
+                      className="editor-source-remove"
+                      aria-label="حذف المصدر"
                     >
-                      حذف
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">لا توجد مصادر</p>
+              <p className="editor-no-sources">لا توجد مصادر - أضف مصادر لتوثيق المقال</p>
             )}
           </div>
         </div>
@@ -287,19 +365,19 @@ export function ArticleEditor({
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Publish settings */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-foreground mb-4 text-lg font-bold">النشر</h3>
+          <div className="editor-card">
+            <h3 className="editor-card-title">النشر</h3>
 
             {/* Status */}
             <div className="mb-4">
-              <label htmlFor="status" className="text-foreground mb-2 block text-sm font-medium">
+              <label htmlFor="status" className="editor-label">
                 الحالة
               </label>
               <select
                 id="status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ArticleStatus)}
-                className="border-border focus:border-primary w-full rounded-lg border px-4 py-2 focus:outline-none"
+                className="editor-input"
               >
                 {ARTICLE_STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -312,10 +390,7 @@ export function ArticleEditor({
             {/* Publish date (for scheduled) */}
             {status !== 'draft' && (
               <div className="mb-4">
-                <label
-                  htmlFor="publishedAt"
-                  className="text-foreground mb-2 block text-sm font-medium"
-                >
+                <label htmlFor="publishedAt" className="editor-label">
                   تاريخ النشر
                 </label>
                 <input
@@ -323,49 +398,106 @@ export function ArticleEditor({
                   id="publishedAt"
                   value={publishedAt}
                   onChange={(e) => setPublishedAt(e.target.value)}
-                  className="border-border focus:border-primary w-full rounded-lg border px-4 py-2 focus:outline-none"
+                  className="editor-input"
                   dir="ltr"
                 />
-                <p className="text-muted-foreground mt-1 text-xs">اتركه فارغاً للنشر الفوري</p>
+                <p className="mt-1 text-xs text-gray-500">اتركه فارغاً للنشر الفوري</p>
               </div>
             )}
 
             {/* Breaking/Featured flags */}
-            <div className="space-y-2">
-              <label className="flex items-center gap-2">
+            <div className="editor-checkbox-group">
+              <label className={`editor-checkbox-label ${isBreaking ? 'checked' : ''}`}>
                 <input
                   type="checkbox"
                   checked={isBreaking}
                   onChange={(e) => setIsBreaking(e.target.checked)}
-                  className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                  className="editor-checkbox"
                 />
-                <span className="text-sm">خبر عاجل</span>
+                <span className={`editor-checkbox-text ${isBreaking ? 'breaking' : ''}`}>
+                  <svg
+                    className="ml-1 inline-block h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  خبر عاجل
+                </span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className={`editor-checkbox-label ${isFeatured ? 'checked' : ''}`}>
                 <input
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="border-border text-primary focus:ring-primary h-4 w-4 rounded"
+                  className="editor-checkbox"
                 />
-                <span className="text-sm">مقال مميز</span>
+                <span className={`editor-checkbox-text ${isFeatured ? 'featured' : ''}`}>
+                  <svg
+                    className="ml-1 inline-block h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
+                  </svg>
+                  مقال مميز
+                </span>
               </label>
             </div>
 
             {/* Action buttons */}
-            <div className="mt-6 space-y-2">
+            <div className="mt-6 space-y-3">
+              <button type="submit" disabled={isPending} className="editor-btn editor-btn-primary">
+                {isPending ? (
+                  <>
+                    <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    جاري الحفظ...
+                  </>
+                ) : mode === 'create' ? (
+                  'إنشاء المقال'
+                ) : (
+                  'حفظ التغييرات'
+                )}
+              </button>
               <button
-                type="submit"
+                type="button"
+                onClick={handleReset}
                 disabled={isPending}
-                className="bg-primary hover:bg-primary-dark w-full rounded-lg px-4 py-3 font-medium text-white disabled:opacity-50"
+                className="editor-btn editor-btn-secondary"
               >
-                {isPending ? 'جاري الحفظ...' : mode === 'create' ? 'إنشاء المقال' : 'حفظ التغييرات'}
+                إعادة تعيين
               </button>
               {mode === 'edit' && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full rounded-lg border border-red-500 px-4 py-2 font-medium text-red-500 hover:bg-red-50"
+                  className="editor-btn editor-btn-danger"
                 >
                   حذف المقال
                 </button>
@@ -374,155 +506,135 @@ export function ArticleEditor({
           </div>
 
           {/* Cover image */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-foreground mb-4 text-lg font-bold">صورة الغلاف</h3>
-            {coverImageUrl && (
-              <div className="relative mb-4 aspect-video overflow-hidden rounded-lg">
-                <Image
-                  src={coverImageUrl}
-                  alt="Cover"
-                  fill
-                  className="object-cover"
-                  sizes="300px"
-                />
-                <button
-                  type="button"
-                  onClick={() => setCoverImage('')}
-                  className="absolute top-2 left-2 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="editor-card">
+            <h3 className="editor-card-title">صورة الغلاف</h3>
+            <div className={`editor-image-upload ${coverImageUrl ? 'has-image' : ''}`}>
+              {coverImageUrl ? (
+                <div className="editor-image-preview">
+                  <Image
+                    src={coverImageUrl}
+                    alt="Cover"
+                    fill
+                    className="object-cover"
+                    sizes="400px"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverImage('')}
+                    className="editor-image-remove"
+                    aria-label="حذف الصورة"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label htmlFor="cover-image" className="editor-image-upload-content cursor-pointer">
+                  <svg
+                    className="editor-image-upload-icon"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
+                      strokeWidth={1.5}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                </button>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={uploading}
-              className="w-full text-sm"
-            />
-            {uploading && <p className="text-muted-foreground mt-2 text-sm">جاري الرفع...</p>}
+                  <span className="editor-image-upload-text">
+                    {uploading ? 'جاري الرفع...' : 'اضغط لاختيار صورة'}
+                  </span>
+                  <span className="editor-image-upload-hint">PNG, JPG, WebP حتى 5MB</span>
+                </label>
+              )}
+              <input
+                id="cover-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </div>
           </div>
 
           {/* Categories */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-foreground mb-4 text-lg font-bold">التصنيف</h3>
+          <div className="editor-card">
+            <h3 className="editor-card-title">التصنيف</h3>
 
             {/* Section */}
-            <div className="mb-4">
-              <label htmlFor="section" className="text-foreground mb-2 block text-sm font-medium">
-                القسم
-              </label>
-              <select
-                id="section"
-                value={sectionId || ''}
-                onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : null)}
-                className="border-border focus:border-primary w-full rounded-lg border px-4 py-2 focus:outline-none"
-              >
-                <option value="">اختر القسم</option>
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name_ar}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <EditorSelect
+              label="القسم"
+              options={sectionOptions}
+              value={sectionId}
+              onChange={(v) => setSectionId(v as number | null)}
+              placeholder="اختر القسم"
+              searchPlaceholder="ابحث عن قسم..."
+            />
 
             {/* Region */}
-            <div className="mb-4">
-              <label htmlFor="region" className="text-foreground mb-2 block text-sm font-medium">
-                المنطقة
-              </label>
-              <select
-                id="region"
-                value={regionId || ''}
-                onChange={(e) => {
-                  setRegionId(e.target.value ? Number(e.target.value) : null)
-                  setCountryId(null) // Reset country when region changes
-                }}
-                className="border-border focus:border-primary w-full rounded-lg border px-4 py-2 focus:outline-none"
-              >
-                <option value="">اختر المنطقة</option>
-                {regions.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name_ar}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <EditorSelect
+              label="المنطقة"
+              options={regionOptions}
+              value={regionId}
+              onChange={handleRegionChange}
+              placeholder="اختر المنطقة"
+              searchPlaceholder="ابحث عن منطقة..."
+            />
 
-            {/* Country */}
-            <div className="mb-4">
-              <label htmlFor="country" className="text-foreground mb-2 block text-sm font-medium">
-                الدولة
-              </label>
-              <select
-                id="country"
-                value={countryId || ''}
-                onChange={(e) => setCountryId(e.target.value ? Number(e.target.value) : null)}
-                className="border-border focus:border-primary w-full rounded-lg border px-4 py-2 focus:outline-none"
-              >
-                <option value="">اختر الدولة</option>
-                {filteredCountries.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name_ar}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Country - filtered by region */}
+            <EditorSelect
+              label="الدولة"
+              options={countryOptions}
+              value={countryId}
+              onChange={(v) => setCountryId(v as number | null)}
+              placeholder="اختر الدولة"
+              searchPlaceholder="ابحث عن دولة..."
+              disabled={!regionId && countries.length > 20}
+            />
           </div>
 
           {/* Topics */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h3 className="text-foreground mb-4 text-lg font-bold">المواضيع</h3>
-            <div className="flex flex-wrap gap-2">
-              {topics.map((topic) => (
-                <button
-                  key={topic.id}
-                  type="button"
-                  onClick={() => handleTopicToggle(topic.id)}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    selectedTopics.includes(topic.id)
-                      ? 'bg-primary text-white'
-                      : 'bg-muted text-foreground hover:bg-primary/10'
-                  }`}
-                >
-                  {topic.name_ar}
-                </button>
-              ))}
-            </div>
+          <div className="editor-card">
+            <h3 className="editor-card-title">المواضيع</h3>
+            <EditorTopics
+              topics={topics}
+              selectedTopics={selectedTopics}
+              onChange={setSelectedTopics}
+            />
           </div>
         </div>
       </div>
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <h3 className="text-foreground mb-4 text-lg font-bold">تأكيد الحذف</h3>
-            <p className="text-muted-foreground mb-6">
+        <div className="editor-modal-overlay">
+          <div className="editor-modal">
+            <h3 className="editor-modal-title">تأكيد الحذف</h3>
+            <p className="editor-modal-text">
               هل أنت متأكد من حذف هذا المقال؟ لا يمكن التراجع عن هذا الإجراء.
             </p>
-            <div className="flex gap-4">
+            <div className="editor-modal-actions">
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={isPending}
-                className="flex-1 rounded-lg bg-red-500 px-4 py-2 font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                className="editor-btn editor-btn-delete"
               >
                 {isPending ? 'جاري الحذف...' : 'نعم، احذف'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="border-border text-foreground hover:bg-muted flex-1 rounded-lg border px-4 py-2 font-medium"
+                className="editor-btn editor-btn-secondary"
               >
                 إلغاء
               </button>

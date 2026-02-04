@@ -32,6 +32,7 @@ export function ArticleCard({
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, 800px"
+              priority
             />
           ) : (
             <div className="from-primary to-primary-dark h-full w-full bg-gradient-to-br" />
@@ -40,10 +41,10 @@ export function ArticleCard({
         </div>
 
         {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-6">
+        <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
           {/* Breaking badge */}
           {article.is_breaking && (
-            <span className="bg-primary mb-3 inline-block rounded px-2 py-1 text-xs font-bold text-white">
+            <span className="mb-2 inline-block rounded bg-[#c61b23] px-2 py-1 text-xs font-bold text-white md:mb-3">
               عاجل
             </span>
           )}
@@ -52,24 +53,24 @@ export function ArticleCard({
           {showSection && article.section && (
             <Link
               href={`/section/${article.section.slug}`}
-              className="text-accent mb-2 inline-block text-sm font-medium hover:underline"
+              className="mb-1.5 inline-block text-xs font-medium text-white hover:underline md:mb-2 md:text-sm"
             >
               {article.section.name_ar}
             </Link>
           )}
 
           {/* Title */}
-          <h2 className="mb-3 text-2xl leading-tight font-bold text-white md:text-3xl">
-            <Link href={`/article/${article.slug}`} className="hover:text-accent">
+          <h2 className="mb-2 text-xl leading-tight font-bold text-white md:mb-3 md:text-2xl lg:text-3xl">
+            <Link href={`/article/${article.slug}`} className="hover:text-white/90">
               {article.title_ar}
             </Link>
           </h2>
 
           {/* Meta */}
-          <div className="flex items-center gap-3 text-sm text-white/80">
+          <div className="flex items-center gap-2 text-xs text-white/80 md:gap-3 md:text-sm">
             {showAuthor && (
               <>
-                <Link href={`/author/${article.author.id}`} className="hover:text-accent">
+                <Link href={`/author/${article.author.id}`} className="hover:text-white">
                   {article.author.display_name_ar}
                 </Link>
                 <span>•</span>
@@ -84,9 +85,9 @@ export function ArticleCard({
 
   if (variant === 'horizontal') {
     return (
-      <article className="card-hover group flex gap-4 rounded-lg bg-white p-4 shadow-sm">
+      <article className="card-hover group flex gap-3 rounded-lg bg-white p-3 shadow-sm md:gap-4 md:p-4">
         {/* Image */}
-        <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-md">
+        <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-md md:h-24 md:w-32">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -99,7 +100,7 @@ export function ArticleCard({
             <div className="from-muted to-border h-full w-full bg-gradient-to-br" />
           )}
           {article.is_breaking && (
-            <span className="bg-primary absolute top-1 right-1 rounded px-1.5 py-0.5 text-[10px] font-bold text-white">
+            <span className="absolute top-1 right-1 rounded bg-[#c61b23] px-1.5 py-0.5 text-[10px] font-bold text-white">
               عاجل
             </span>
           )}
@@ -110,15 +111,15 @@ export function ArticleCard({
           {showSection && article.section && (
             <Link
               href={`/section/${article.section.slug}`}
-              className="text-primary mb-1 inline-block text-xs font-medium hover:underline"
+              className="mb-1 inline-block text-xs font-medium text-[#c61b23] hover:underline"
             >
               {article.section.name_ar}
             </Link>
           )}
-          <h3 className="text-foreground group-hover:text-primary mb-2 line-clamp-2 leading-snug font-bold">
+          <h3 className="mb-1.5 line-clamp-2 text-sm leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mb-2 md:text-base">
             <Link href={`/article/${article.slug}`}>{article.title_ar}</Link>
           </h3>
-          <time className="text-muted-foreground text-xs">
+          <time className="text-xs text-gray-500">
             {article.published_at && formatDateAr(article.published_at, 'dd MMMM yyyy')}
           </time>
         </div>
@@ -153,36 +154,42 @@ export function ArticleCard({
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+            priority={false}
           />
         ) : (
           <div className="from-muted to-border h-full w-full bg-gradient-to-br" />
         )}
         {article.is_breaking && (
-          <span className="bg-primary absolute top-3 right-3 rounded px-2 py-1 text-xs font-bold text-white">
+          <span className="absolute top-2 right-2 rounded bg-[#c61b23] px-2 py-1 text-xs font-bold text-white md:top-3 md:right-3">
             عاجل
           </span>
         )}
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-3 md:p-4">
         {showSection && article.section && (
           <Link
             href={`/section/${article.section.slug}`}
-            className="text-primary mb-2 inline-block text-xs font-medium hover:underline"
+            className="mb-1.5 inline-block text-xs font-medium text-[#c61b23] hover:underline md:mb-2"
           >
             {article.section.name_ar}
           </Link>
         )}
-        <h3 className="text-foreground group-hover:text-primary mb-2 line-clamp-2 text-lg leading-snug font-bold">
+        <h3 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-lg">
           <Link href={`/article/${article.slug}`}>{article.title_ar}</Link>
         </h3>
         {showExcerpt && article.excerpt_ar && (
-          <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">{article.excerpt_ar}</p>
+          <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-gray-600 md:mb-3 md:text-sm">
+            {article.excerpt_ar}
+          </p>
         )}
-        <div className="text-muted-foreground flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs text-gray-500">
           {showAuthor && (
-            <Link href={`/author/${article.author.id}`} className="hover:text-primary">
+            <Link
+              href={`/author/${article.author.id}`}
+              className="transition-colors hover:text-[#c61b23]"
+            >
               {article.author.display_name_ar}
             </Link>
           )}

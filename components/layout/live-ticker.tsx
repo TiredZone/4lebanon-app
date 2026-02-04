@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { formatTimeAr } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
 
 interface TickerItem {
@@ -30,19 +29,23 @@ export async function LiveTicker() {
     <section id="ticker" className="border-border bg-muted border-b py-4">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-start gap-6">
-          {/* Title */}
           <div className="shrink-0">
-            <h2 className="text-primary text-lg font-bold">على مدار الساعة</h2>
+            <h2 className="section-heading text-lg font-bold text-black">على مدار الساعة</h2>
             <div className="bg-primary mt-1 h-0.5 w-full"></div>
           </div>
 
-          {/* Ticker items */}
           <div className="min-w-0 flex-1">
             <ul className="space-y-2">
               {items.map((item) => (
                 <li key={item.id} className="flex items-start gap-3">
                   <time className="text-primary shrink-0 text-sm font-medium">
-                    {formatTimeAr(item.published_at)}
+                    {item.published_at
+                      ? new Date(item.published_at).toLocaleTimeString('ar-EG', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })
+                      : ''}
                   </time>
                   <Link
                     href={`/article/${item.slug}`}
@@ -53,9 +56,10 @@ export async function LiveTicker() {
                 </li>
               ))}
             </ul>
+
             <Link
               href="/"
-              className="text-primary mt-4 inline-flex items-center gap-1 text-sm font-medium hover:underline"
+              className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-black hover:underline"
             >
               <span>المزيد</span>
               <svg
@@ -88,7 +92,7 @@ export function LiveTickerStatic({ items }: { items: TickerItem[] }) {
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-start gap-6">
           <div className="shrink-0">
-            <h2 className="text-primary text-lg font-bold">على مدار الساعة</h2>
+            <h2 className="section-heading text-lg font-bold text-black">على مدار الساعة</h2>
             <div className="bg-primary mt-1 h-0.5 w-full"></div>
           </div>
           <div className="min-w-0 flex-1">
@@ -96,7 +100,13 @@ export function LiveTickerStatic({ items }: { items: TickerItem[] }) {
               {items.map((item) => (
                 <li key={item.id} className="flex items-start gap-3">
                   <time className="text-primary shrink-0 text-sm font-medium">
-                    {formatTimeAr(item.published_at)}
+                    {item.published_at
+                      ? new Date(item.published_at).toLocaleTimeString('ar-EG', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })
+                      : ''}
                   </time>
                   <Link
                     href={`/article/${item.slug}`}

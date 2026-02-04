@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ArticleEditor } from '@/components/admin/article-editor'
@@ -36,7 +37,22 @@ export default async function NewArticlePage() {
 
   return (
     <div>
-      <h1 className="text-foreground mb-8 text-2xl font-bold">مقال جديد</h1>
+      {/* Page Header */}
+      <div className="editor-page-header">
+        <Link href="/admin" className="editor-back-btn">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          العودة إلى لوحة التحكم
+        </Link>
+        <h1 className="editor-page-title">إنشاء مقال جديد</h1>
+      </div>
+
       <ArticleEditor
         mode="create"
         sections={formData.sections}

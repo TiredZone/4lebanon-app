@@ -1,0 +1,48 @@
+{
+  "sections": {
+    "important": "هــــام",
+    "radar": "رادار",
+    "investigation": "بحث وتحرّي",
+    "special": "خاص",
+    "mostRead": "الأكثر قراءة",
+    "spotshot": "SpotShot",
+    "local": "المحلية",
+    "security": "أمن وقضاء",
+    "regional": "إقليمي ودولي",
+    "economy": "اقتصاد",
+    "writers": "كتّابنا"
+  },
+  "buttons": {
+    "more": "المزيد",
+    "allWriters": "جميع كتّابنا",
+    "search": "بحث"
+  },
+  "common": {
+    "noArticles": "لا توجد مقالات في هذا القسم",
+    "readMore": "إقرأ المزيد",
+    "by": "بقلم",
+    "admin": "لوحة التحكم",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة"
+  },
+  "footer": {
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "privacy": "الشكاوى والتصحيحات",
+    "terms": "أعلن معنا",
+    "copyright": "© 2026 لبنانـديبايت. جميع الحقوق محفوظة."
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "local": "محلي",
+    "security": "أمن وقضاء",
+    "regional": "إقليمي ودولي",
+    "economy": "اقتصاد",
+    "investigation": "بحث وتحرّي",
+    "special": "خاص",
+    "writers": "الكتّاب",
+    "radar": "رادار"
+  }
+}

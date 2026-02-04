@@ -115,3 +115,60 @@ export function isProduction(): boolean {
 export function isDevelopment(): boolean {
   return process.env.NODE_ENV === 'development'
 }
+
+/**
+ * Security checks for sensitive data exposure
+ * Call this at startup to detect potential misconfigurations
+ */
+export function checkForExposedSecrets(): string[] {
+  const warnings: string[] = []
+
+  // Keys that should NEVER be public
+  const sensitiveKeys = [
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'DATABASE_URL',
+    'JWT_SECRET',
+    'API_SECRET',
+    'PRIVATE_KEY',
+    'SECRET_KEY',
+  ]
+
+  for (const key of sensitiveKeys) {
+    // Check if a sensitive key is exposed as NEXT_PUBLIC_
+    if (process.env[`NEXT_PUBLIC_${key}`]) {
+      warnings.push(
+        `CRITICAL: ${key} is exposed as NEXT_PUBLIC_${key} - this is a security vulnerability!`
+      )
+    }
+  }
+
+  // Check if service role key is accidentally in the anon key variable
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (anonKey && anonKey.includes('service_role')) {
+    warnings.push('CRITICAL: Service role key detected in NEXT_PUBLIC_SUPABASE_ANON_KEY!')
+  }
+
+  // Check for weak revalidation secret
+  const revalidateSecret = process.env.REVALIDATE_SECRET
+  if (revalidateSecret && revalidateSecret.length < 32) {
+    warnings.push('WARNING: REVALIDATE_SECRET should be at least 32 characters for security')
+  }
+
+  return warnings
+}
+
+/**
+ * Run security validation on module load (server-side only)
+ */
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test') {
+  const warnings = checkForExposedSecrets()
+  if (warnings.length > 0) {
+    console.error('🔒 Security configuration warnings:')
+    warnings.forEach((w) => console.error(`  ❌ ${w}`))
+
+    // In production, fail hard on critical issues
+    if (isProduction() && warnings.some((w) => w.startsWith('CRITICAL'))) {
+      throw new Error('Critical security misconfiguration detected. Check logs.')
+    }
+  }
+}

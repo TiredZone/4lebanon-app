@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { SITE_CONFIG, FOOTER_NAV, SOCIAL_LINKS } from '@/lib/constants'
 
 export function Footer() {
@@ -6,16 +7,21 @@ export function Footer() {
 
   return (
     <footer className="bg-primary text-white">
-      <div className="mx-auto max-w-7xl px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
+        <div className="grid gap-6 text-center md:grid-cols-2 md:gap-8 md:text-right lg:grid-cols-4">
           {/* Logo and Social */}
-          <div>
-            <Link href="/" className="mb-4 flex items-baseline gap-1 text-2xl font-bold">
-              <span className="text-3xl text-black">4</span>
-              <span className="text-white">Lebanon</span>
+          <div className="flex flex-col items-center md:items-start">
+            <Link href="/" className="mb-4 block">
+              <Image
+                src="/logo-transparent.png"
+                alt="4Lebanon Logo"
+                width={150}
+                height={50}
+                className="h-10 w-auto sm:h-12"
+              />
             </Link>
-            <p className="mb-6 text-sm text-white/80">{SITE_CONFIG.description}</p>
-            <div className="flex gap-3">
+            <p className="mb-4 text-sm text-white/80 sm:mb-6">{SITE_CONFIG.description}</p>
+            <div className="flex justify-center gap-2 sm:gap-3 md:justify-start">
               <SocialLink href={SOCIAL_LINKS.facebook} icon="facebook" />
               <SocialLink href={SOCIAL_LINKS.twitter} icon="twitter" />
               <SocialLink href={SOCIAL_LINKS.instagram} icon="instagram" />
@@ -27,13 +33,13 @@ export function Footer() {
 
           {/* Sections */}
           <div>
-            <h3 className="mb-4 text-lg font-bold">الأقسام</h3>
+            <h3 className="mb-3 text-base font-bold sm:mb-4 sm:text-lg">الأقسام</h3>
             <ul className="space-y-2">
               {FOOTER_NAV.sections.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="hover:text-accent text-sm text-white/80 transition-colors"
+                    className="hover:text-accent inline-block min-h-[44px] py-2 text-sm text-white/80 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -44,13 +50,13 @@ export function Footer() {
 
           {/* About */}
           <div>
-            <h3 className="mb-4 text-lg font-bold">حول الموقع</h3>
+            <h3 className="mb-3 text-base font-bold sm:mb-4 sm:text-lg">حول الموقع</h3>
             <ul className="space-y-2">
               {FOOTER_NAV.about.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="hover:text-accent text-sm text-white/80 transition-colors"
+                    className="hover:text-accent inline-block min-h-[44px] py-2 text-sm text-white/80 transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -61,11 +67,11 @@ export function Footer() {
 
           {/* RSS Feed */}
           <div>
-            <h3 className="mb-4 text-lg font-bold">تابعنا</h3>
+            <h3 className="mb-3 text-base font-bold sm:mb-4 sm:text-lg">تابعنا</h3>
             <div className="space-y-3">
               <Link
                 href="/rss.xml"
-                className="hover:text-accent flex items-center gap-2 text-sm text-white/80 transition-colors"
+                className="hover:text-accent mx-auto flex min-h-[44px] w-fit items-center gap-2 text-sm text-white/80 transition-colors md:mx-0"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20C5 20 4 19 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z" />
@@ -74,7 +80,7 @@ export function Footer() {
               </Link>
               <Link
                 href={SOCIAL_LINKS.telegram}
-                className="hover:text-accent flex items-center gap-2 text-sm text-white/80 transition-colors"
+                className="hover:text-accent mx-auto flex min-h-[44px] w-fit items-center gap-2 text-sm text-white/80 transition-colors md:mx-0"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -88,8 +94,8 @@ export function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 border-t border-white/20 pt-8 text-center">
-          <p className="text-sm text-white/60">
+        <div className="mt-6 border-t border-white/20 pt-6 text-center sm:mt-8 sm:pt-8">
+          <p className="text-xs text-white/60 sm:text-sm">
             © {currentYear} {SITE_CONFIG.nameAr}. جميع الحقوق محفوظة.
           </p>
         </div>

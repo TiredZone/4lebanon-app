@@ -7,6 +7,33 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 // Max file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
+// Rate limiting
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const windowMs = 60000 // 1 minute
+  const maxRequests = 20 // 20 uploads per minute
+
+  const entry = rateLimitMap.get(ip)
+  if (!entry || entry.resetTime < now) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+
+  entry.count++
+  return entry.count <= maxRequests
+}
+
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIp = request.headers.get('x-real-ip')
+  const cfIp = request.headers.get('cf-connecting-ip')
+
+  if (forwarded) return forwarded.split(',')[0].trim()
+  return cfIp || realIp || 'unknown'
+}
+
 // Validate file type by checking magic bytes
 function validateMagicBytes(buffer: ArrayBuffer): string | null {
   const bytes = new Uint8Array(buffer.slice(0, 12))
@@ -85,6 +112,17 @@ function generateSafeFilename(originalName: string, detectedType: string): strin
 }
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+
+  // Rate limiting
+  if (!checkRateLimit(ip)) {
+    console.warn(`[SECURITY] Upload rate limit exceeded for IP: ${ip}`)
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    )
+  }
+
   try {
     // Get authenticated user
     const supabase = await createClient()
@@ -94,6 +132,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
+      console.warn(`[SECURITY] Unauthorized upload attempt from IP: ${ip}`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
