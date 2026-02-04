@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSection, deleteSection, getSections } from '../actions'
 import type { Section } from '@/types/database'
 
 export default function NewSectionPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [existingSections, setExistingSections] = useState<Section[]>([])
   const [formData, setFormData] = useState({

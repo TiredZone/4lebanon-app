@@ -13,7 +13,7 @@ import {
   ArticleHeroImage,
   RecommendedArticles,
 } from '@/components/article'
-import type { ArticleWithRelations, ArticleListItem, Topic } from '@/types/database'
+import type { ArticleWithRelations, ArticleListItem } from '@/types/database'
 
 export const revalidate = 600 // 10 minutes
 

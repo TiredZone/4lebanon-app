@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 
 // Secret token for webhook authentication
 const REVALIDATE_SECRET = process.env.REVALIDATE_SECRET

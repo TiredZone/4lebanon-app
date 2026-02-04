@@ -46,7 +46,7 @@ async function getDashboardData(): Promise<{
 }
 
 export default async function AdminDashboardPage() {
-  const { articles, profile } = await getDashboardData()
+  const { articles } = await getDashboardData()
 
   const draftCount = articles.filter((a) => a.status === 'draft').length
   const scheduledCount = articles.filter((a) => a.status === 'scheduled').length

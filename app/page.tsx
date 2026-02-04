@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getStorageUrl, toLatinNumbers, formatDateAr } from '@/lib/utils'
+import { getStorageUrl, formatDateAr } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import WritersCarousel from '@/components/writers-carousel'

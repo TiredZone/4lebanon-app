@@ -401,7 +401,6 @@ function SearchPagination({
   }
 
   const pages: (number | 'dots')[] = []
-  const maxVisible = 5
 
   // Always show first page
   pages.push(1)
