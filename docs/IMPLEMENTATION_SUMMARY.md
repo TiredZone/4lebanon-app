@@ -194,7 +194,7 @@ Homepage loads:
 
 1. `/app/admin/signup/page.tsx` - Signup page
 2. `/components/layout/user-menu.tsx` - User dropdown menu
-3. `/TESTING_GUIDE.md` - Comprehensive testing instructions
+3. `/docs/TESTING_GUIDE.md` - Comprehensive testing instructions
 
 ### Modified Files:
 
