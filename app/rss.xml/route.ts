@@ -42,13 +42,14 @@ export async function GET() {
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="true">${baseUrl}/article/${articleData.slug}</guid>
       <author>${authorData?.display_name_ar || SITE_CONFIG.nameAr}</author>
+      <dc:creator><![CDATA[${authorData?.display_name_ar || SITE_CONFIG.nameAr}]]></dc:creator>
       ${imageUrl ? `<enclosure url="${imageUrl}" type="image/jpeg" />` : ''}
     </item>`
     })
     .join('\n')
 
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>${SITE_CONFIG.nameAr}</title>
     <link>${baseUrl}</link>

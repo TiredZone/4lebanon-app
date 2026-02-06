@@ -37,5 +37,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key' }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://4lebanon.com' }}
 
+      # TODO: Add test step when test suite is introduced
+      # - name: Run tests
+      #   run: npm test
+
   # Preview deployment handled by Vercel automatically on PRs
   # Production deployment handled by Vercel on push to main

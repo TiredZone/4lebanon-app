@@ -5,21 +5,26 @@ import type { ArticleListItem } from '@/types/database'
 
 export const revalidate = 60 // Revalidate every minute for recent news
 
-async function getRecentArticles() {
-  const supabase = await createClient()
+const PAGE_SIZE = 20
 
-  const { data } = await supabase
+async function getRecentArticles(page: number) {
+  const supabase = await createClient()
+  const from = (page - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
+
+  const { data, count } = await supabase
     .from('articles')
     .select(
       `
       id, slug, title_ar, published_at, is_breaking,
       author:profiles!articles_author_id_fkey(id, display_name_ar),
       section:sections!articles_section_id_fkey(id, name_ar)
-    `
+    `,
+      { count: 'exact' }
     )
     .eq('status', 'published')
     .order('published_at', { ascending: false })
-    .limit(20)
+    .range(from, to)
 
   const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
     id: article.id as string,
@@ -31,11 +36,18 @@ async function getRecentArticles() {
     section: article.section as ArticleListItem['section'],
   }))
 
-  return articles
+  return { articles, total: count || 0 }
 }
 
-export default async function RecentNewsPage() {
-  const articles = await getRecentArticles()
+export default async function RecentNewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
+  const params = await searchParams
+  const page = Math.max(1, parseInt(params.page || '1', 10) || 1)
+  const { articles, total } = await getRecentArticles(page)
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   return (
     <div className="bg-muted min-h-screen">
@@ -100,15 +112,32 @@ export default async function RecentNewsPage() {
               ))}
             </div>
 
-            {/* Load More Button */}
-            <div className="border-border border-t p-6 text-center">
-              <button
-                type="button"
-                className="hover:bg-primary-dark bg-primary rounded-lg px-6 py-2 font-medium text-white transition-colors"
-              >
-                + المزيــــــد
-              </button>
-            </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="border-border border-t p-6">
+                <div className="flex items-center justify-center gap-2">
+                  {page > 1 && (
+                    <Link
+                      href={`/recent?page=${page - 1}`}
+                      className="bg-muted hover:bg-muted/80 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                    >
+                      السابق
+                    </Link>
+                  )}
+                  <span className="text-muted-foreground px-4 text-sm">
+                    صفحة {page} من {totalPages}
+                  </span>
+                  {page < totalPages && (
+                    <Link
+                      href={`/recent?page=${page + 1}`}
+                      className="bg-primary rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90"
+                    >
+                      التالي
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex min-h-[400px] items-center justify-center rounded-lg bg-white p-8 text-center shadow-sm">

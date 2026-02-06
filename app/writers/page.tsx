@@ -9,12 +9,19 @@ export const revalidate = 120
 async function getAllWriters() {
   const supabase = await createClient()
 
+  // Only show writers who have published at least one article
   const { data } = await supabase
     .from('profiles')
-    .select('*')
+    .select('*, articles!articles_author_id_fkey(id)')
     .order('display_name_ar', { ascending: true })
 
-  return (data || []) as Profile[]
+  // Filter to profiles that have at least one published article
+  const writers = ((data || []) as (Profile & { articles: { id: string }[] })[])
+    .filter((p) => p.articles && p.articles.length > 0)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    .map(({ articles: _articles, ...profile }) => profile)
+
+  return writers as Profile[]
 }
 
 export default async function WritersPage() {

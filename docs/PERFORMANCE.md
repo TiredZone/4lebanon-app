@@ -38,6 +38,23 @@ This ensures:
 - Article pages reflect edits instantly
 - RSS feed updates for subscribers
 
+### Scheduled Publishing
+
+Articles with `status = 'published'` and a future `published_at` are hidden by RLS
+(`published_at <= NOW()`). They become visible once `NOW()` passes the scheduled
+time, but the cached page won't refresh until the ISR revalidation window expires.
+
+**Worst-case delay** = ISR revalidate interval for that route:
+
+| Route    | Max delay |
+| -------- | --------- |
+| Homepage | 2 min     |
+| Section  | 3 min     |
+| RSS      | 5 min     |
+
+For truly time-critical scheduling, trigger the `/api/revalidate` endpoint via a
+cron job (e.g., Vercel Cron or Supabase pg_cron) shortly after the scheduled time.
+
 ### Database Caching
 
 Supabase handles connection pooling and query optimization. Key indexes:

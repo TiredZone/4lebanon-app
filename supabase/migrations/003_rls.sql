@@ -57,11 +57,11 @@ CREATE POLICY "topics_public_read" ON topics
 -- ============================================
 
 -- Public can only view published articles where published_at <= now()
--- This handles scheduled publishing without cron jobs
+-- Scheduled articles become visible only after their published_at time passes
 CREATE POLICY "articles_public_read" ON articles
   FOR SELECT
   USING (
-    status IN ('published', 'scheduled') 
+    status = 'published'
     AND published_at IS NOT NULL 
     AND published_at <= NOW()
   );
@@ -98,7 +98,7 @@ CREATE POLICY "article_topics_public_read" ON article_topics
     EXISTS (
       SELECT 1 FROM articles 
       WHERE articles.id = article_topics.article_id 
-      AND status IN ('published', 'scheduled')
+      AND status = 'published'
       AND published_at IS NOT NULL 
       AND published_at <= NOW()
     )
@@ -136,6 +136,24 @@ CREATE POLICY "article_topics_author_delete" ON article_topics
     )
   );
 
+-- Authors can update topics for their own articles
+CREATE POLICY "article_topics_author_update" ON article_topics
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM articles 
+      WHERE articles.id = article_topics.article_id 
+      AND articles.author_id = auth.uid()
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM articles 
+      WHERE articles.id = article_topics.article_id 
+      AND articles.author_id = auth.uid()
+    )
+  );
+
 -- ============================================
 -- SERVICE ROLE BYPASS
 -- ============================================
@@ -149,7 +167,7 @@ CREATE OR REPLACE FUNCTION is_article_visible(article_row articles)
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN (
-    article_row.status IN ('published', 'scheduled') 
+    article_row.status = 'published'
     AND article_row.published_at IS NOT NULL 
     AND article_row.published_at <= NOW()
   );

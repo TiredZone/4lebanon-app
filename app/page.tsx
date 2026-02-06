@@ -49,18 +49,22 @@ async function getHomepageData() {
     .select('id, slug, name_ar')
     .order('sort_order', { ascending: true })
 
-  // Fetch articles for each section dynamically
+  // Fetch articles for each section in parallel (avoids N+1)
   const sectionsWithArticles: { slug: string; name_ar: string; articles: ArticleListItem[] }[] = []
 
   if (allSections) {
-    for (const section of allSections) {
-      const articles = await getSectionArticles(section.slug, 6)
-      if (articles.length > 0) {
-        sectionsWithArticles.push({
+    const sectionResults = await Promise.all(
+      (allSections as { id: number; slug: string; name_ar: string }[]).map((section) =>
+        getSectionArticlesById(section.id, 6).then((articles) => ({
           slug: section.slug,
           name_ar: section.name_ar,
           articles,
-        })
+        }))
+      )
+    )
+    for (const result of sectionResults) {
+      if (result.articles.length > 0) {
+        sectionsWithArticles.push(result)
       }
     }
   }
@@ -90,19 +94,11 @@ async function getHomepageData() {
   }
 }
 
-async function getSectionArticles(
-  sectionSlug: string,
+async function getSectionArticlesById(
+  sectionId: number,
   limit: number = 6
 ): Promise<ArticleListItem[]> {
   const supabase = await createClient()
-
-  const { data: sectionData } = await supabase
-    .from('sections')
-    .select('id')
-    .eq('slug', sectionSlug)
-    .single()
-
-  if (!sectionData) return []
 
   const { data } = await supabase
     .from('articles')
@@ -113,7 +109,7 @@ async function getSectionArticles(
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `
     )
-    .eq('section_id', sectionData.id)
+    .eq('section_id', sectionId)
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(limit)
@@ -253,6 +249,7 @@ export default async function Home() {
                           alt={article.title_ar}
                           fill
                           className="object-cover object-center"
+                          sizes="(max-width: 768px) 100vw, 65vw"
                           priority
                         />
                       ) : (
@@ -319,6 +316,7 @@ export default async function Home() {
                             alt={article.title_ar}
                             fill
                             className="object-cover object-center"
+                            sizes="(max-width: 640px) 100vw, 33vw"
                           />
                         ) : (
                           <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a2e] to-[#16213e]">
@@ -410,6 +408,7 @@ export default async function Home() {
                             alt={article.title_ar}
                             fill
                             className="object-cover object-center"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                         </>
@@ -461,6 +460,7 @@ export default async function Home() {
                           alt={section.articles[0].title_ar}
                           fill
                           className="object-cover object-center"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 66vw"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
                       </>
@@ -535,6 +535,7 @@ export default async function Home() {
                         alt={data.recent[0].title_ar}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 1024px) 100vw, 40vw"
                       />
                       {/* Dark gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
@@ -611,6 +612,7 @@ export default async function Home() {
                           alt={article.title_ar}
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          sizes="80px"
                         />
                         {/* Glassmorphism Rank Badge */}
                         <div className="absolute inset-0 flex items-center justify-center">

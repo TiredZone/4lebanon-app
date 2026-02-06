@@ -1,7 +1,18 @@
 'use server'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+
+async function requireAuth() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    throw new Error('Unauthorized')
+  }
+  return user
+}
 
 export async function createSection(formData: {
   name_ar: string
@@ -10,6 +21,7 @@ export async function createSection(formData: {
   sort_order: number
 }) {
   try {
+    await requireAuth()
     const supabase = await createServiceClient()
 
     // Get sections that need to shift (those with sort_order >= new sort_order)
@@ -56,6 +68,11 @@ export async function createSection(formData: {
 }
 
 export async function deleteSection(sectionId: number) {
+  try {
+    await requireAuth()
+  } catch {
+    return { success: false, error: 'يجب تسجيل الدخول' }
+  }
   const supabase = await createServiceClient()
 
   const { error } = await supabase.from('sections').delete().eq('id', sectionId)
@@ -71,6 +88,11 @@ export async function deleteSection(sectionId: number) {
 }
 
 export async function getSections() {
+  try {
+    await requireAuth()
+  } catch {
+    return { success: false, error: 'يجب تسجيل الدخول', data: [] }
+  }
   const supabase = await createServiceClient()
 
   const { data, error } = await supabase

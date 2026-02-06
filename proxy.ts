@@ -1,33 +1,36 @@
-'use server'
-
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // In-memory stores for middleware (reset on cold start)
+// ⚠️  LIMITATION: On Vercel (serverless), each edge invocation may get a fresh
+//     isolate, so these maps are NOT shared across instances. The rate limiting
+//     is therefore best-effort and only effective per-isolate. For production-
+//     grade rate limiting, consider Vercel KV, Upstash Redis, or an edge rate
+//     limiter like @upstash/ratelimit.
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 const blockedIPs = new Set<string>()
 const suspiciousIPs = new Map<string, number>()
 
 // Bad patterns to detect in URLs
 const MALICIOUS_URL_PATTERNS = [
-  /\.\.\//g, // Path traversal
-  /<script/gi, // XSS in URL
-  /javascript:/gi, // JavaScript protocol
-  /union.*select/gi, // SQL injection
-  /\bor\b.*[=<>]/gi, // SQL injection
-  /\band\b.*[=<>]/gi, // SQL injection
-  /exec\s*\(/gi, // Command execution
-  /\$\{/gi, // Template injection
-  /%00/gi, // Null byte injection
-  /etc\/passwd/gi, // LFI attempt
-  /proc\/self/gi, // LFI attempt
-  /\.env/gi, // Environment file access
-  /\.git/gi, // Git folder access
-  /wp-admin/gi, // WordPress probes
-  /wp-login/gi, // WordPress probes
-  /phpmyadmin/gi, // PhpMyAdmin probes
-  /\.php$/gi, // PHP file probes
-  /\.asp$/gi, // ASP file probes
+  /\.\.\//, // Path traversal
+  /<script/i, // XSS in URL
+  /javascript:/i, // JavaScript protocol
+  /union.*select/i, // SQL injection
+  /\bor\b.*[=<>]/i, // SQL injection
+  /\band\b.*[=<>]/i, // SQL injection
+  /exec\s*\(/i, // Command execution
+  /\$\{/i, // Template injection
+  /%00/i, // Null byte injection
+  /etc\/passwd/i, // LFI attempt
+  /proc\/self/i, // LFI attempt
+  /\.env/i, // Environment file access
+  /\.git/i, // Git folder access
+  /wp-admin/i, // WordPress probes
+  /wp-login/i, // WordPress probes
+  /phpmyadmin/i, // PhpMyAdmin probes
+  /\.php$/i, // PHP file probes
+  /\.asp$/i, // ASP file probes
 ]
 
 // Bad user agents (scanners, bots)
@@ -109,7 +112,7 @@ function isBadUserAgent(userAgent: string): boolean {
   return BAD_USER_AGENTS.some((pattern) => pattern.test(userAgent))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const ip = getClientIP(request)
   const userAgent = request.headers.get('user-agent') || ''
   const pathname = request.nextUrl.pathname

@@ -46,9 +46,27 @@ async function searchArticles(params: {
     .eq('status', 'published')
     .order('published_at', { ascending: false })
 
-  // Search by title - using ilike for instant single-character search (works with Arabic and English)
+  // Search by text - use full-text search for multi-word queries, ilike for short/single-char
   if (params.q && params.q.trim().length > 0) {
-    query = query.ilike('title_ar', `%${params.q.trim()}%`)
+    const trimmed = params.q.trim()
+    // For queries with 2+ words or 3+ chars, try FTS first via textSearch
+    if (trimmed.length >= 3 || trimmed.includes(' ')) {
+      // Convert to tsquery format: split words and join with &
+      const tsQuery = trimmed
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ''))
+        .filter(Boolean)
+        .join(' & ')
+      if (tsQuery) {
+        query = query.textSearch('search_vector', tsQuery, { config: 'simple' })
+      } else {
+        query = query.ilike('title_ar', `%${trimmed}%`)
+      }
+    } else {
+      // Short queries: use ilike for instant single-character search
+      query = query.ilike('title_ar', `%${trimmed}%`)
+    }
   }
 
   // Filters

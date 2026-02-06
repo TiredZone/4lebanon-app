@@ -25,10 +25,6 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
   const supabase = await createClient()
   const decodedSlug = decodeURIComponent(slug)
 
-  console.log('=== ARTICLE FETCH DEBUG ===')
-  console.log('Raw slug:', slug)
-  console.log('Decoded slug:', decodedSlug)
-
   // Use explicit foreign key names like homepage does
   const { data, error } = await supabase
     .from('articles')
@@ -36,29 +32,26 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
       `
       *,
       author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar),
-      section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar)
+      section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar),
+      region:regions!articles_region_id_fkey(id, name_ar),
+      country:countries!articles_country_id_fkey(id, name_ar),
+      topics:article_topics(topic:topics(id, name_ar))
     `
     )
     .eq('slug', decodedSlug)
     .eq('status', 'published')
     .single()
 
-  console.log('Query result - data:', data ? 'found' : 'null')
-  console.log('Query result - error:', error ? JSON.stringify(error) : 'none')
+  if (error || !data) return null
 
-  if (error) {
-    console.error('Error fetching article:', error.message, error.details, error.hint)
-    return null
-  }
-
-  if (!data) return null
-
-  // Return with empty defaults for unused relations
   return {
     ...data,
-    region: null,
-    country: null,
-    topics: [],
+    region: (data as Record<string, unknown>).region ?? null,
+    country: (data as Record<string, unknown>).country ?? null,
+    topics: (
+      ((data as Record<string, unknown>).topics as { topic: { id: number; name_ar: string } }[]) ||
+      []
+    ).map((t) => t.topic),
   } as ArticleWithRelations
 }
 

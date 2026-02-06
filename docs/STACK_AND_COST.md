@@ -4,13 +4,13 @@
 
 ### Frontend
 
-| Technology       | Version | Purpose                         |
-| ---------------- | ------- | ------------------------------- |
-| Next.js          | 16.1.1  | React framework with App Router |
-| React            | 19.2.x  | UI library                      |
-| TypeScript       | 5.x     | Type safety                     |
-| Tailwind CSS     | 4.x     | Styling                         |
-| Noto Kufi Arabic | -       | Arabic typography               |
+| Technology   | Version | Purpose                         |
+| ------------ | ------- | ------------------------------- |
+| Next.js      | 16.1.1  | React framework with App Router |
+| React        | 19.2.x  | UI library                      |
+| TypeScript   | 5.x     | Type safety                     |
+| Tailwind CSS | 4.x     | Styling                         |
+| Cairo        | -       | Arabic typography               |
 
 ### Backend
 
