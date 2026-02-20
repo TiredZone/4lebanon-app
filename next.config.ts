@@ -103,7 +103,7 @@ const nextConfig: NextConfig = {
           // Default: only same origin
           "default-src 'self'",
           // Scripts: self + Vercel analytics (unsafe-inline needed for Next.js hydration)
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
+          "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
           // Styles: self + inline (needed for Tailwind) + Google Fonts
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           // Fonts: self + Google Fonts

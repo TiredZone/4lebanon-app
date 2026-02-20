@@ -11,7 +11,10 @@ RETURNS void AS $$
 BEGIN
   UPDATE articles 
   SET view_count = view_count + 1 
-  WHERE id = article_id;
+  WHERE id = article_id
+    AND status = 'published'
+    AND published_at IS NOT NULL
+    AND published_at <= NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -65,6 +68,25 @@ BEGIN
   ORDER BY rank DESC, a.published_at DESC
   LIMIT limit_count
   OFFSET offset_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================
+-- SEARCH ARTICLES COUNT (for pagination)
+-- ============================================
+CREATE OR REPLACE FUNCTION search_articles_count(
+  search_query TEXT
+)
+RETURNS BIGINT AS $$
+BEGIN
+  RETURN (
+    SELECT COUNT(*)
+    FROM articles a
+    WHERE
+      a.status = 'published'
+      AND a.published_at <= NOW()
+      AND a.search_vector @@ to_tsquery('simple', search_query)
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -1875,6 +1875,7 @@ section a[href*='/recent'] {
 .article-page-bg {
   position: relative;
   min-height: 100vh;
+  padding-bottom: 4rem;
   background-color: #f8fafc;
   background-image:
     /* Red aurora orb - top right */
@@ -2175,7 +2176,8 @@ section a[href*='/recent'] {
   gap: 0.5rem;
   font-size: var(--font-size-sm);
   color: #64748b;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  padding-top: 0.5rem;
 }
 
 .article-breadcrumbs a {
@@ -2527,7 +2529,9 @@ section a[href*='/recent'] {
 /* Recommended section - "اخترنا لكم" */
 .article-recommended {
   margin-top: 4rem;
+  margin-bottom: 4rem;
   padding-top: 3rem;
+  padding-bottom: 2rem;
   border-top: 1px solid #e2e8f0;
 }
 

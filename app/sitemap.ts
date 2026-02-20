@@ -40,6 +40,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/recent`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/important`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/writers`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
   ]
 
   // Sections
@@ -62,7 +80,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .not('published_at', 'is', null)
     .lte('published_at', new Date().toISOString())
     .order('published_at', { ascending: false })
-    .limit(1000) // Limit for performance
+    .limit(5000) // Google sitemaps support up to 50,000 URLs
 
   const articlePages: MetadataRoute.Sitemap = (
     (articles || []) as { slug: string; updated_at: string }[]

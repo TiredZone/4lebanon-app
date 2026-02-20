@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run build:*)",
+      "Bash(git stash:*)",
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge peter-new-devs --no-ff -m \"$\\(cat <<''EOF''\nmerge: peter-new-devs into main — full feature set with security hardening\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

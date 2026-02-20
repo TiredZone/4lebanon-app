@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 function isValidRedirect(path: string | null): boolean {
@@ -91,13 +90,6 @@ function LoginForm() {
       >
         {loading ? 'جاري التسجيل...' : 'تسجيل الدخول'}
       </button>
-
-      <p className="text-center text-sm text-gray-600">
-        ليس لديك حساب؟{' '}
-        <Link href="/admin/signup" className="text-primary font-medium hover:underline">
-          إنشاء حساب جديد
-        </Link>
-      </p>
     </form>
   )
 }
@@ -118,7 +110,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-sm">
         <div className="mb-8 text-center">
           <h1 className="text-foreground mb-2 text-2xl font-bold">تسجيل الدخول</h1>
-          <p className="text-muted-foreground">لوحة تحكم الكتّاب</p>
+          <p className="text-muted-foreground">لوحة تحكم المحررين والكتّاب</p>
+          <p className="mt-2 text-xs text-gray-400">هذه اللوحة مخصصة لفريق التحرير فقط</p>
         </div>
 
         <Suspense fallback={<LoginFormFallback />}>

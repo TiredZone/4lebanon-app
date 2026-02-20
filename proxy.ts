@@ -2,45 +2,23 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // In-memory stores for middleware (reset on cold start)
+// ⚠️  LIMITATION: On Vercel (serverless), each edge invocation may get a fresh
+//     isolate, so these maps are NOT shared across instances. The rate limiting
+//     is therefore best-effort and only effective per-isolate. For production-
+//     grade rate limiting, consider Vercel KV, Upstash Redis, or an edge rate
+//     limiter like @upstash/ratelimit.
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 const blockedIPs = new Set<string>()
 const suspiciousIPs = new Map<string, number>()
 
-// Cleanup expired entries every 60 seconds to prevent memory leaks
-let cleanupInterval: ReturnType<typeof setInterval> | null = null
-function ensureCleanupInterval() {
-  if (!cleanupInterval) {
-    cleanupInterval = setInterval(() => {
-      const now = Date.now()
-      for (const [key, entry] of rateLimitStore.entries()) {
-        if (entry.resetTime < now) {
-          rateLimitStore.delete(key)
-        }
-      }
-      // Also clean up suspiciousIPs to prevent unbounded growth
-      // Reset suspicious counts every 10 minutes
-      if (suspiciousIPs.size > 1000) {
-        suspiciousIPs.clear()
-      }
-      // Clean blocked IPs after 1 hour (max 500 entries)
-      if (blockedIPs.size > 500) {
-        blockedIPs.clear()
-      }
-    }, 60000)
-    if (cleanupInterval.unref) cleanupInterval.unref()
-  }
-}
-ensureCleanupInterval()
-
 // Bad patterns to detect in URLs
-// NOTE: Do NOT use /g flag with .test() - it causes stateful behavior
 const MALICIOUS_URL_PATTERNS = [
-  /\.\.\//i, // Path traversal
+  /\.\.\//, // Path traversal
   /<script/i, // XSS in URL
   /javascript:/i, // JavaScript protocol
-  /union\s+select/i, // SQL injection
-  /\bor\b\s+\d+\s*[=<>]/i, // SQL injection (e.g., "or 1=1")
-  /\band\b\s+\d+\s*[=<>]/i, // SQL injection (e.g., "and 1=1")
+  /union.*select/i, // SQL injection
+  /\bor\b.*[=<>]/i, // SQL injection
+  /\band\b.*[=<>]/i, // SQL injection
   /exec\s*\(/i, // Command execution
   /\$\{/i, // Template injection
   /%00/i, // Null byte injection
@@ -126,13 +104,7 @@ function trackSuspicious(ip: string): boolean {
 }
 
 function containsMaliciousPattern(url: string): boolean {
-  let decodedUrl: string
-  try {
-    decodedUrl = decodeURIComponent(url)
-  } catch {
-    // Malformed percent-encoding is itself suspicious
-    return true
-  }
+  const decodedUrl = decodeURIComponent(url)
   return MALICIOUS_URL_PATTERNS.some((pattern) => pattern.test(decodedUrl))
 }
 
@@ -140,7 +112,7 @@ function isBadUserAgent(userAgent: string): boolean {
   return BAD_USER_AGENTS.some((pattern) => pattern.test(userAgent))
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const ip = getClientIP(request)
   const userAgent = request.headers.get('user-agent') || ''
   const pathname = request.nextUrl.pathname
