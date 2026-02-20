@@ -57,6 +57,21 @@ export function NewsImage({
 
   const imageUrl = src.startsWith('http') ? src : getStorageUrl(src)
 
+  // If getStorageUrl returned null (e.g., missing SUPABASE_URL), show fallback
+  if (!imageUrl) {
+    return (
+      <div
+        className={cn(
+          'image-fallback relative overflow-hidden',
+          aspectClasses[aspect],
+          containerClassName
+        )}
+        role="img"
+        aria-label={alt}
+      />
+    )
+  }
+
   return (
     <div
       className={cn(
@@ -92,8 +107,8 @@ export function NewsImage({
         <Image
           src={imageUrl}
           alt={alt}
-          width={width}
-          height={height}
+          width={width || 800}
+          height={height || 450}
           sizes={sizes}
           priority={priority}
           className={cn(

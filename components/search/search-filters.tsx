@@ -1,5 +1,7 @@
 'use client'
 
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback } from 'react'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
 interface SearchFiltersProps {
@@ -18,6 +20,32 @@ interface SearchFiltersProps {
 }
 
 export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const handleFilterChange = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      // Preserve the current search input value from the DOM (not yet in URL)
+      const qInput = document.querySelector<HTMLInputElement>('input[name="q"]')
+      if (qInput && qInput.value.trim()) {
+        params.set('q', qInput.value.trim())
+      }
+      if (value) {
+        params.set(key, value)
+      } else {
+        params.delete(key)
+      }
+      // When region changes, clear the country filter (it may no longer be valid)
+      if (key === 'region') {
+        params.delete('country')
+      }
+      // Reset to page 1 when filters change
+      params.delete('page')
+      router.push(`/search?${params.toString()}`)
+    },
+    [router, searchParams]
+  )
   // Convert to options format
   const sectionOptions = [
     { value: '', label: 'جميع الأقسام' },
@@ -34,9 +62,15 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
     ...filters.regions.map((r) => ({ value: r.slug, label: r.name_ar })),
   ]
 
+  // Filter countries by selected region
+  const selectedRegion = filters.regions.find((r) => r.slug === currentParams.region)
+  const filteredCountries = selectedRegion
+    ? filters.countries.filter((c) => c.region_id === selectedRegion.id)
+    : filters.countries
+
   const countryOptions = [
     { value: '', label: 'جميع الدول' },
-    ...filters.countries.map((c) => ({ value: c.slug, label: c.name_ar })),
+    ...filteredCountries.map((c) => ({ value: c.slug, label: c.name_ar })),
   ]
 
   return (
@@ -49,6 +83,7 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
         defaultValue={currentParams.section}
         placeholder="جميع الأقسام"
         searchPlaceholder="ابحث عن قسم..."
+        onChange={(value) => handleFilterChange('section', value)}
       />
 
       {/* Topic filter - Searchable */}
@@ -59,6 +94,7 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
         defaultValue={currentParams.topic}
         placeholder="جميع المواضيع"
         searchPlaceholder="ابحث عن موضوع..."
+        onChange={(value) => handleFilterChange('topic', value)}
       />
 
       {/* Region filter - Searchable */}
@@ -69,6 +105,7 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
         defaultValue={currentParams.region}
         placeholder="جميع المناطق"
         searchPlaceholder="ابحث عن منطقة..."
+        onChange={(value) => handleFilterChange('region', value)}
       />
 
       {/* Country filter - Searchable */}
@@ -79,6 +116,7 @@ export function SearchFilters({ filters, currentParams }: SearchFiltersProps) {
         defaultValue={currentParams.country}
         placeholder="جميع الدول"
         searchPlaceholder="ابحث عن دولة..."
+        onChange={(value) => handleFilterChange('country', value)}
       />
     </div>
   )

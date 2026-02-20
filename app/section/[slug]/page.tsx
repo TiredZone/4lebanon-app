@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
@@ -102,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SectionPage({ params, searchParams }: PageProps) {
   const { slug } = await params
   const { page: pageParam } = await searchParams
-  const page = parseInt(pageParam || '1', 10)
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1)
 
   const section = await getSection(slug)
 
@@ -198,25 +199,25 @@ function GlassPagination({
   return (
     <nav className="pagination-glass">
       {currentPage > 1 && (
-        <a href={`${baseUrl}?page=${currentPage - 1}`} className={darkStyles}>
+        <Link href={`${baseUrl}?page=${currentPage - 1}`} className={darkStyles}>
           السابق
-        </a>
+        </Link>
       )}
 
       {pages.map((pageNum) => (
-        <a
+        <Link
           key={pageNum}
           href={`${baseUrl}?page=${pageNum}`}
           className={`${pageNum === currentPage ? 'active' : ''} ${isDark && pageNum !== currentPage ? darkStyles : ''}`}
         >
           {pageNum}
-        </a>
+        </Link>
       ))}
 
       {currentPage < totalPages && (
-        <a href={`${baseUrl}?page=${currentPage + 1}`} className={darkStyles}>
+        <Link href={`${baseUrl}?page=${currentPage + 1}`} className={darkStyles}>
           التالي
-        </a>
+        </Link>
       )}
     </nav>
   )

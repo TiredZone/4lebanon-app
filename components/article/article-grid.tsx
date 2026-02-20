@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { ArticleCard } from './article-card'
 import type { ArticleListItem } from '@/types/database'
 
@@ -75,7 +76,7 @@ export function SectionGrid({ title, titleHref, articles, columns = 3 }: Section
       <div className="mb-6 flex items-center justify-between">
         <h2 className="section-heading text-xl font-bold text-black">{title}</h2>
         {titleHref && (
-          <a
+          <Link
             href={titleHref}
             className="flex items-center gap-1 text-sm font-bold text-black hover:underline"
           >
@@ -88,7 +89,7 @@ export function SectionGrid({ title, titleHref, articles, columns = 3 }: Section
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-          </a>
+          </Link>
         )}
       </div>
       <ArticleGrid articles={articles} columns={columns} />

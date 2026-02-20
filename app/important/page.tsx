@@ -1,30 +1,45 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { PAGINATION } from '@/lib/constants'
 import { GlassEditorialCard } from '@/components/glass-editorial-card'
 import type { ArticleListItem } from '@/types/database'
 
+export const metadata: Metadata = {
+  title: 'الأخبار المهمة',
+  description: 'أهم الأخبار العاجلة والمميزة',
+}
+
 export const revalidate = 60
 
-async function getImportantArticles() {
+interface PageProps {
+  searchParams: Promise<{ page?: string }>
+}
+
+async function getImportantArticles(page: number = 1) {
   const supabase = await createClient()
   const now = new Date().toISOString()
+  const perPage = PAGINATION.defaultPageSize
+  const offset = (page - 1) * perPage
 
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from('articles')
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
       author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
-    `
+    `,
+      { count: 'exact' }
     )
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
     .or('is_featured.eq.true,is_breaking.eq.true')
     .order('published_at', { ascending: false })
-    .limit(18)
+    .range(offset, offset + perPage - 1)
 
-  return ((data || []) as Record<string, unknown>[]).map((article) => ({
+  const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
     id: article.id as string,
     slug: article.slug as string,
     title_ar: article.title_ar as string,
@@ -36,10 +51,15 @@ async function getImportantArticles() {
     author: article.author as ArticleListItem['author'],
     section: article.section as ArticleListItem['section'],
   }))
+
+  return { articles, total: count || 0 }
 }
 
-export default async function ImportantNewsPage() {
-  const articles = await getImportantArticles()
+export default async function ImportantNewsPage({ searchParams }: PageProps) {
+  const { page: pageParam } = await searchParams
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1)
+  const { articles, total } = await getImportantArticles(page)
+  const totalPages = Math.ceil(total / PAGINATION.defaultPageSize)
 
   return (
     <div className="category-page-bg">
@@ -52,11 +72,17 @@ export default async function ImportantNewsPage() {
 
         {/* Articles Grid - 3x3 Fluid */}
         {articles.length > 0 ? (
-          <div className="category-grid">
-            {articles.map((article, index) => (
-              <GlassEditorialCard key={article.id} article={article} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="category-grid">
+              {articles.map((article, index) => (
+                <GlassEditorialCard key={article.id} article={article} index={index} />
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <GlassPagination currentPage={page} totalPages={totalPages} baseUrl="/important" />
+            )}
+          </>
         ) : (
           <div className="glass-editorial-card mx-auto max-w-md p-8 text-center">
             <p className="text-gray-500">لا توجد أخبار مهمة حالياً.</p>
@@ -64,5 +90,47 @@ export default async function ImportantNewsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function GlassPagination({
+  currentPage,
+  totalPages,
+  baseUrl,
+}: {
+  currentPage: number
+  totalPages: number
+  baseUrl: string
+}) {
+  const pages = []
+  const maxVisible = 5
+
+  let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+  const end = Math.min(totalPages, start + maxVisible - 1)
+
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1)
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  return (
+    <nav className="pagination-glass">
+      {currentPage > 1 && <Link href={`${baseUrl}?page=${currentPage - 1}`}>السابق</Link>}
+
+      {pages.map((pageNum) => (
+        <Link
+          key={pageNum}
+          href={`${baseUrl}?page=${pageNum}`}
+          className={pageNum === currentPage ? 'active' : ''}
+        >
+          {pageNum}
+        </Link>
+      ))}
+
+      {currentPage < totalPages && <Link href={`${baseUrl}?page=${currentPage + 1}`}>التالي</Link>}
+    </nav>
   )
 }

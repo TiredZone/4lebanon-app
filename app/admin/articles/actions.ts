@@ -92,12 +92,16 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
 
   // Insert article topics
   if (validatedData.topic_ids.length > 0) {
-    await supabase.from('article_topics').insert(
+    const { error: topicsError } = await supabase.from('article_topics').insert(
       validatedData.topic_ids.map((topic_id) => ({
         article_id: articleId,
         topic_id,
       }))
     )
+    if (topicsError) {
+      console.error('Error inserting article topics:', topicsError)
+      // Article was created successfully, just topics failed - don't fail the whole operation
+    }
   }
 
   // Revalidate paths
@@ -125,7 +129,7 @@ export async function updateArticle(
     return { error: 'يجب تسجيل الدخول' }
   }
 
-  // Validate article ID
+  // Validate article ID first (fast check)
   const idValidation = UUIDSchema.safeParse(articleId)
   if (!idValidation.success) {
     await logSecurityEvent('invalid_input', {
@@ -136,7 +140,36 @@ export async function updateArticle(
     return { error: 'معرف المقال غير صالح' }
   }
 
-  // Rate limiting
+  // AUTHORIZATION CHECK FIRST - verify ownership before expensive operations
+  const { data: existingArticle, error: fetchError } = await supabase
+    .from('articles')
+    .select('author_id, slug, status, title_ar')
+    .eq('id', articleId)
+    .single()
+
+  // Use generic error message to prevent article enumeration
+  if (fetchError || !existingArticle) {
+    return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
+  }
+
+  const existing = existingArticle as {
+    author_id: string
+    slug: string
+    status: string
+    title_ar: string
+  }
+
+  if (existing.author_id !== user.id) {
+    await logSecurityEvent('unauthorized_access', {
+      action: 'updateArticle',
+      userId: user.id,
+      attemptedArticleId: articleId,
+    })
+    // Use same error message to prevent article enumeration
+    return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
+  }
+
+  // Rate limiting - after authorization check
   const clientId = await getClientIdentifier()
   const rateLimit = checkRateLimit(clientId, 'create')
   if (!rateLimit.allowed) {
@@ -157,33 +190,6 @@ export async function updateArticle(
   }
 
   const validatedData = validationResult.data
-
-  // Verify ownership
-  const { data: existingArticle } = await supabase
-    .from('articles')
-    .select('author_id, slug, status, title_ar')
-    .eq('id', articleId)
-    .single()
-
-  if (!existingArticle) {
-    return { error: 'المقال غير موجود' }
-  }
-
-  const existing = existingArticle as {
-    author_id: string
-    slug: string
-    status: string
-    title_ar: string
-  }
-
-  if (existing.author_id !== user.id) {
-    await logSecurityEvent('unauthorized_access', {
-      action: 'updateArticle',
-      userId: user.id,
-      attemptedArticleId: articleId,
-    })
-    return { error: 'ليس لديك صلاحية لتعديل هذا المقال' }
-  }
 
   const oldSlug = existing.slug
   const wasPublished = existing.status === 'published'
@@ -223,15 +229,29 @@ export async function updateArticle(
   }
 
   // Update article topics (delete existing, insert new)
-  await supabase.from('article_topics').delete().eq('article_id', articleId)
+  // Handle this more safely - delete first, then insert, with error handling
+  const { error: deleteTopicsError } = await supabase
+    .from('article_topics')
+    .delete()
+    .eq('article_id', articleId)
+
+  if (deleteTopicsError) {
+    console.error('Error deleting article topics:', deleteTopicsError)
+    // Don't fail the whole operation - topics deletion is non-critical
+  }
 
   if (validatedData.topic_ids.length > 0) {
-    await supabase.from('article_topics').insert(
+    const { error: insertTopicsError } = await supabase.from('article_topics').insert(
       validatedData.topic_ids.map((topic_id) => ({
         article_id: articleId,
         topic_id,
       }))
     )
+
+    if (insertTopicsError) {
+      console.error('Error inserting article topics:', insertTopicsError)
+      // Article was updated successfully, just topics failed
+    }
   }
 
   // Revalidate paths
@@ -268,15 +288,16 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
     return { error: 'معرف المقال غير صالح' }
   }
 
-  // Verify ownership and get slug for revalidation
-  const { data: article } = await supabase
+  // Verify ownership and get slug for revalidation - authorization first
+  const { data: article, error: fetchError } = await supabase
     .from('articles')
     .select('author_id, slug')
     .eq('id', articleId)
     .single()
 
-  if (!article) {
-    return { error: 'المقال غير موجود' }
+  // Use generic error message to prevent article enumeration
+  if (fetchError || !article) {
+    return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
   }
 
   const articleData = article as { author_id: string; slug: string }
@@ -287,7 +308,8 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
       userId: user.id,
       attemptedArticleId: articleId,
     })
-    return { error: 'ليس لديك صلاحية لحذف هذا المقال' }
+    // Use same error message to prevent article enumeration
+    return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
   }
 
   // Delete article (cascades to article_topics)

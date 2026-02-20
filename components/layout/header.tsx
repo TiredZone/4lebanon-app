@@ -28,6 +28,18 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileMenuOpen])
+
   // Find active index for mobile menu
   const activeIndex = NAV_ITEMS.findIndex(
     (item) => pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
@@ -294,18 +306,18 @@ export function Header() {
                     اتصل بنا
                   </Link>
                   <Link
-                    href="/privacy"
+                    href="/writers"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
-                    الشكاوى
+                    كتّابنا
                   </Link>
                   <Link
-                    href="/terms"
+                    href="/recent"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
                   >
-                    أعلن معنا
+                    آخر الأخبار
                   </Link>
                 </div>
               </div>
@@ -315,8 +327,4 @@ export function Header() {
       </AnimatePresence>
     </>
   )
-}
-
-export function HeaderMobile() {
-  return null // No longer needed as search is in hamburger menu
 }

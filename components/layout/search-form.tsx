@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
-import { getStorageUrl } from '@/lib/utils'
+import { getStorageUrl, escapeIlike } from '@/lib/utils'
 
 interface SearchFormProps {
   onSearch?: () => void
@@ -28,6 +28,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
   const [isSearching, setIsSearching] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
+  const latestRequestRef = useRef(0)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,6 +53,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
       setIsSearching(true)
       setShowResults(true)
 
+      const requestId = ++latestRequestRef.current
       const supabase = createClient()
       const now = new Date().toISOString()
       const { data } = await supabase
@@ -62,15 +64,18 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
           section:sections!articles_section_id_fkey(name_ar, slug)
         `
         )
-        .ilike('title_ar', `%${query.trim()}%`)
+        .ilike('title_ar', `%${escapeIlike(query.trim())}%`)
         .eq('status', 'published')
         .not('published_at', 'is', null)
         .lte('published_at', now)
         .order('published_at', { ascending: false })
         .limit(5)
 
-      setResults((data as unknown as SearchResult[]) || [])
-      setIsSearching(false)
+      // Only apply results if this is still the latest request
+      if (requestId === latestRequestRef.current) {
+        setResults((data as unknown as SearchResult[]) || [])
+        setIsSearching(false)
+      }
     }
 
     const debounce = setTimeout(searchArticles, 200)
@@ -142,10 +147,10 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
                   }}
                   className="flex gap-3 border-b border-gray-100 px-4 py-3 transition-colors last:border-0 hover:bg-gray-50"
                 >
-                  {article.cover_image_path && (
+                  {article.cover_image_path && getStorageUrl(article.cover_image_path) && (
                     <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded">
                       <Image
-                        src={getStorageUrl(article.cover_image_path)}
+                        src={getStorageUrl(article.cover_image_path)!}
                         alt={article.title_ar}
                         fill
                         className="object-cover"

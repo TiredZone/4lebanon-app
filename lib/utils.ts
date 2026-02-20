@@ -31,6 +31,9 @@ const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأ
 export function formatDateAr(date: string | Date, formatStr: string = 'dd MMMM yyyy') {
   const d = typeof date === 'string' ? new Date(date) : date
 
+  // Handle invalid dates
+  if (isNaN(d.getTime())) return ''
+
   const day = d.getDate()
   const month = ARABIC_MONTHS[d.getMonth()]
   const year = d.getFullYear()
@@ -137,15 +140,20 @@ export function extractTextFromMarkdown(markdown: string): string {
     .replace(/#+\s/g, '') // Headers
     .replace(/\*\*([^*]+)\*\*/g, '$1') // Bold
     .replace(/\*([^*]+)\*/g, '$1') // Italic
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // Images (must come BEFORE links)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Links
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // Images
-    .replace(/`([^`]+)`/g, '$1') // Inline code
     .replace(/```[\s\S]*?```/g, '') // Code blocks
+    .replace(/`([^`]+)`/g, '$1') // Inline code
     .replace(/>\s/g, '') // Blockquotes
     .replace(/[-*+]\s/g, '') // List items
     .replace(/\d+\.\s/g, '') // Numbered lists
     .replace(/\n+/g, ' ') // Newlines to space
     .trim()
+}
+
+// Escape special characters for Supabase/PostgreSQL ilike patterns
+export function escapeIlike(input: string): string {
+  return input.replace(/[\\%_]/g, (ch) => `\\${ch}`)
 }
 
 // Truncate text with ellipsis
@@ -155,13 +163,17 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 // Get Supabase storage public URL (also supports external URLs)
-export function getStorageUrl(path: string | null): string {
-  if (!path) return '/placeholder.png'
+// Returns null when path is null/empty so callers can decide fallback behavior
+export function getStorageUrl(path: string | null | undefined): string | null {
+  if (!path) return null
   // If it's already a full URL, return as-is
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path
   }
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) return null
+  // Storage paths are already properly formatted - don't encode the whole path
+  // as it would double-encode any existing percent-encoded characters
   return `${supabaseUrl}/storage/v1/object/public/article-images/${path}`
 }
 
@@ -225,14 +237,8 @@ export function formatDateLatinAr(date: string | Date): string {
   return `${day} ${month} ${year}`
 }
 
-// Format date with Levantine month names and Latin numerals (for mobile cards)
-export function formatLevantineDate(date: string | Date): string {
-  const d = typeof date === 'string' ? new Date(date) : date
-  const day = d.getDate()
-  const month = ARABIC_MONTHS[d.getMonth()]
-  const year = d.getFullYear()
-  return `${day} ${month} ${year}`
-}
+// Alias for formatDateLatinAr (same format)
+export const formatLevantineDate = formatDateLatinAr
 
 // Get article status label in Arabic
 export function getStatusLabelAr(status: string): string {

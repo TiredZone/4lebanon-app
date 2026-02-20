@@ -24,7 +24,7 @@ export function RecommendedArticles({ articles }: RecommendedArticlesProps) {
               className="recommended-card group"
             >
               <div className="card-image">
-                {imageUrl && imageUrl !== '/placeholder.png' ? (
+                {imageUrl ? (
                   <Image
                     src={imageUrl}
                     alt={article.title_ar}

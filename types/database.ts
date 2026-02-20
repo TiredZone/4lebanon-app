@@ -79,7 +79,7 @@ export interface ArticleTopic {
 
 // Extended types with relations
 export interface ArticleWithRelations extends Article {
-  author: Profile
+  author: Profile | null // Can be null if author was deleted
   section: Section | null
   region: Region | null
   country: Country | null
@@ -95,14 +95,14 @@ export interface ArticleListItem {
   published_at: string | null
   is_breaking: boolean
   is_featured: boolean
-  author: Pick<Profile, 'id' | 'display_name_ar' | 'avatar_url'>
+  author: Pick<Profile, 'id' | 'display_name_ar' | 'avatar_url'> | null // Can be null if author was deleted
   section: Pick<Section, 'id' | 'slug' | 'name_ar'> | null
 }
 
 // Utility types for forms
 export interface ArticleFormData {
   title_ar: string
-  excerpt_ar: string
+  excerpt_ar: string | null // Can be null or undefined - matches Zod schema
   body_md: string
   cover_image_path: string | null
   section_id: number | null

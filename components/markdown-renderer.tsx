@@ -16,12 +16,33 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
         components={{
-          // Custom link component for external links
+          // Custom link component for external links with URL validation
           a: ({ href, children, ...props }) => {
-            const isExternal = href?.startsWith('http')
+            // Validate URL to prevent XSS via javascript: or data: URLs
+            const isValidUrl = (url: string | undefined): boolean => {
+              if (!url) return false
+              // Allow relative URLs
+              if (url.startsWith('/') || url.startsWith('#')) return true
+              // Only allow http/https protocols
+              try {
+                const parsed = new URL(url)
+                return ['http:', 'https:'].includes(parsed.protocol)
+              } catch {
+                return false
+              }
+            }
+
+            const safeHref = isValidUrl(href) ? href : undefined
+            const isExternal = safeHref?.startsWith('http')
+
+            if (!safeHref) {
+              // Invalid URL - render as plain text
+              return <span {...props}>{children}</span>
+            }
+
             return (
               <a
-                href={href}
+                href={safeHref}
                 target={isExternal ? '_blank' : undefined}
                 rel={isExternal ? 'noopener noreferrer' : undefined}
                 {...props}
@@ -30,24 +51,44 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               </a>
             )
           },
-          // Custom image component
-          img: ({ src, alt, ...props }) => (
-            <figure className="my-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt={alt || ''}
-                className="mx-auto max-w-full rounded-lg"
-                loading="lazy"
-                {...props}
-              />
-              {alt && (
-                <figcaption className="text-muted-foreground mt-2 text-center text-sm">
-                  {alt}
-                </figcaption>
-              )}
-            </figure>
-          ),
+          // Custom image component with URL validation
+          img: ({ src, alt, ...props }) => {
+            // Validate image source - only accept strings, not Blobs
+            const isValidSrc = (url: string | undefined): boolean => {
+              if (!url) return false
+              if (url.startsWith('/')) return true // Relative URL
+              if (url.startsWith('data:image/')) return true // Data URL for images only
+              try {
+                const parsed = new URL(url)
+                return ['http:', 'https:'].includes(parsed.protocol)
+              } catch {
+                return false
+              }
+            }
+
+            // Handle case where src might be a Blob (we only accept string URLs)
+            const srcString = typeof src === 'string' ? src : undefined
+            const safeSrc = isValidSrc(srcString) ? srcString : undefined
+            if (!safeSrc) return null
+
+            return (
+              <figure className="my-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={safeSrc}
+                  alt={alt || ''}
+                  className="mx-auto max-w-full rounded-lg"
+                  loading="lazy"
+                  {...props}
+                />
+                {alt && (
+                  <figcaption className="text-muted-foreground mt-2 text-center text-sm">
+                    {alt}
+                  </figcaption>
+                )}
+              </figure>
+            )
+          },
           // Custom blockquote
           blockquote: ({ children, ...props }) => (
             <blockquote

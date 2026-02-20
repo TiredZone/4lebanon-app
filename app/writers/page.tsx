@@ -1,17 +1,37 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getStorageUrl } from '@/lib/utils'
 import type { Profile } from '@/types/database'
 
+export const metadata: Metadata = {
+  title: 'كتّابنا',
+  description: 'تعرّف على الكتّاب والصحفيين في فريق 4 لبنان',
+}
+
 export const revalidate = 120
 
 async function getAllWriters() {
   const supabase = await createClient()
+  const now = new Date().toISOString()
+
+  // Only show authors who have at least one published article
+  const { data: authorRows } = await supabase
+    .from('articles')
+    .select('author_id')
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
+
+  const uniqueAuthorIds = [...new Set((authorRows || []).map((r) => r.author_id).filter(Boolean))]
+
+  if (uniqueAuthorIds.length === 0) return []
 
   const { data } = await supabase
     .from('profiles')
     .select('*')
+    .in('id', uniqueAuthorIds)
     .order('display_name_ar', { ascending: true })
 
   return (data || []) as Profile[]
@@ -41,9 +61,9 @@ export default async function WritersPage() {
               >
                 {/* Avatar */}
                 <div className="author-avatar">
-                  {writer.avatar_url ? (
+                  {writer.avatar_url && getStorageUrl(writer.avatar_url) ? (
                     <Image
-                      src={getStorageUrl(writer.avatar_url)}
+                      src={getStorageUrl(writer.avatar_url)!}
                       alt={writer.display_name_ar}
                       width={120}
                       height={120}

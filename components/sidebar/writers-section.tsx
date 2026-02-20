@@ -53,7 +53,7 @@ export async function WritersSection() {
         })}
       </div>
       <Link
-        href="/authors"
+        href="/writers"
         className="text-primary mt-4 block text-center text-sm font-medium hover:underline"
       >
         عرض الكل

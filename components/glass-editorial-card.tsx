@@ -28,7 +28,7 @@ export function GlassEditorialCard({
       <div className="card-image">
         {article.cover_image_path ? (
           <Image
-            src={getStorageUrl(article.cover_image_path)}
+            src={getStorageUrl(article.cover_image_path)!}
             alt={article.title_ar}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

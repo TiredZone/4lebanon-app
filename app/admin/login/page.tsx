@@ -5,10 +5,21 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
+function isValidRedirect(path: string | null): boolean {
+  if (!path) return false
+  // Only allow internal paths that start with /admin
+  if (!path.startsWith('/admin')) return false
+  // Block any URLs with protocol or external redirects
+  if (path.includes('://') || path.startsWith('//')) return false
+  return true
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/admin'
+  const rawRedirect = searchParams.get('redirect')
+  // Sanitize redirect URL - only allow safe internal paths
+  const redirectTo = isValidRedirect(rawRedirect) ? rawRedirect! : '/admin'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

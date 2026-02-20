@@ -16,7 +16,7 @@ export function ToastProvider() {
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           borderRadius: '0.5rem',
           padding: '1rem',
-          fontFamily: 'var(--font-noto-kufi-arabic)',
+          fontFamily: 'var(--font-cairo), sans-serif',
         },
         success: {
           duration: 3000,

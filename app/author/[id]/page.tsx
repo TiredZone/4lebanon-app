@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
@@ -89,7 +90,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function AuthorPage({ params, searchParams }: PageProps) {
   const { id } = await params
   const { page: pageParam } = await searchParams
-  const page = parseInt(pageParam || '1', 10)
+  const page = Math.max(1, parseInt(pageParam || '1', 10) || 1)
 
   const author = await getAuthor(id)
 
@@ -185,16 +186,16 @@ function Pagination({
   return (
     <nav className="mt-8 flex items-center justify-center gap-2">
       {currentPage > 1 && (
-        <a
+        <Link
           href={`${baseUrl}?page=${currentPage - 1}`}
           className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
         >
           السابق
-        </a>
+        </Link>
       )}
 
       {pages.map((pageNum) => (
-        <a
+        <Link
           key={pageNum}
           href={`${baseUrl}?page=${pageNum}`}
           className={`rounded-lg px-4 py-2 text-sm font-medium ${
@@ -204,16 +205,16 @@ function Pagination({
           }`}
         >
           {pageNum}
-        </a>
+        </Link>
       ))}
 
       {currentPage < totalPages && (
-        <a
+        <Link
           href={`${baseUrl}?page=${currentPage + 1}`}
           className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
         >
           التالي
-        </a>
+        </Link>
       )}
     </nav>
   )

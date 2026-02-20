@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getStorageUrl, toLatinNumbers, formatDateAr } from '@/lib/utils'
+import { getStorageUrl, formatDateAr } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
 import WritersCarousel from '@/components/writers-carousel'
@@ -55,20 +55,17 @@ async function getHomepageData() {
     .select('id, slug, name_ar')
     .order('sort_order', { ascending: true })
 
-  // Fetch articles for each section dynamically
-  const sectionsWithArticles: { slug: string; name_ar: string; articles: ArticleListItem[] }[] = []
+  // Fetch articles for each section dynamically (in parallel to avoid N+1)
+  let sectionsWithArticles: { slug: string; name_ar: string; articles: ArticleListItem[] }[] = []
 
   if (allSections) {
-    for (const section of allSections) {
-      const articles = await getSectionArticles(section.slug, 6)
-      if (articles.length > 0) {
-        sectionsWithArticles.push({
-          slug: section.slug,
-          name_ar: section.name_ar,
-          articles,
-        })
-      }
-    }
+    const sectionResults = await Promise.all(
+      allSections.map(async (section) => {
+        const articles = await getSectionArticlesById(section.id, 6)
+        return { slug: section.slug, name_ar: section.name_ar, articles }
+      })
+    )
+    sectionsWithArticles = sectionResults.filter((s) => s.articles.length > 0)
   }
 
   // Fetch writers/authors
@@ -89,29 +86,37 @@ async function getHomepageData() {
     .order('published_at', { ascending: false })
     .limit(10)
 
+  // Fetch most-read articles (by view_count, not recent)
+  const { data: mostReadArticles } = await supabase
+    .from('articles')
+    .select(
+      `
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+      section:sections!articles_section_id_fkey(id, name_ar)
+    `
+    )
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
+    .order('view_count', { ascending: false })
+    .limit(5)
+
   return {
     recent: transformArticles((recentArticles || []) as Record<string, unknown>[]),
     important: transformArticles((importantArticles || []) as Record<string, unknown>[]),
+    mostRead: transformArticles((mostReadArticles || []) as Record<string, unknown>[]),
     writers: writersData || [],
     sectionsWithArticles,
     breakingNews: (breakingNews || []) as { id: string; slug: string; title_ar: string }[],
   }
 }
 
-async function getSectionArticles(
-  sectionSlug: string,
+async function getSectionArticlesById(
+  sectionId: number,
   limit: number = 6
 ): Promise<ArticleListItem[]> {
   const supabase = await createClient()
   const now = new Date().toISOString()
-
-  const { data: sectionData } = await supabase
-    .from('sections')
-    .select('id')
-    .eq('slug', sectionSlug)
-    .single()
-
-  if (!sectionData) return []
 
   const { data } = await supabase
     .from('articles')
@@ -122,7 +127,7 @@ async function getSectionArticles(
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `
     )
-    .eq('section_id', sectionData.id)
+    .eq('section_id', sectionId)
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
@@ -260,7 +265,7 @@ export default async function Home() {
                     <div className="relative h-[250px] w-full sm:h-[350px] md:h-[400px] lg:h-[500px] xl:h-[550px]">
                       {article.cover_image_path ? (
                         <Image
-                          src={getStorageUrl(article.cover_image_path)}
+                          src={getStorageUrl(article.cover_image_path)!}
                           alt={article.title_ar}
                           fill
                           className="object-cover object-center"
@@ -326,7 +331,7 @@ export default async function Home() {
                       <div className="relative h-48 w-full sm:h-56 md:h-64 lg:h-72">
                         {article.cover_image_path ? (
                           <Image
-                            src={getStorageUrl(article.cover_image_path)}
+                            src={getStorageUrl(article.cover_image_path)!}
                             alt={article.title_ar}
                             fill
                             className="object-cover object-center"
@@ -417,7 +422,7 @@ export default async function Home() {
                       {article.cover_image_path ? (
                         <>
                           <Image
-                            src={getStorageUrl(article.cover_image_path)}
+                            src={getStorageUrl(article.cover_image_path)!}
                             alt={article.title_ar}
                             fill
                             className="object-cover object-center"
@@ -468,7 +473,7 @@ export default async function Home() {
                     {section.articles[0].cover_image_path ? (
                       <>
                         <Image
-                          src={getStorageUrl(section.articles[0].cover_image_path)}
+                          src={getStorageUrl(section.articles[0].cover_image_path)!}
                           alt={section.articles[0].title_ar}
                           fill
                           className="object-cover object-center"
@@ -535,15 +540,15 @@ export default async function Home() {
           {/* Asymmetric Grid: 40% Right (#1 Hero) + 60% Left (List 2-5) */}
           <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[40%_60%] lg:gap-8">
             {/* Right Side - #1 Ranked Hero (Half Size) */}
-            {data.recent[0] && (
-              <Link href={`/article/${data.recent[0].slug}`} className="group relative">
+            {data.mostRead[0] && (
+              <Link href={`/article/${data.mostRead[0].slug}`} className="group relative">
                 <div className="relative overflow-hidden rounded-3xl shadow-xl transition-shadow duration-300 group-hover:shadow-2xl">
                   {/* Hero Image - Reduced to Half Size */}
-                  {data.recent[0].cover_image_path ? (
+                  {data.mostRead[0].cover_image_path ? (
                     <div className="relative aspect-square overflow-hidden">
                       <Image
-                        src={getStorageUrl(data.recent[0].cover_image_path)}
-                        alt={data.recent[0].title_ar}
+                        src={getStorageUrl(data.mostRead[0].cover_image_path)!}
+                        alt={data.mostRead[0].title_ar}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
@@ -580,23 +585,23 @@ export default async function Home() {
                   {/* Content at Bottom */}
                   <div className="absolute right-0 bottom-0 left-0 p-4 lg:p-6">
                     {/* Category Tag */}
-                    {data.recent[0].section && (
+                    {data.mostRead[0].section && (
                       <div className="mb-2">
                         <span className="inline-block rounded-full bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
-                          {data.recent[0].section.name_ar}
+                          {data.mostRead[0].section.name_ar}
                         </span>
                       </div>
                     )}
 
                     {/* Headline */}
                     <h3 className="mb-3 text-lg leading-relaxed font-bold text-white lg:text-xl lg:leading-relaxed">
-                      {data.recent[0].title_ar}
+                      {data.mostRead[0].title_ar}
                     </h3>
 
                     {/* Excerpt */}
-                    {data.recent[0].excerpt_ar && (
+                    {data.mostRead[0].excerpt_ar && (
                       <p className="line-clamp-2 text-sm leading-relaxed text-white/80 lg:text-base lg:leading-relaxed">
-                        {data.recent[0].excerpt_ar}
+                        {data.mostRead[0].excerpt_ar}
                       </p>
                     )}
                   </div>
@@ -606,7 +611,7 @@ export default async function Home() {
 
             {/* Left Side - Ranked List (02-05) - Only Top 5 */}
             <div className="space-y-3 sm:space-y-4">
-              {data.recent.slice(1, 5).map((article, index) => {
+              {data.mostRead.slice(1, 5).map((article, index) => {
                 const rankNumber = (index + 2).toString().padStart(2, '0')
                 return (
                   <Link
@@ -618,7 +623,7 @@ export default async function Home() {
                     {article.cover_image_path ? (
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                         <Image
-                          src={getStorageUrl(article.cover_image_path)}
+                          src={getStorageUrl(article.cover_image_path)!}
                           alt={article.title_ar}
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-110"

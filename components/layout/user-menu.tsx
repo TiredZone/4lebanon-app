@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -31,6 +31,18 @@ export function UserMenu() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Close dropdown on Escape key
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setIsOpen(false)
+  }, [])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey)
+      return () => document.removeEventListener('keydown', handleEscapeKey)
+    }
+  }, [isOpen, handleEscapeKey])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -72,7 +84,9 @@ export function UserMenu() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="group flex h-10 w-10 items-center justify-center rounded-full bg-[#c61b23] font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-[#8a1219] hover:shadow-lg"
-        aria-label="User Menu"
+        aria-label="قائمة المستخدم"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         <svg
           className="h-5 w-5 transition-transform group-hover:scale-110"
@@ -92,7 +106,10 @@ export function UserMenu() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
-          <div className="absolute left-0 z-20 mt-2 w-48 rounded-lg bg-white shadow-lg">
+          <div
+            className="absolute right-0 z-20 mt-2 w-48 rounded-lg bg-white shadow-lg"
+            role="menu"
+          >
             <div className="border-b border-gray-200 p-3">
               <p className="text-sm font-medium text-gray-900">{user.email}</p>
             </div>

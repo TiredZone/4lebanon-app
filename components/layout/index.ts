@@ -1,4 +1,4 @@
-export { Header, HeaderMobile } from './header'
+export { Header } from './header'
 export { NavBar } from './nav-bar'
 export { Footer } from './footer'
 export { MobileTabBar } from './mobile-tab-bar'

@@ -81,6 +81,9 @@ function SignupForm() {
       setTimeout(() => {
         router.push('/admin/login')
       }, 2000)
+    } else {
+      setError('حدث خطأ أثناء التسجيل. يرجى المحاولة مرة أخرى.')
+      setLoading(false)
     }
   }
 

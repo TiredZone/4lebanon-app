@@ -10,19 +10,19 @@ export function NewsletterForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
-    if (!email || !email.includes('@')) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!email || !emailRegex.test(email)) {
       toast.error('الرجاء إدخال بريد إلكتروني صحيح')
       return
     }
 
     setLoading(true)
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Success
-      toast.success('تم الاشتراك بنجاح! شكراً لك')
+      // TODO: Replace with actual newsletter API endpoint when available
+      // For now, show a message that the feature is coming soon
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      toast.success('شكراً لاهتمامك! خدمة النشرة البريدية قيد التطوير')
       setEmail('')
     } catch {
       toast.error('حدث خطأ. الرجاء المحاولة مرة أخرى')

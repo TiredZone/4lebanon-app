@@ -26,10 +26,6 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
   const decodedSlug = decodeURIComponent(slug)
   const now = new Date().toISOString()
 
-  console.log('=== ARTICLE FETCH DEBUG ===')
-  console.log('Raw slug:', slug)
-  console.log('Decoded slug:', decodedSlug)
-
   // Use explicit foreign key names like homepage does
   const { data, error } = await supabase
     .from('articles')
@@ -46,22 +42,30 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
     .lte('published_at', now)
     .single()
 
-  console.log('Query result - data:', data ? 'found' : 'null')
-  console.log('Query result - error:', error ? JSON.stringify(error) : 'none')
-
   if (error) {
-    console.error('Error fetching article:', error.message, error.details, error.hint)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching article:', error.message, error.details, error.hint)
+    }
     return null
   }
 
   if (!data) return null
 
-  // Return with empty defaults for unused relations
+  // Fetch topics through the article_topics join table
+  const { data: topicRows } = await supabase
+    .from('article_topics')
+    .select('topic:topics(id, slug, name_ar, sort_order, created_at)')
+    .eq('article_id', data.id)
+
+  const topics: Topic[] = (topicRows || [])
+    .map((row) => (row as unknown as { topic: Topic }).topic)
+    .filter(Boolean)
+
   return {
     ...data,
     region: null,
     country: null,
-    topics: [],
+    topics,
   } as ArticleWithRelations
 }
 
@@ -88,7 +92,7 @@ async function getRelatedArticles(
     .order('published_at', { ascending: false })
     .limit(PAGINATION.relatedArticlesCount)
 
-  if (sectionId) {
+  if (sectionId !== null) {
     query = query.eq('section_id', sectionId)
   }
 
@@ -136,7 +140,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: article.excerpt_ar || article.title_ar,
       type: 'article',
       publishedTime: article.published_at || undefined,
-      authors: [article.author.display_name_ar],
+      authors: article.author?.display_name_ar ? [article.author.display_name_ar] : undefined,
       images: imageUrl ? [{ url: imageUrl, width: 1200, height: 630 }] : undefined,
     },
     twitter: {
@@ -157,7 +161,7 @@ export default async function ArticlePage({ params }: PageProps) {
   }
 
   // Increment view count (non-blocking)
-  incrementViewCount(article.id)
+  void incrementViewCount(article.id)
 
   const relatedArticles = await getRelatedArticles(article.id, article.section_id)
   const imageUrl = getStorageUrl(article.cover_image_path)
@@ -213,27 +217,31 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Metadata Glass Pill */}
             <div className="article-meta-pill">
-              <Link
-                href={`/author/${article.author.id}`}
-                className="flex items-center gap-2 hover:opacity-80"
-              >
-                <div className="author-avatar">
-                  {article.author.avatar_url ? (
-                    <Image
-                      src={getStorageUrl(article.author.avatar_url)!}
-                      alt={article.author.display_name_ar}
-                      width={36}
-                      height={36}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
-                      {article.author.display_name_ar.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <span className="author-name">{article.author.display_name_ar}</span>
-              </Link>
+              {article.author ? (
+                <Link
+                  href={`/author/${article.author.id}`}
+                  className="flex items-center gap-2 hover:opacity-80"
+                >
+                  <div className="author-avatar">
+                    {article.author.avatar_url ? (
+                      <Image
+                        src={getStorageUrl(article.author.avatar_url) || '/placeholder.png'}
+                        alt={article.author.display_name_ar}
+                        width={36}
+                        height={36}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
+                        {article.author.display_name_ar?.charAt(0) || 'ك'}
+                      </div>
+                    )}
+                  </div>
+                  <span className="author-name">{article.author.display_name_ar}</span>
+                </Link>
+              ) : (
+                <span className="text-gray-500">كاتب غير معروف</span>
+              )}
 
               <span className="separator" />
 
@@ -277,9 +285,7 @@ export default async function ArticlePage({ params }: PageProps) {
             )}
 
             {/* Hero Image */}
-            {imageUrl && imageUrl !== '/placeholder.png' && (
-              <ArticleHeroImage src={imageUrl} alt={article.title_ar} />
-            )}
+            {imageUrl && <ArticleHeroImage src={imageUrl} alt={article.title_ar} />}
 
             {/* Article Glass Container */}
             <div className="article-glass-container">

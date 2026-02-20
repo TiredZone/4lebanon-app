@@ -7,8 +7,26 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 // Max file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
-// Rate limiting
+// Rate limiting with automatic cleanup to prevent memory leaks
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+// Cleanup expired entries every 60 seconds to prevent memory leaks
+let cleanupInterval: ReturnType<typeof setInterval> | null = null
+function ensureCleanupInterval() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, entry] of rateLimitMap.entries()) {
+        if (entry.resetTime < now) {
+          rateLimitMap.delete(key)
+        }
+      }
+    }, 60000)
+    // Allow process to exit even if interval is running
+    if (cleanupInterval.unref) cleanupInterval.unref()
+  }
+}
+ensureCleanupInterval()
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()

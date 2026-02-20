@@ -330,7 +330,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
                 )}
 
                 {/* Date - pushed to the end */}
-                <span className="mr-auto text-xs text-slate-400">
+                <span className="ml-auto text-xs text-slate-400">
                   {formatDateAr(article.updated_at, 'dd/MM/yyyy HH:mm')}
                 </span>
               </div>

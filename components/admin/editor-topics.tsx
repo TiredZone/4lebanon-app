@@ -64,15 +64,23 @@ export function EditorTopics({ topics, selectedTopics, onChange }: EditorTopicsP
   return (
     <div ref={containerRef} className="editor-topics-container">
       {/* Trigger */}
-      <div
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`editor-topics-trigger ${isOpen ? 'open' : ''}`}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
       >
         {selectedTopicObjects.length > 0 ? (
           selectedTopicObjects.map((topic) => (
             <span key={topic.id} className="editor-topic-tag">
               {topic.name_ar}
-              <span onClick={(e) => handleRemove(topic.id, e)} className="editor-topic-tag-remove">
+              <button
+                type="button"
+                onClick={(e) => handleRemove(topic.id, e)}
+                className="editor-topic-tag-remove"
+                aria-label={`حذف ${topic.name_ar}`}
+              >
                 <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -81,13 +89,13 @@ export function EditorTopics({ topics, selectedTopics, onChange }: EditorTopicsP
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </span>
+              </button>
             </span>
           ))
         ) : (
           <span className="editor-topics-placeholder">اختر المواضيع...</span>
         )}
-      </div>
+      </button>
 
       {/* Dropdown */}
       {isOpen && (

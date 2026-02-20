@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { headers } from 'next/headers'
 
-// Secret token for webhook authentication
+// Secret token for webhook authentication - validate at startup
 const REVALIDATE_SECRET = process.env.REVALIDATE_SECRET
+if (!REVALIDATE_SECRET && process.env.NODE_ENV === 'production') {
+  console.error('[SECURITY] CRITICAL: REVALIDATE_SECRET is not set in production!')
+}
 
-// Simple in-memory rate limiting
+// Simple in-memory rate limiting with automatic cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+// Cleanup expired entries every 60 seconds to prevent memory leaks
+let cleanupInterval: ReturnType<typeof setInterval> | null = null
+function ensureCleanupInterval() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, entry] of rateLimitMap.entries()) {
+        if (entry.resetTime < now) {
+          rateLimitMap.delete(key)
+        }
+      }
+    }, 60000)
+    if (cleanupInterval.unref) cleanupInterval.unref()
+  }
+}
+ensureCleanupInterval()
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()

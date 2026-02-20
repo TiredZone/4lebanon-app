@@ -12,9 +12,13 @@ interface MostReadArticle {
 async function getMostReadArticles(): Promise<MostReadArticle[]> {
   const supabase = await createClient()
 
+  const now = new Date().toISOString()
   const { data } = await supabase
     .from('articles')
     .select('id, slug, title_ar, view_count')
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('view_count', { ascending: false })
     .limit(PAGINATION.mostReadCount)
 

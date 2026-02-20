@@ -50,9 +50,9 @@ export function ArticleEditor({
   const [excerpt, setExcerpt] = useState(article?.excerpt_ar || '')
   const [body, setBody] = useState(article?.body_md || '')
   const [coverImage, setCoverImage] = useState(article?.cover_image_path || '')
-  const [sectionId, setSectionId] = useState<number | null>(article?.section_id || null)
-  const [regionId, setRegionId] = useState<number | null>(article?.region_id || null)
-  const [countryId, setCountryId] = useState<number | null>(article?.country_id || null)
+  const [sectionId, setSectionId] = useState<number | null>(article?.section_id ?? null)
+  const [regionId, setRegionId] = useState<number | null>(article?.region_id ?? null)
+  const [countryId, setCountryId] = useState<number | null>(article?.country_id ?? null)
   const [selectedTopics, setSelectedTopics] = useState<number[]>(topicIds)
   const [status, setStatus] = useState<ArticleStatus>(article?.status || 'draft')
   // Default to current date/time for new articles, or existing date for editing
@@ -89,20 +89,26 @@ export function ArticleEditor({
     setUploading(true)
     setError(null)
 
-    const formData = new FormData()
-    formData.append('file', file)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
 
-    const result = await uploadImage(formData)
+      const result = await uploadImage(formData)
 
-    if (result.error) {
-      setError(result.error)
-    } else if (result.path) {
-      setCoverImage(result.path)
-      setSuccess('تم رفع الصورة بنجاح')
-      setTimeout(() => setSuccess(null), 3000)
+      if (result.error) {
+        setError(result.error)
+      } else if (result.path) {
+        setCoverImage(result.path)
+        setSuccess('تم رفع الصورة بنجاح')
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    } catch {
+      setError('فشل رفع الصورة. الرجاء المحاولة مرة أخرى')
+    } finally {
+      setUploading(false)
+      // Reset file input so the same file can be re-uploaded
+      e.target.value = ''
     }
-
-    setUploading(false)
   }
 
   const handleAddSource = () => {
@@ -114,9 +120,9 @@ export function ArticleEditor({
     setExcerpt(article?.excerpt_ar || '')
     setBody(article?.body_md || '')
     setCoverImage(article?.cover_image_path || '')
-    setSectionId(article?.section_id || null)
-    setRegionId(article?.region_id || null)
-    setCountryId(article?.country_id || null)
+    setSectionId(article?.section_id ?? null)
+    setRegionId(article?.region_id ?? null)
+    setCountryId(article?.country_id ?? null)
     setSelectedTopics(topicIds)
     setStatus(article?.status || 'draft')
     setPublishedAt(getDefaultPublishDate())
@@ -132,9 +138,7 @@ export function ArticleEditor({
   }
 
   const handleSourceChange = (index: number, field: 'title' | 'url', value: string) => {
-    const newSources = [...sources]
-    newSources[index][field] = value
-    setSources(newSources)
+    setSources(sources.map((source, i) => (i === index ? { ...source, [field]: value } : source)))
   }
 
   const handleRegionChange = (value: number | string | null) => {
@@ -321,7 +325,7 @@ export function ArticleEditor({
             {sources.length > 0 ? (
               <div>
                 {sources.map((source, index) => (
-                  <div key={index} className="editor-source-item">
+                  <div key={`${index}-${source.url}`} className="editor-source-item">
                     <input
                       type="text"
                       value={source.title}
@@ -594,7 +598,7 @@ export function ArticleEditor({
               <input
                 id="cover-image"
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp"
                 onChange={handleImageUpload}
                 disabled={uploading}
                 className="hidden"
@@ -670,6 +674,7 @@ export function ArticleEditor({
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
+                disabled={isPending}
                 className="editor-btn editor-btn-secondary"
               >
                 إلغاء

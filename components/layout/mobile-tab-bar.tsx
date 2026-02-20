@@ -87,7 +87,7 @@ export function MobileTabBar() {
   const pathname = usePathname()
 
   return (
-    <nav className="mobile-tab-bar lg:hidden">
+    <nav className="mobile-tab-bar lg:hidden" aria-label="التنقل السريع">
       <div className="flex items-center justify-around">
         {TAB_ITEMS.map((item) => {
           const isActive =
@@ -98,8 +98,11 @@ export function MobileTabBar() {
               key={item.href}
               href={item.href}
               className={cn('mobile-tab-item', isActive && 'mobile-tab-item-active')}
+              aria-current={isActive ? 'page' : undefined}
             >
-              <span className={cn(isActive && 'text-[var(--aura-red)]')}>{item.icon}</span>
+              <span className={cn(isActive && 'text-aura-red')} aria-hidden="true">
+                {item.icon}
+              </span>
               <span className="mt-1">{item.label}</span>
             </Link>
           )

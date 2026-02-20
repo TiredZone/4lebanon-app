@@ -11,9 +11,13 @@ interface TickerItem {
 async function getTickerItems(): Promise<TickerItem[]> {
   const supabase = await createClient()
 
+  const now = new Date().toISOString()
   const { data } = await supabase
     .from('articles')
     .select('id, slug, title_ar, published_at')
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
     .order('published_at', { ascending: false })
     .limit(12)
 
@@ -58,7 +62,7 @@ export async function LiveTicker() {
             </ul>
 
             <Link
-              href="/"
+              href="/recent"
               className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-black hover:underline"
             >
               <span>المزيد</span>

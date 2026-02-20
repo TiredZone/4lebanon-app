@@ -62,6 +62,7 @@ const BAD_USER_AGENTS = [
  * Check if an IP is blocked
  */
 export function isIPBlocked(ip: string): { blocked: boolean; reason?: string; until?: number } {
+  cleanupSecurityMaps()
   const block = blockedIPs.get(ip)
   if (!block) return { blocked: false }
 
@@ -275,7 +276,7 @@ export const ArticleSchema = z.object({
   section_id: z.number().int().positive().optional().nullable(),
   region_id: z.number().int().positive().optional().nullable(),
   country_id: z.number().int().positive().optional().nullable(),
-  status: z.enum(['draft', 'published', 'scheduled', 'archived']),
+  status: z.enum(['draft', 'published', 'scheduled']),
   published_at: z.string().datetime().optional().nullable(),
   is_breaking: z.boolean().default(false),
   is_featured: z.boolean().default(false),
@@ -324,17 +325,30 @@ interface RateLimitEntry {
 }
 
 // In-memory rate limit store (for serverless, use Redis in production)
+// NOTE: In serverless environments (Vercel), this resets on each cold start
+// and is NOT shared across instances. Use Redis for production rate limiting.
 const rateLimitStore = new Map<string, RateLimitEntry>()
+const MAX_RATE_LIMIT_ENTRIES = 10000
 
-// Clean up expired entries periodically
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
-      rateLimitStore.delete(key)
+// Lazy cleanup: remove expired entries when map grows too large
+function cleanupRateLimitStore() {
+  if (rateLimitStore.size > MAX_RATE_LIMIT_ENTRIES) {
+    const now = Date.now()
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (entry.resetTime < now) {
+        rateLimitStore.delete(key)
+      }
+    }
+    // If still too large after cleanup, clear oldest half
+    if (rateLimitStore.size > MAX_RATE_LIMIT_ENTRIES) {
+      const entries = Array.from(rateLimitStore.entries())
+      entries
+        .sort((a, b) => a[1].resetTime - b[1].resetTime)
+        .slice(0, Math.floor(entries.length / 2))
+        .forEach(([key]) => rateLimitStore.delete(key))
     }
   }
-}, 60000) // Clean every minute
+}
 
 export interface RateLimitConfig {
   windowMs: number // Time window in milliseconds
@@ -421,6 +435,9 @@ export function checkRateLimit(
   identifier: string,
   action: keyof typeof RATE_LIMITS
 ): { allowed: boolean; remaining: number; resetIn: number } {
+  // Lazy cleanup to prevent unbounded memory growth
+  cleanupRateLimitStore()
+
   const config = RATE_LIMITS[action]
   const key = `${action}:${identifier}`
   const now = Date.now()
@@ -903,28 +920,40 @@ export const SlugSchema = z
 // CLEANUP ROUTINES
 // ============================================================================
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
+// NOTE: Using lazy cleanup instead of setInterval to avoid timer leaks
+// in serverless environments. Cleanup runs when maps grow too large.
+const MAX_SECURITY_MAP_SIZE = 5000
+
+function cleanupSecurityMaps() {
   const now = Date.now()
 
   // Clean blocked IPs
-  for (const [ip, block] of blockedIPs.entries()) {
-    if (block.until < now) {
-      blockedIPs.delete(ip)
+  if (blockedIPs.size > MAX_SECURITY_MAP_SIZE) {
+    for (const [ip, block] of blockedIPs.entries()) {
+      if (block.until < now) {
+        blockedIPs.delete(ip)
+      }
     }
   }
 
   // Clean suspicious activity older than 2 hours
-  for (const [ip, activity] of suspiciousActivity.entries()) {
-    if (now - activity.lastActivity > 7200000) {
-      suspiciousActivity.delete(ip)
+  if (suspiciousActivity.size > MAX_SECURITY_MAP_SIZE) {
+    for (const [ip, activity] of suspiciousActivity.entries()) {
+      if (now - activity.lastActivity > 7200000) {
+        suspiciousActivity.delete(ip)
+      }
     }
   }
 
   // Clean brute force records older than 1 hour
-  for (const [id, record] of bruteForceAttempts.entries()) {
-    if (now - record.firstAttempt > 3600000) {
-      bruteForceAttempts.delete(id)
+  if (bruteForceAttempts.size > MAX_SECURITY_MAP_SIZE) {
+    for (const [id, record] of bruteForceAttempts.entries()) {
+      if (now - record.firstAttempt > 3600000) {
+        bruteForceAttempts.delete(id)
+      }
     }
   }
-}, 300000)
+}
+
+// Export cleanup for external use if needed
+export { cleanupSecurityMaps }

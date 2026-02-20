@@ -26,9 +26,9 @@ export const NAV_ITEMS = [
 // Footer navigation
 export const FOOTER_NAV = {
   sections: [
-    { href: '/section/breaking', label: 'أخبار عاجلة' },
-    { href: '/section/news', label: 'الأخبار' },
-    { href: '/section/analysis', label: 'تحليل' },
+    { href: '/important', label: 'أخبار عاجلة' },
+    { href: '/section/local', label: 'المحليّة' },
+    { href: '/section/radar', label: 'رادار' },
     { href: '/section/economy', label: 'اقتصاد' },
   ],
   about: [
@@ -53,7 +53,7 @@ export const SOCIAL_LINKS = {
 export const PAGINATION = {
   defaultPageSize: 12,
   searchPageSize: 20,
-  relatedArticlesCount: 4,
+  relatedArticlesCount: 3,
   mostReadCount: 5,
   tickerItemsCount: 10,
 }

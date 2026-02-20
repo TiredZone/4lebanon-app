@@ -1,11 +1,11 @@
 import { MetadataRoute } from 'next'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { SITE_CONFIG } from '@/lib/constants'
 
 export const revalidate = 3600 // 1 hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = await createServiceClient()
+  const supabase = await createClient()
   const baseUrl = SITE_CONFIG.url
 
   // Static pages
@@ -15,6 +15,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 1,
+    },
+    {
+      url: `${baseUrl}/important`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/recent`,
+      lastModified: new Date(),
+      changeFrequency: 'hourly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/writers`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.6,
     },
     {
       url: `${baseUrl}/search`,

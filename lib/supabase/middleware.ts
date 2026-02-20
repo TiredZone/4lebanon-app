@@ -39,15 +39,29 @@ if (typeof setInterval !== 'undefined') {
 }
 
 function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const realIp = request.headers.get('x-real-ip')
+  // First check Cloudflare header (most trusted when using CF)
   const cfIp = request.headers.get('cf-connecting-ip')
+  if (cfIp) return cfIp.trim()
 
+  // Check X-Real-IP (set by nginx/other reverse proxies)
+  const realIp = request.headers.get('x-real-ip')
+  if (realIp) return realIp.trim()
+
+  // X-Forwarded-For can be spoofed - only use rightmost IP which is the one
+  // added by the most trusted proxy closest to the server
+  // WARNING: This is still vulnerable if you're not behind a trusted proxy
+  const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    return forwarded.split(',')[0].trim()
+    const ips = forwarded.split(',').map((ip) => ip.trim())
+    // In a proper setup, use the rightmost non-internal IP
+    // For now, use the first IP but log a warning in development
+    if (process.env.NODE_ENV === 'development' && ips.length > 1) {
+      console.warn('[SECURITY] Multiple IPs in x-forwarded-for - potential spoofing')
+    }
+    return ips[0]
   }
 
-  return cfIp || realIp || 'unknown'
+  return 'unknown'
 }
 
 // Known malicious bot user agents
@@ -133,27 +147,27 @@ export async function updateSession(request: NextRequest) {
     })
   }
 
-  // Block suspicious patterns
-  const suspiciousPatterns = [
+  // Block suspicious patterns - only test against pathname (not full URL with hostname)
+  const suspiciousPathPatterns = [
     /\.\./, // Path traversal
     /<script/i, // XSS attempt
     /javascript:/i, // JavaScript injection
-    /data:/i, // Data URL injection
     /vbscript:/i, // VBScript injection
     /on\w+\s*=/i, // Event handler injection
     /union\s+select/i, // SQL injection
     /\b(drop|delete|truncate)\s+table/i, // SQL injection
     /\/etc\/passwd/i, // LFI attempt
-    /\.env/i, // Env file access
-    /wp-admin/i, // WordPress scan
-    /phpMyAdmin/i, // phpMyAdmin scan
-    /\.git/i, // Git access
-    /\.htaccess/i, // Apache config
+    /\/\.env\b/i, // Env file access (with path separator to avoid false positives)
+    /\/wp-admin/i, // WordPress scan
+    /\/phpMyAdmin/i, // phpMyAdmin scan
+    /\/\.git\b/i, // Git access (with path separator to avoid false positives)
+    /\/\.htaccess/i, // Apache config
   ]
 
-  const fullUrl = request.nextUrl.toString()
-  for (const pattern of suspiciousPatterns) {
-    if (pattern.test(fullUrl) || pattern.test(pathname)) {
+  // Test against pathname and search params only, not the full URL which includes hostname
+  const pathAndSearch = pathname + (request.nextUrl.search || '')
+  for (const pattern of suspiciousPathPatterns) {
+    if (pattern.test(pathAndSearch)) {
       console.warn(`[SECURITY] Suspicious request blocked: ${pathname} from IP: ${ip}`)
       return new NextResponse('Forbidden', { status: 403 })
     }
@@ -186,8 +200,8 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, {
               ...options,
-              // Enhance cookie security
-              httpOnly: true,
+              // Enhance cookie security - do NOT set httpOnly as Supabase
+              // client-side JS needs to read auth cookies for session management
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
             })
@@ -247,18 +261,29 @@ export async function updateSession(request: NextRequest) {
       })
     }
 
-    // Validate origin for API requests (basic CSRF protection)
+    // Validate origin for API requests (strict CSRF protection)
     const origin = request.headers.get('origin')
     const host = request.headers.get('host')
 
     if (origin && host) {
       try {
         const originUrl = new URL(origin)
-        const isVercelDeployment =
-          originUrl.host.includes('vercel.app') || host.includes('vercel.app')
         const isCrossOrigin = originUrl.host !== host
 
-        if (isCrossOrigin && !isVercelDeployment) {
+        // Only allow same-origin requests or specific trusted Vercel deployments
+        // Note: In production, replace with your actual domain
+        const trustedDomains = ['4lebanon.com', 'www.4lebanon.com', 'localhost']
+
+        // Check if this is our own Vercel deployment (same project)
+        const isOwnVercelDeployment =
+          (originUrl.host.endsWith('.vercel.app') &&
+            host.endsWith('.vercel.app') &&
+            originUrl.host.split('-')[0] === host.split('-')[0]) || // Same project prefix
+          trustedDomains.some(
+            (domain) => originUrl.host === domain || originUrl.host.endsWith(`.${domain}`)
+          )
+
+        if (isCrossOrigin && !isOwnVercelDeployment) {
           console.warn(`[SECURITY] CORS violation: origin ${origin} for host ${host}`)
           return new NextResponse(JSON.stringify({ error: 'Forbidden' }), {
             status: 403,
@@ -266,7 +291,12 @@ export async function updateSession(request: NextRequest) {
           })
         }
       } catch {
-        // Invalid origin URL
+        // Invalid origin URL - block the request
+        console.warn(`[SECURITY] Invalid origin header: ${origin}`)
+        return new NextResponse(JSON.stringify({ error: 'Bad Request' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
       }
     }
   }

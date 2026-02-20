@@ -14,6 +14,7 @@ interface SearchableSelectProps {
   defaultValue?: string
   placeholder?: string
   searchPlaceholder?: string
+  onChange?: (value: string) => void
 }
 
 export function SearchableSelect({
@@ -23,10 +24,16 @@ export function SearchableSelect({
   defaultValue = '',
   placeholder = 'اختر...',
   searchPlaceholder = 'ابحث...',
+  onChange,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedValue, setSelectedValue] = useState(defaultValue)
+
+  // Sync with external defaultValue changes (e.g., filter reset)
+  useEffect(() => {
+    setSelectedValue(defaultValue)
+  }, [defaultValue])
   const containerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -70,6 +77,7 @@ export function SearchableSelect({
     setSelectedValue(value)
     setIsOpen(false)
     setSearch('')
+    onChange?.(value)
   }
 
   return (

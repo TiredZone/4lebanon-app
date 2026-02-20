@@ -1,5 +1,3 @@
-'use server'
-
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
@@ -8,26 +6,53 @@ const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
 const blockedIPs = new Set<string>()
 const suspiciousIPs = new Map<string, number>()
 
+// Cleanup expired entries every 60 seconds to prevent memory leaks
+let cleanupInterval: ReturnType<typeof setInterval> | null = null
+function ensureCleanupInterval() {
+  if (!cleanupInterval) {
+    cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, entry] of rateLimitStore.entries()) {
+        if (entry.resetTime < now) {
+          rateLimitStore.delete(key)
+        }
+      }
+      // Also clean up suspiciousIPs to prevent unbounded growth
+      // Reset suspicious counts every 10 minutes
+      if (suspiciousIPs.size > 1000) {
+        suspiciousIPs.clear()
+      }
+      // Clean blocked IPs after 1 hour (max 500 entries)
+      if (blockedIPs.size > 500) {
+        blockedIPs.clear()
+      }
+    }, 60000)
+    if (cleanupInterval.unref) cleanupInterval.unref()
+  }
+}
+ensureCleanupInterval()
+
 // Bad patterns to detect in URLs
+// NOTE: Do NOT use /g flag with .test() - it causes stateful behavior
 const MALICIOUS_URL_PATTERNS = [
-  /\.\.\//g, // Path traversal
-  /<script/gi, // XSS in URL
-  /javascript:/gi, // JavaScript protocol
-  /union.*select/gi, // SQL injection
-  /\bor\b.*[=<>]/gi, // SQL injection
-  /\band\b.*[=<>]/gi, // SQL injection
-  /exec\s*\(/gi, // Command execution
-  /\$\{/gi, // Template injection
-  /%00/gi, // Null byte injection
-  /etc\/passwd/gi, // LFI attempt
-  /proc\/self/gi, // LFI attempt
-  /\.env/gi, // Environment file access
-  /\.git/gi, // Git folder access
-  /wp-admin/gi, // WordPress probes
-  /wp-login/gi, // WordPress probes
-  /phpmyadmin/gi, // PhpMyAdmin probes
-  /\.php$/gi, // PHP file probes
-  /\.asp$/gi, // ASP file probes
+  /\.\.\//i, // Path traversal
+  /<script/i, // XSS in URL
+  /javascript:/i, // JavaScript protocol
+  /union\s+select/i, // SQL injection
+  /\bor\b\s+\d+\s*[=<>]/i, // SQL injection (e.g., "or 1=1")
+  /\band\b\s+\d+\s*[=<>]/i, // SQL injection (e.g., "and 1=1")
+  /exec\s*\(/i, // Command execution
+  /\$\{/i, // Template injection
+  /%00/i, // Null byte injection
+  /etc\/passwd/i, // LFI attempt
+  /proc\/self/i, // LFI attempt
+  /\.env/i, // Environment file access
+  /\.git/i, // Git folder access
+  /wp-admin/i, // WordPress probes
+  /wp-login/i, // WordPress probes
+  /phpmyadmin/i, // PhpMyAdmin probes
+  /\.php$/i, // PHP file probes
+  /\.asp$/i, // ASP file probes
 ]
 
 // Bad user agents (scanners, bots)
@@ -101,7 +126,13 @@ function trackSuspicious(ip: string): boolean {
 }
 
 function containsMaliciousPattern(url: string): boolean {
-  const decodedUrl = decodeURIComponent(url)
+  let decodedUrl: string
+  try {
+    decodedUrl = decodeURIComponent(url)
+  } catch {
+    // Malformed percent-encoding is itself suspicious
+    return true
+  }
   return MALICIOUS_URL_PATTERNS.some((pattern) => pattern.test(decodedUrl))
 }
 

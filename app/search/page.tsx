@@ -1,9 +1,10 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
-import { formatDateAr, getStorageUrl } from '@/lib/utils'
+import { formatDateAr, getStorageUrl, escapeIlike } from '@/lib/utils'
 import { SearchFilters } from '@/components/search/search-filters'
 import type { ArticleListItem } from '@/types/database'
 
@@ -51,7 +52,7 @@ async function searchArticles(params: {
 
   // Search by title - using ilike for instant single-character search (works with Arabic and English)
   if (params.q && params.q.trim().length > 0) {
-    query = query.ilike('title_ar', `%${params.q.trim()}%`)
+    query = query.ilike('title_ar', `%${escapeIlike(params.q.trim())}%`)
   }
 
   // Filters
@@ -171,7 +172,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function SearchPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const page = parseInt(params.page || '1', 10)
+  const page = Math.max(1, parseInt(params.page || '1', 10) || 1)
 
   const [{ articles, total }, filters] = await Promise.all([
     searchArticles({
@@ -228,15 +229,17 @@ export default async function SearchPage({ searchParams }: PageProps) {
             </div>
 
             {/* Filters */}
-            <SearchFilters
-              filters={filters}
-              currentParams={{
-                section: params.section || '',
-                region: params.region || '',
-                country: params.country || '',
-                topic: params.topic || '',
-              }}
-            />
+            <Suspense fallback={<div className="search-filters" />}>
+              <SearchFilters
+                filters={filters}
+                currentParams={{
+                  section: params.section || '',
+                  region: params.region || '',
+                  country: params.country || '',
+                  topic: params.topic || '',
+                }}
+              />
+            </Suspense>
 
             {/* Submit button */}
             <button type="submit" className="search-submit-btn">
@@ -314,7 +317,7 @@ function SearchResultCard({ article }: { article: ArticleListItem }) {
     <article className="search-result-card">
       {/* Image */}
       <Link href={`/article/${article.slug}`} className="search-card-image">
-        {imageUrl && imageUrl !== '/placeholder.png' ? (
+        {imageUrl ? (
           <Image
             src={imageUrl}
             alt={article.title_ar}
@@ -343,9 +346,11 @@ function SearchResultCard({ article }: { article: ArticleListItem }) {
         {article.excerpt_ar && <p className="search-card-excerpt">{article.excerpt_ar}</p>}
 
         <div className="search-card-meta">
-          <Link href={`/author/${article.author.id}`} className="search-card-author">
-            {article.author.display_name_ar}
-          </Link>
+          {article.author && (
+            <Link href={`/author/${article.author.id}`} className="search-card-author">
+              {article.author.display_name_ar}
+            </Link>
+          )}
           {article.published_at && (
             <time>{formatDateAr(article.published_at, 'dd MMMM yyyy')}</time>
           )}
@@ -404,7 +409,6 @@ function SearchPagination({
   }
 
   const pages: (number | 'dots')[] = []
-  const maxVisible = 5
 
   // Always show first page
   pages.push(1)

@@ -9,14 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/admin/',
-          '/api/',
-          '/_next/',
-          '/private/',
-          '/*.json$',
-          '/*?*', // Query strings
-        ],
+        disallow: ['/admin/', '/api/', '/_next/', '/private/', '/*.json$'],
       },
       // Block aggressive bots
       {

@@ -30,9 +30,9 @@ export function NavBar() {
 
     const updateIndicator = () => {
       const navElement = navRef.current
-      if (!navElement) return
+      if (!navElement || activeIndex < 0) return
 
-      const activeItem = navElement.children[activeIndex] as HTMLElement
+      const activeItem = navElement.children[activeIndex] as HTMLElement | undefined
       if (activeItem) {
         const link = activeItem.querySelector('a') as HTMLElement
         if (link) {
@@ -84,8 +84,8 @@ export function NavBar() {
                 className="absolute bottom-2 h-[2.5px] rounded-full bg-[var(--aura-red)]"
                 initial={false}
                 animate={{
-                  left: indicatorStyle.left + 20,
-                  width: indicatorStyle.width - 40,
+                  left: indicatorStyle.left + Math.min(20, indicatorStyle.width / 4),
+                  width: Math.max(0, indicatorStyle.width - Math.min(40, indicatorStyle.width / 2)),
                 }}
                 transition={{
                   type: 'spring',
