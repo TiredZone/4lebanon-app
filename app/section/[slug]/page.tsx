@@ -82,6 +82,13 @@ function getBackgroundClass(variant: 'default' | 'exclusive' | 'authors'): strin
   }
 }
 
+export async function generateStaticParams() {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+  const { data } = await supabase.from('sections').select('slug')
+  return (data || []).map((s) => ({ slug: (s as { slug: string }).slug }))
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const section = await getSection(slug)
@@ -93,6 +100,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: section.name_ar,
     description: section.description_ar || `أخبار ${section.name_ar} على ${SITE_CONFIG.nameAr}`,
+    alternates: { canonical: '/section/' + slug },
     openGraph: {
       title: section.name_ar,
       description: section.description_ar || `أخبار ${section.name_ar}`,

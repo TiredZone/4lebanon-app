@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
@@ -49,13 +50,10 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               </a>
             )
           },
-          // Custom image component with URL validation
-          img: ({ src, alt, ...props }) => {
-            // Validate image source - only accept strings, not Blobs
+          img: ({ src, alt }) => {
             const isValidSrc = (url: string | undefined): boolean => {
               if (!url) return false
-              if (url.startsWith('/')) return true // Relative URL
-              if (url.startsWith('data:image/')) return true // Data URL for images only
+              if (url.startsWith('/')) return true
               try {
                 const parsed = new URL(url)
                 return ['http:', 'https:'].includes(parsed.protocol)
@@ -64,21 +62,35 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               }
             }
 
-            // Handle case where src might be a Blob (we only accept string URLs)
             const srcString = typeof src === 'string' ? src : undefined
             const safeSrc = isValidSrc(srcString) ? srcString : undefined
             if (!safeSrc) return null
 
+            const isRemote = safeSrc.startsWith('http')
+
             return (
               <figure className="my-6">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={safeSrc}
-                  alt={alt || ''}
-                  className="mx-auto max-w-full rounded-lg"
-                  loading="lazy"
-                  {...props}
-                />
+                {isRemote ? (
+                  <Image
+                    src={safeSrc}
+                    alt={alt || ''}
+                    width={800}
+                    height={450}
+                    className="mx-auto max-w-full rounded-lg"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    loading="lazy"
+                  />
+                ) : (
+                  <Image
+                    src={safeSrc}
+                    alt={alt || ''}
+                    width={800}
+                    height={450}
+                    className="mx-auto max-w-full rounded-lg"
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    loading="lazy"
+                  />
+                )}
                 {alt && (
                   <figcaption className="text-muted-foreground mt-2 text-center text-sm">
                     {alt}

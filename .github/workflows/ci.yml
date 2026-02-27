@@ -36,6 +36,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key' }}
           NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://4lebanon.com' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-role-key' }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET || 'placeholder-revalidate-secret-min16chars' }}
 
       # TODO: Add test step when test suite is introduced
       # - name: Run tests

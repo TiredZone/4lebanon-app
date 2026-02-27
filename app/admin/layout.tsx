@@ -1,4 +1,5 @@
 import { SITE_CONFIG } from '@/lib/constants'
+import { SessionTimeout } from '@/components/admin/session-timeout'
 
 export const metadata = {
   title: {
@@ -11,6 +12,7 @@ export const metadata = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="admin-page-bg">
+      <SessionTimeout />
       <main className="admin-main">{children}</main>
     </div>
   )

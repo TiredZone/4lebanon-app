@@ -62,11 +62,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className="aura-full font-arabic text-foreground min-h-screen antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg"
+        >
+          تخطي إلى المحتوى الرئيسي
+        </a>
         <ToastProvider />
         <div className="flex min-h-screen flex-col">
           <Header />
           <NavBar />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
           <Footer />
         </div>
         {/* Vercel Analytics - automatically tracks Web Vitals */}

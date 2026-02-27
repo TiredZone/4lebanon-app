@@ -238,9 +238,27 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // Verify user has admin or editor role (graceful: skip if column doesn't exist yet)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (!profileError && profile) {
+      const role = (profile as { role?: string }).role
+      if (role && !['admin', 'editor'].includes(role)) {
+        console.warn(
+          `[SECURITY] Unauthorized admin access: user ${user.id} role=${role} path=${pathname} IP=${ip}`
+        )
+        return new NextResponse('Forbidden', { status: 403 })
+      }
+    }
+
     // Log admin access
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[ADMIN] User ${user.id} accessed ${pathname}`)
+      const role = (profile as { role?: string } | null)?.role || 'unknown'
+      console.log(`[ADMIN] User ${user.id} (${role}) accessed ${pathname}`)
     }
   }
 

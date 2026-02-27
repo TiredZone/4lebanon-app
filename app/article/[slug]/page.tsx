@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizeUrl } from '@/lib/security'
 import { SITE_CONFIG, PAGINATION } from '@/lib/constants'
 import { formatDateAr, calculateReadingTime, getStorageUrl } from '@/lib/utils'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
@@ -13,6 +14,7 @@ import {
   ArticleHeroImage,
   RecommendedArticles,
 } from '@/components/article'
+import { JsonLd, newsArticleJsonLd, breadcrumbJsonLd } from '@/components/json-ld'
 import type { ArticleWithRelations, ArticleListItem, Topic } from '@/types/database'
 
 export const revalidate = 600 // 10 minutes
@@ -122,6 +124,18 @@ async function incrementViewCount(articleId: string) {
   }
 }
 
+export async function generateStaticParams() {
+  const { createServiceClient } = await import('@/lib/supabase/server')
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from('articles')
+    .select('slug')
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(100)
+  return (data || []).map((a) => ({ slug: (a as { slug: string }).slug }))
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const article = await getArticle(slug)
@@ -135,6 +149,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: article.title_ar,
     description: article.excerpt_ar || article.title_ar,
+    alternates: { canonical: '/article/' + slug },
     openGraph: {
       title: article.title_ar,
       description: article.excerpt_ar || article.title_ar,
@@ -168,8 +183,35 @@ export default async function ArticlePage({ params }: PageProps) {
   const readingTime = calculateReadingTime(article.body_md)
   const articleUrl = `${SITE_CONFIG.url}/article/${article.slug}`
 
+  const breadcrumbItems = [
+    { name: 'الرئيسية', url: SITE_CONFIG.url },
+    ...(article.section
+      ? [
+          {
+            name: article.section.name_ar,
+            url: `${SITE_CONFIG.url}/section/${article.section.slug}`,
+          },
+        ]
+      : []),
+    { name: article.title_ar, url: articleUrl },
+  ]
+
   return (
     <>
+      <JsonLd
+        data={newsArticleJsonLd({
+          title: article.title_ar,
+          description: article.excerpt_ar,
+          published_at: article.published_at,
+          updated_at: article.updated_at,
+          imageUrl,
+          authorName: article.author?.display_name_ar,
+          slug: article.slug,
+          sectionName: article.section?.name_ar,
+        })}
+      />
+      <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
+
       {/* Reading Progress Bar */}
       <ReadingProgressBar />
 
@@ -299,13 +341,20 @@ export default async function ArticlePage({ params }: PageProps) {
                 <div className="article-sources">
                   <h2 className="article-sources-title">المصادر</h2>
                   <ul>
-                    {article.sources.map((source, index) => (
-                      <li key={index}>
-                        <a href={source.url} target="_blank" rel="noopener noreferrer">
-                          {source.title}
-                        </a>
-                      </li>
-                    ))}
+                    {article.sources.map((source, index) => {
+                      const safeUrl = sanitizeUrl(source.url)
+                      return (
+                        <li key={index}>
+                          {safeUrl ? (
+                            <a href={safeUrl} target="_blank" rel="noopener noreferrer">
+                              {source.title}
+                            </a>
+                          ) : (
+                            <span>{source.title}</span>
+                          )}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               )}

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import WritersCarousel from '@/components/writers-carousel'
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker'
+import { JsonLd, organizationJsonLd, websiteJsonLd } from '@/components/json-ld'
 import type { ArticleListItem } from '@/types/database'
 
 export const revalidate = 120
@@ -49,23 +50,45 @@ async function getHomepageData() {
     .order('published_at', { ascending: false })
     .limit(6)
 
-  // Fetch all sections from database ordered by sort_order
-  const { data: allSections } = await supabase
-    .from('sections')
-    .select('id, slug, name_ar')
-    .order('sort_order', { ascending: true })
+  // Fetch all sections and a batch of recent articles in two queries (avoids N+1)
+  const [{ data: allSections }, { data: sectionArticlesRaw }] = await Promise.all([
+    supabase.from('sections').select('id, slug, name_ar').order('sort_order', { ascending: true }),
+    supabase
+      .from('articles')
+      .select(
+        `
+        id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+        section_id,
+        author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
+        section:sections!articles_section_id_fkey(id, slug, name_ar)
+      `
+      )
+      .eq('status', 'published')
+      .not('published_at', 'is', null)
+      .lte('published_at', now)
+      .order('published_at', { ascending: false })
+      .limit(120),
+  ])
 
-  // Fetch articles for each section dynamically (in parallel to avoid N+1)
   let sectionsWithArticles: { slug: string; name_ar: string; articles: ArticleListItem[] }[] = []
 
-  if (allSections) {
-    const sectionResults = await Promise.all(
-      allSections.map(async (section) => {
-        const articles = await getSectionArticlesById(section.id, 6)
-        return { slug: section.slug, name_ar: section.name_ar, articles }
-      })
-    )
-    sectionsWithArticles = sectionResults.filter((s) => s.articles.length > 0)
+  if (allSections && sectionArticlesRaw) {
+    const grouped = new Map<number, Record<string, unknown>[]>()
+    for (const article of sectionArticlesRaw) {
+      const sid = (article as Record<string, unknown>).section_id as number | null
+      if (sid == null) continue
+      const list = grouped.get(sid) || []
+      if (list.length < 6) list.push(article as Record<string, unknown>)
+      grouped.set(sid, list)
+    }
+
+    sectionsWithArticles = allSections
+      .map((section) => ({
+        slug: section.slug,
+        name_ar: section.name_ar,
+        articles: transformArticles(grouped.get(section.id) || []),
+      }))
+      .filter((s) => s.articles.length > 0)
   }
 
   // Fetch writers/authors
@@ -111,32 +134,6 @@ async function getHomepageData() {
   }
 }
 
-async function getSectionArticlesById(
-  sectionId: number,
-  limit: number = 6
-): Promise<ArticleListItem[]> {
-  const supabase = await createClient()
-  const now = new Date().toISOString()
-
-  const { data } = await supabase
-    .from('articles')
-    .select(
-      `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
-      section:sections!articles_section_id_fkey(id, slug, name_ar)
-    `
-    )
-    .eq('section_id', sectionId)
-    .eq('status', 'published')
-    .not('published_at', 'is', null)
-    .lte('published_at', now)
-    .order('published_at', { ascending: false })
-    .limit(limit)
-
-  return transformArticles((data || []) as Record<string, unknown>[])
-}
-
 function transformArticles(articles: Record<string, unknown>[]): ArticleListItem[] {
   return articles.map((article) => ({
     id: article.id as string,
@@ -157,6 +154,9 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={organizationJsonLd()} />
+      <JsonLd data={websiteJsonLd()} />
+
       {/* Breaking News Ticker */}
       <BreakingNewsTicker articles={data.breakingNews} />
 
@@ -268,6 +268,7 @@ export default async function Home() {
                           src={getStorageUrl(article.cover_image_path)!}
                           alt={article.title_ar}
                           fill
+                          sizes="(max-width: 768px) 100vw, 65vw"
                           className="object-cover object-center"
                           priority
                         />
@@ -334,6 +335,7 @@ export default async function Home() {
                             src={getStorageUrl(article.cover_image_path)!}
                             alt={article.title_ar}
                             fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                             className="object-cover object-center"
                           />
                         ) : (
@@ -425,6 +427,7 @@ export default async function Home() {
                             src={getStorageUrl(article.cover_image_path)!}
                             alt={article.title_ar}
                             fill
+                            sizes="(max-width: 768px) 100vw, 33vw"
                             className="object-cover object-center"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
@@ -476,6 +479,7 @@ export default async function Home() {
                           src={getStorageUrl(section.articles[0].cover_image_path)!}
                           alt={section.articles[0].title_ar}
                           fill
+                          sizes="(max-width: 1024px) 100vw, 66vw"
                           className="object-cover object-center"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
@@ -550,6 +554,7 @@ export default async function Home() {
                         src={getStorageUrl(data.mostRead[0].cover_image_path)!}
                         alt={data.mostRead[0].title_ar}
                         fill
+                        sizes="(max-width: 1024px) 100vw, 40vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       {/* Dark gradient overlay */}
@@ -626,6 +631,7 @@ export default async function Home() {
                           src={getStorageUrl(article.cover_image_path)!}
                           alt={article.title_ar}
                           fill
+                          sizes="80px"
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
                         />
                         {/* Glassmorphism Rank Badge */}

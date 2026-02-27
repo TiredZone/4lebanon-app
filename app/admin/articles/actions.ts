@@ -21,6 +21,14 @@ interface ActionResult {
   newSlug?: string
 }
 
+async function verifyEditorRole(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<boolean> {
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
+  return !!profile && ['admin', 'editor'].includes((profile as { role: string }).role)
+}
+
 export async function createArticle(formData: ArticleFormData): Promise<ActionResult> {
   const supabase = await createClient()
 
@@ -31,6 +39,11 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
   if (!user) {
     await logSecurityEvent('unauthorized_access', { action: 'createArticle' })
     return { error: 'يجب تسجيل الدخول' }
+  }
+
+  if (!(await verifyEditorRole(supabase, user.id))) {
+    await logSecurityEvent('unauthorized_access', { action: 'createArticle', userId: user.id })
+    return { error: 'ليس لديك صلاحية لهذا الإجراء' }
   }
 
   // Rate limiting

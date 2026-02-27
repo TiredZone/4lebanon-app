@@ -156,8 +156,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
-
-// GET handler for health check
-export async function GET() {
-  return NextResponse.json({ status: 'ok' })
-}
