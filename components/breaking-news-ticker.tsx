@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 
 interface BreakingNewsItem {
@@ -15,7 +15,6 @@ interface BreakingNewsTickerProps {
 
 export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
   const [isPaused, setIsPaused] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
 
   // If no breaking news, don't render
   if (!articles || articles.length === 0) {
@@ -27,6 +26,16 @@ export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
 
   return (
     <div className="breaking-news-bar relative z-40 overflow-hidden bg-gradient-to-l from-[#c61b23] to-[#9a1419]">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @keyframes ticker-rtl {
+          0% { transform: translateX(-33.333%); }
+          100% { transform: translateX(0); }
+        }
+      `,
+        }}
+      />
       <div className="mx-auto flex max-w-7xl items-center">
         {/* Breaking News Label */}
         <div className="flex-shrink-0 bg-white/10 px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3">
@@ -51,8 +60,11 @@ export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
 
           {/* Scrolling Content */}
           <div
-            ref={scrollRef}
-            className={`ticker-scroll flex items-center gap-6 py-2.5 whitespace-nowrap sm:gap-8 sm:py-3 ${isPaused ? 'paused' : ''}`}
+            className="ticker-scroll flex items-center gap-6 py-2.5 whitespace-nowrap sm:gap-8 sm:py-3"
+            style={{
+              animation: 'ticker-rtl 30s linear infinite',
+              animationPlayState: isPaused ? 'paused' : 'running',
+            }}
           >
             {duplicatedArticles.map((article, index) => (
               <Link
@@ -72,26 +84,6 @@ export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
           <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-8 bg-gradient-to-l from-[#c61b23] to-transparent sm:w-12"></div>
         </div>
       </div>
-
-      {/* CSS for ticker animation - RTL direction (right to left for Arabic) */}
-      <style jsx>{`
-        .ticker-scroll {
-          animation: ticker-rtl 60s linear infinite;
-        }
-
-        .ticker-scroll.paused {
-          animation-play-state: paused;
-        }
-
-        @keyframes ticker-rtl {
-          0% {
-            transform: translateX(-33.333%);
-          }
-          100% {
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   )
 }
