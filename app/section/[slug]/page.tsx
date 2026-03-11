@@ -34,7 +34,7 @@ async function getSectionArticles(
     .from('articles')
     .select(
       `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
       author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `,
@@ -44,7 +44,8 @@ async function getSectionArticles(
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
-    .order('published_at', { ascending: false })
+    .order('priority', { ascending: true })
+    .order('sort_position', { ascending: false })
     .range(offset, offset + perPage - 1)
 
   const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
@@ -56,6 +57,7 @@ async function getSectionArticles(
     published_at: article.published_at as string | null,
     is_breaking: article.is_breaking as boolean,
     is_featured: article.is_featured as boolean,
+    priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
     author: article.author as ArticleListItem['author'],
     section: article.section as ArticleListItem['section'],
   }))

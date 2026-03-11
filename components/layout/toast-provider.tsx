@@ -21,14 +21,14 @@ export function ToastProvider() {
         success: {
           duration: 3000,
           iconTheme: {
-            primary: '#c61b23',
+            primary: '#830005',
             secondary: '#ffffff',
           },
         },
         error: {
           duration: 4000,
           iconTheme: {
-            primary: '#ef4444',
+            primary: '#830005',
             secondary: '#ffffff',
           },
         },

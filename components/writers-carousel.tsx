@@ -51,7 +51,7 @@ export default function WritersCarousel({ writers }: { writers: Writer[] }) {
             href={`/author/${writer.id}`}
             className="group flex min-h-[80px] shrink-0 flex-col items-center"
           >
-            <div className="relative mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-[#eeeeee] shadow-sm transition-all duration-300 group-hover:border-[#c61b23] group-hover:shadow-md sm:mb-3 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28">
+            <div className="relative mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-[#eeeeee] shadow-sm transition-all duration-300 group-hover:border-[#830005] group-hover:shadow-md sm:mb-3 sm:h-20 sm:w-20 md:h-24 md:w-24 lg:h-28 lg:w-28">
               {writer.avatar_url ? (
                 <Image
                   src={getStorageUrl(writer.avatar_url)!}
@@ -60,12 +60,12 @@ export default function WritersCarousel({ writers }: { writers: Writer[] }) {
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#c61b23] to-[#a01519] text-lg font-bold text-white sm:text-xl md:text-2xl lg:text-3xl">
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#830005] to-[#6b0004] text-lg font-bold text-white sm:text-xl md:text-2xl lg:text-3xl">
                   {writer.display_name_ar?.charAt(0) || 'ك'}
                 </div>
               )}
             </div>
-            <span className="w-16 text-center text-[10px] font-bold break-words text-black transition-colors group-hover:text-[#c61b23] sm:w-20 sm:text-xs md:w-24 md:text-sm lg:w-28">
+            <span className="w-16 text-center text-[10px] font-bold break-words text-black transition-colors group-hover:text-[#830005] sm:w-20 sm:text-xs md:w-24 md:text-sm lg:w-28">
               {writer.display_name_ar || 'كاتب'}
             </span>
           </Link>
@@ -77,7 +77,7 @@ export default function WritersCarousel({ writers }: { writers: Writer[] }) {
         <>
           <button
             aria-label="الكتّاب السابقون"
-            className="absolute top-1/2 left-0 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-[#eeeeee] bg-white p-2 shadow-sm transition-all duration-300 hover:bg-[#c61b23] hover:text-white hover:shadow-md active:scale-95 sm:p-2.5"
+            className="absolute top-1/2 left-0 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-[#eeeeee] bg-white p-2 shadow-sm transition-all duration-300 hover:bg-[#830005] hover:text-white hover:shadow-md active:scale-95 sm:p-2.5"
             onClick={() => handleScroll('left')}
           >
             <svg
@@ -96,7 +96,7 @@ export default function WritersCarousel({ writers }: { writers: Writer[] }) {
           </button>
           <button
             aria-label="الكتّاب التاليون"
-            className="absolute top-1/2 right-0 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-[#eeeeee] bg-white p-2 shadow-sm transition-all duration-300 hover:bg-[#c61b23] hover:text-white hover:shadow-md active:scale-95 sm:p-2.5"
+            className="absolute top-1/2 right-0 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-[#eeeeee] bg-white p-2 shadow-sm transition-all duration-300 hover:bg-[#830005] hover:text-white hover:shadow-md active:scale-95 sm:p-2.5"
             onClick={() => handleScroll('right')}
           >
             <svg

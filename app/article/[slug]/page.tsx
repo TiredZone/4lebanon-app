@@ -109,6 +109,7 @@ async function getRelatedArticles(
     published_at: article.published_at as string | null,
     is_breaking: article.is_breaking as boolean,
     is_featured: article.is_featured as boolean,
+    priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
     author: article.author as ArticleListItem['author'],
     section: article.section as ArticleListItem['section'],
   }))

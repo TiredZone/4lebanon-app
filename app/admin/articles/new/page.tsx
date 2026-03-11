@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ArticleEditor } from '@/components/admin/article-editor'
-import type { Section, Region, Country, Topic } from '@/types/database'
+import type { Section, Region, Country, Topic, UserRole } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +17,14 @@ async function getFormData() {
     redirect('/admin/login')
   }
 
+  // Get user role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const userRole = ((profile as { role: string } | null)?.role || 'editor') as UserRole
+
   const [sections, regions, countries, topics] = await Promise.all([
     supabase.from('sections').select('*').order('sort_order'),
     supabase.from('regions').select('*').order('sort_order'),
@@ -25,6 +33,7 @@ async function getFormData() {
   ])
 
   return {
+    userRole,
     sections: (sections.data || []) as Section[],
     regions: (regions.data || []) as Region[],
     countries: (countries.data || []) as Country[],
@@ -59,6 +68,7 @@ export default async function NewArticlePage() {
         regions={formData.regions}
         countries={formData.countries}
         topics={formData.topics}
+        userRole={formData.userRole}
       />
     </div>
   )

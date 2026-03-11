@@ -25,10 +25,10 @@ const SectionSchema = z.object({
   sort_order: z.number().int().min(0).max(1000),
 })
 
-async function verifyAdminRole(userId: string): Promise<boolean> {
+async function verifySuperAdminRole(userId: string): Promise<boolean> {
   const supabase = await createClient()
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
-  return !!profile && (profile as { role: string }).role === 'admin'
+  return !!profile && (profile as { role: string }).role === 'super_admin'
 }
 
 export async function createSection(formData: {
@@ -50,7 +50,7 @@ export async function createSection(formData: {
       return { success: false, error: 'غير مصرح بهذا الإجراء' }
     }
 
-    if (!(await verifyAdminRole(user.id))) {
+    if (!(await verifySuperAdminRole(user.id))) {
       console.warn(`[SECURITY] Non-admin section creation attempt by user ${user.id}`)
       return { success: false, error: 'يجب أن تكون مسؤولاً لإنشاء الأقسام' }
     }
@@ -135,7 +135,7 @@ export async function deleteSection(sectionId: number) {
       return { success: false, error: 'غير مصرح بهذا الإجراء' }
     }
 
-    if (!(await verifyAdminRole(user.id))) {
+    if (!(await verifySuperAdminRole(user.id))) {
       console.warn(`[SECURITY] Non-admin section deletion attempt by user ${user.id}`)
       return { success: false, error: 'يجب أن تكون مسؤولاً لحذف الأقسام' }
     }

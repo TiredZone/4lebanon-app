@@ -2,18 +2,21 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ArticlesTable } from '@/components/admin/articles-table'
-import type { Article, Section, Profile } from '@/types/database'
+import { DeletionToast } from '@/components/admin/deletion-toast'
+import type { Article, Section, Profile, UserRole } from '@/types/database'
 
 // Admin pages are dynamic
 export const dynamic = 'force-dynamic'
 
 interface ArticleWithSection extends Article {
   section: Section | null
+  author?: { id: string; display_name_ar: string } | null
 }
 
 async function getDashboardData(): Promise<{
   articles: ArticleWithSection[]
   profile: Profile | null
+  role: UserRole
 }> {
   const supabase = await createClient()
 
@@ -25,28 +28,41 @@ async function getDashboardData(): Promise<{
     redirect('/admin/login')
   }
 
-  const [articlesData, profileData] = await Promise.all([
-    supabase
-      .from('articles')
-      .select(
-        `
-        *,
-        section:sections(*)
-      `
-      )
-      .eq('author_id', user.id)
-      .order('updated_at', { ascending: false }),
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-  ])
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+  const role = ((profileData as Profile | null)?.role || 'editor') as UserRole
+  const isSuperAdmin = role === 'super_admin'
+
+  // Super admin sees all articles with author info; others see only their own
+  let articlesQuery = supabase
+    .from('articles')
+    .select(
+      isSuperAdmin
+        ? `*, section:sections(*), author:profiles!author_id(id, display_name_ar)`
+        : `*, section:sections(*)`
+    )
+
+  if (!isSuperAdmin) {
+    articlesQuery = articlesQuery.eq('author_id', user.id)
+  }
+
+  const { data: articlesData } = await articlesQuery
+    .order('priority', { ascending: true })
+    .order('sort_position', { ascending: false })
 
   return {
-    articles: (articlesData.data || []) as ArticleWithSection[],
-    profile: profileData.data as Profile | null,
+    articles: (articlesData || []) as unknown as ArticleWithSection[],
+    profile: profileData as Profile | null,
+    role,
   }
 }
 
 export default async function AdminDashboardPage() {
-  const { articles } = await getDashboardData()
+  const { articles, role } = await getDashboardData()
+  const isSuperAdmin = role === 'super_admin'
 
   const draftCount = articles.filter((a) => a.status === 'draft').length
   const scheduledCount = articles.filter((a) => a.status === 'scheduled').length
@@ -56,6 +72,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div>
+      <DeletionToast />
       {/* Quick Actions - 3 Cards */}
       <div className="admin-quick-actions">
         <Link href="/admin/articles/new" className="admin-action-card primary-card">
@@ -73,20 +90,22 @@ export default async function AdminDashboardPage() {
           <p>ابدأ بكتابة مقال جديد ونشره على الموقع</p>
         </Link>
 
-        <Link href="/admin/sections/new" className="admin-action-card primary-card">
-          <div className="admin-action-icon purple">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-          </div>
-          <h3>إضافة قسم</h3>
-          <p>أنشئ قسم جديد لتصنيف المقالات</p>
-        </Link>
+        {isSuperAdmin && (
+          <Link href="/admin/sections/new" className="admin-action-card primary-card">
+            <div className="admin-action-icon purple">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+            </div>
+            <h3>إضافة قسم</h3>
+            <p>أنشئ قسم جديد لتصنيف المقالات</p>
+          </Link>
+        )}
 
         <Link href="/" target="_blank" className="admin-action-card">
           <div className="admin-action-icon blue">
@@ -116,11 +135,13 @@ export default async function AdminDashboardPage() {
 
       {/* Articles Section Header */}
       <div className="admin-section-header">
-        <h2 className="admin-section-title">مقالاتي ({articles.length})</h2>
+        <h2 className="admin-section-title">
+          {isSuperAdmin ? `جميع المقالات (${articles.length})` : `مقالاتي (${articles.length})`}
+        </h2>
       </div>
 
       {/* Articles Table with Search & Filter */}
-      <ArticlesTable articles={articles} />
+      <ArticlesTable articles={articles} showAuthor={isSuperAdmin} />
     </div>
   )
 }

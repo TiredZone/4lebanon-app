@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import toast from 'react-hot-toast'
 import {
   createArticle,
   updateArticle,
@@ -10,7 +11,7 @@ import {
   uploadImage,
 } from '@/app/admin/articles/actions'
 import { getStorageUrl } from '@/lib/utils'
-import { ARTICLE_STATUSES, SUCCESS_MESSAGES } from '@/lib/constants'
+import { ARTICLE_STATUSES, ARTICLE_PRIORITIES, SUCCESS_MESSAGES } from '@/lib/constants'
 import { EditorSelect } from './editor-select'
 import { EditorTopics } from './editor-topics'
 import type {
@@ -21,6 +22,8 @@ import type {
   Topic,
   ArticleSource,
   ArticleStatus,
+  ArticlePriority,
+  UserRole,
 } from '@/types/database'
 
 interface ArticleEditorProps {
@@ -31,6 +34,7 @@ interface ArticleEditorProps {
   regions: Region[]
   countries: Country[]
   topics: Topic[]
+  userRole?: UserRole
 }
 
 export function ArticleEditor({
@@ -41,6 +45,7 @@ export function ArticleEditor({
   regions,
   countries,
   topics,
+  userRole = 'editor',
 }: ArticleEditorProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -64,13 +69,18 @@ export function ArticleEditor({
     return new Date().toISOString().slice(0, 16)
   }
   const [publishedAt, setPublishedAt] = useState(getDefaultPublishDate())
-  const [isBreaking, setIsBreaking] = useState(article?.is_breaking || false)
-  const [isFeatured, setIsFeatured] = useState(article?.is_featured || false)
+  const [priority, setPriority] = useState<ArticlePriority>(article?.priority ?? 4)
+
+  // Filter priorities based on user role
+  const allowedPriorities = ARTICLE_PRIORITIES.filter((p) => {
+    if (userRole === 'super_admin') return true
+    if (userRole === 'admin') return p.value >= 2
+    return p.value >= 3 // editor
+  })
   const [sources, setSources] = useState<ArticleSource[]>(article?.sources || [])
 
   // UI state
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -97,13 +107,14 @@ export function ArticleEditor({
 
       if (result.error) {
         setError(result.error)
+        toast.error(result.error)
       } else if (result.path) {
         setCoverImage(result.path)
-        setSuccess('تم رفع الصورة بنجاح')
-        setTimeout(() => setSuccess(null), 3000)
+        toast.success(SUCCESS_MESSAGES.imageUploaded)
       }
     } catch {
       setError('فشل رفع الصورة. الرجاء المحاولة مرة أخرى')
+      toast.error('فشل رفع الصورة')
     } finally {
       setUploading(false)
       // Reset file input so the same file can be re-uploaded
@@ -113,24 +124,6 @@ export function ArticleEditor({
 
   const handleAddSource = () => {
     setSources([...sources, { title: '', url: '' }])
-  }
-
-  const handleReset = () => {
-    setTitle(article?.title_ar || '')
-    setExcerpt(article?.excerpt_ar || '')
-    setBody(article?.body_md || '')
-    setCoverImage(article?.cover_image_path || '')
-    setSectionId(article?.section_id ?? null)
-    setRegionId(article?.region_id ?? null)
-    setCountryId(article?.country_id ?? null)
-    setSelectedTopics(topicIds)
-    setStatus(article?.status || 'draft')
-    setPublishedAt(getDefaultPublishDate())
-    setIsBreaking(article?.is_breaking || false)
-    setIsFeatured(article?.is_featured || false)
-    setSources(article?.sources || [])
-    setError(null)
-    setSuccess(null)
   }
 
   const handleRemoveSource = (index: number) => {
@@ -149,7 +142,6 @@ export function ArticleEditor({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setSuccess(null)
 
     if (!title.trim()) {
       setError('العنوان مطلوب')
@@ -184,8 +176,7 @@ export function ArticleEditor({
       country_id: countryId,
       status,
       published_at: status !== 'draft' ? getISODate(publishedAt) : null,
-      is_breaking: isBreaking,
-      is_featured: isFeatured,
+      priority,
       sources: sources.filter((s) => s.title && s.url),
       topic_ids: selectedTopics,
     }
@@ -201,8 +192,9 @@ export function ArticleEditor({
 
       if (result?.error) {
         setError(result.error)
+        toast.error(result.error)
       } else {
-        setSuccess(SUCCESS_MESSAGES.articleSaved)
+        toast.success(SUCCESS_MESSAGES.articleSaved)
         if (mode === 'create' && result?.success && result.articleId) {
           router.push(`/admin/articles/${result.articleId}/edit`)
         }
@@ -214,9 +206,12 @@ export function ArticleEditor({
     if (!article) return
 
     startTransition(async () => {
+      sessionStorage.setItem('articleDeleted', '1')
       const result = await deleteArticle(article.id)
       if (result?.error) {
+        sessionStorage.removeItem('articleDeleted')
         setError(result.error)
+        toast.error(result.error)
         setShowDeleteConfirm(false)
       }
       // Redirect happens in the server action
@@ -227,7 +222,7 @@ export function ArticleEditor({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Error/Success messages */}
+      {/* Error message */}
       {error && (
         <div className="editor-message error">
           <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,19 +234,6 @@ export function ArticleEditor({
             />
           </svg>
           {error}
-        </div>
-      )}
-      {success && (
-        <div className="editor-message success">
-          <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          {success}
         </div>
       )}
 
@@ -445,56 +427,40 @@ export function ArticleEditor({
               </div>
             )}
 
-            {/* Breaking/Featured flags */}
-            <div className="editor-checkbox-group">
-              <label className={`editor-checkbox-label ${isBreaking ? 'checked' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={isBreaking}
-                  onChange={(e) => setIsBreaking(e.target.checked)}
-                  className="editor-checkbox"
-                />
-                <span className={`editor-checkbox-text ${isBreaking ? 'breaking' : ''}`}>
-                  <svg
-                    className="ml-1 inline-block h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  خبر عاجل
-                </span>
+            {/* Priority */}
+            <div className="mb-4">
+              <label htmlFor="priority" className="editor-label">
+                الأولوية
               </label>
-              <label className={`editor-checkbox-label ${isFeatured ? 'checked' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => setIsFeatured(e.target.checked)}
-                  className="editor-checkbox"
-                />
-                <span className={`editor-checkbox-text ${isFeatured ? 'featured' : ''}`}>
-                  <svg
-                    className="ml-1 inline-block h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <div className="space-y-1.5">
+                {allowedPriorities.map((p) => (
+                  <label
+                    key={p.value}
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 transition-all ${
+                      priority === p.value
+                        ? 'border-current bg-slate-50 font-medium'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                    }`}
+                    style={
+                      priority === p.value ? { color: p.color, borderColor: p.color } : undefined
+                    }
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    <input
+                      type="radio"
+                      name="priority"
+                      value={p.value}
+                      checked={priority === p.value}
+                      onChange={() => setPriority(p.value as ArticlePriority)}
+                      className="sr-only"
                     />
-                  </svg>
-                  مقال مميز
-                </span>
-              </label>
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: p.color }}
+                    />
+                    <span className="text-sm">{p.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Action buttons */}
@@ -524,14 +490,6 @@ export function ArticleEditor({
                 ) : (
                   'حفظ التغييرات'
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                disabled={isPending}
-                className="editor-btn editor-btn-secondary"
-              >
-                إعادة تعيين
               </button>
               {mode === 'edit' && (
                 <button

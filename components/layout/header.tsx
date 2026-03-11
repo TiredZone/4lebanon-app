@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { formatDateAr, toLatinNumbers } from '@/lib/utils'
 import { SearchForm } from './search-form'
 import { UserMenu } from './user-menu'
@@ -79,16 +78,13 @@ export function Header() {
                 href="/"
                 className="transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
               >
-                <Image
+                <img
                   src="/logo-transparent.png"
                   alt="Logo"
-                  width={173}
-                  height={58}
-                  className="h-8 w-auto sm:h-10 md:h-14"
-                  priority
+                  className="h-10 w-auto sm:h-12 md:h-16"
                 />
               </Link>
-              <time className="hidden text-xs font-medium text-slate-500 lg:block">{today}</time>
+              <time className="hidden text-sm font-medium text-slate-500 lg:block">{today}</time>
             </div>
 
             {/* Search - Center - Desktop only */}
@@ -114,29 +110,8 @@ export function Header() {
               </motion.div>
             </div>
 
-            {/* Profile/Dashboard Button - Mobile */}
-            <Link
-              href="/admin"
-              className="group order-3 flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-[#c61b23] p-2.5 shadow-md transition-all hover:scale-105 hover:bg-[#8a1219] hover:shadow-lg active:scale-95 lg:hidden"
-              aria-label="لوحة التحكم"
-            >
-              <svg
-                className="h-5 w-5 text-white transition-transform group-hover:scale-110"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-                />
-              </svg>
-            </Link>
-
-            {/* Profile - Right side */}
-            <div className="order-4 hidden items-center lg:flex">
+            {/* Profile - Right side (only shows for logged-in users) */}
+            <div className="order-3 flex items-center lg:order-4">
               <UserMenu />
             </div>
           </div>
@@ -167,20 +142,14 @@ export function Header() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Menu Header - Red accent bar */}
-              <div className="bg-gradient-to-l from-[#c61b23] to-[#9a1419] px-4 py-4">
+              <div className="bg-gradient-to-l from-[#830005] to-[#6b0004] px-4 py-4">
                 <div className="flex items-center justify-between">
                   <Link
                     href="/"
                     onClick={() => setMobileMenuOpen(false)}
                     className="transition-opacity hover:opacity-90"
                   >
-                    <Image
-                      src="/logo-transparent.png"
-                      alt="Logo"
-                      width={120}
-                      height={40}
-                      className="h-8 w-auto brightness-0 invert"
-                    />
+                    <img src="/logo-alternate.png" alt="Logo" className="h-8 w-auto" />
                   </Link>
                   <button
                     type="button"
@@ -205,46 +174,6 @@ export function Header() {
                 </div>
               </div>
 
-              {/* Dashboard Access */}
-              <Link
-                href="/admin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="mx-4 mt-4 flex items-center gap-3 rounded-xl bg-gradient-to-l from-slate-50 to-slate-100 px-4 py-3 transition-all hover:shadow-md active:scale-[0.98]"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c61b23]">
-                  <svg
-                    className="h-5 w-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <span className="block text-sm font-bold text-slate-800">لوحة التحكم</span>
-                  <span className="text-xs text-slate-500">إدارة المقالات</span>
-                </div>
-                <svg
-                  className="h-5 w-5 text-slate-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </Link>
-
               {/* Search in Menu */}
               <div className="px-4 py-4">
                 <div className="relative">
@@ -268,7 +197,7 @@ export function Header() {
                         className={cn(
                           'flex min-h-[48px] items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all',
                           isActive
-                            ? 'bg-[#c61b23] text-white shadow-md'
+                            ? 'bg-[#830005] text-white shadow-md'
                             : 'text-slate-700 hover:bg-slate-100'
                         )}
                       >

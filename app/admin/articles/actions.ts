@@ -12,7 +12,8 @@ import {
   logSecurityEvent,
   sanitizeFilename,
 } from '@/lib/security'
-import type { ArticleFormData } from '@/types/database'
+import type { ArticleFormData, UserRole, ArticlePriority } from '@/types/database'
+import { MAX_PINNED_ARTICLES } from '@/lib/constants'
 
 interface ActionResult {
   error?: string
@@ -21,12 +22,48 @@ interface ActionResult {
   newSlug?: string
 }
 
+/** Clamp priority to the max allowed for a given role */
+function clampPriority(priority: number, role: UserRole): ArticlePriority {
+  // super_admin: 1-5, admin: 2-5, editor: 3-5
+  const minAllowed = role === 'super_admin' ? 1 : role === 'admin' ? 2 : 3
+  return Math.max(priority, minAllowed) as ArticlePriority
+}
+
+/** Get the sort_position for a new pinned article (FIFO: first pinned stays on top) */
+async function getPinnedSortPosition(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<number> {
+  const { data } = await supabase
+    .from('articles')
+    .select('sort_position')
+    .eq('priority', 1)
+    .eq('status', 'published')
+    .order('sort_position', { ascending: true })
+    .limit(1)
+
+  const minPosition = data?.[0]?.sort_position as number | undefined
+  return minPosition != null ? minPosition - 1 : 0
+}
+
+/** Check if the pinned articles limit has been reached */
+async function getPinnedCount(supabase: Awaited<ReturnType<typeof createClient>>): Promise<number> {
+  const { count } = await supabase
+    .from('articles')
+    .select('id', { count: 'exact', head: true })
+    .eq('priority', 1)
+    .eq('status', 'published')
+
+  return count ?? 0
+}
+
 async function verifyEditorRole(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string
 ): Promise<boolean> {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
-  return !!profile && ['admin', 'editor'].includes((profile as { role: string }).role)
+  return (
+    !!profile && ['super_admin', 'admin', 'editor'].includes((profile as { role: string }).role)
+  )
 }
 
 export async function createArticle(formData: ArticleFormData): Promise<ActionResult> {
@@ -45,6 +82,14 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
     await logSecurityEvent('unauthorized_access', { action: 'createArticle', userId: user.id })
     return { error: 'ليس لديك صلاحية لهذا الإجراء' }
   }
+
+  // Get user role for priority enforcement
+  const { data: creatorProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const creatorRole = ((creatorProfile as { role: string } | null)?.role as UserRole) || 'editor'
 
   // Rate limiting
   const clientId = await getClientIdentifier()
@@ -68,10 +113,34 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
 
   const validatedData = validationResult.data
 
+  // Enforce role-based priority cap
+  const effectivePriority = clampPriority(validatedData.priority, creatorRole)
+
+  // Check pinned limit if priority 1
+  if (effectivePriority === 1) {
+    const pinnedCount = await getPinnedCount(supabase)
+    if (pinnedCount >= MAX_PINNED_ARTICLES) {
+      return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+    }
+  }
+
   // Generate slug from sanitized title
   const slug = generateSlug(validatedData.title_ar, crypto.randomUUID().slice(0, 8))
 
+  // Calculate sort_position
+  const publishedAt =
+    validatedData.status !== 'draft' ? validatedData.published_at || new Date().toISOString() : null
+  let sortPosition: number
+  if (effectivePriority === 1) {
+    // FIFO: first pinned stays on top (gets highest sort_position)
+    sortPosition = await getPinnedSortPosition(supabase)
+  } else {
+    // Default: epoch of published_at (newest = highest value = shown first)
+    sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
+  }
+
   // Insert article with validated data
+  // Note: is_breaking/is_featured are auto-set by DB trigger from priority
   const { data: article, error: insertError } = await supabase
     .from('articles')
     .insert({
@@ -85,12 +154,9 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       region_id: validatedData.region_id,
       country_id: validatedData.country_id,
       status: validatedData.status,
-      published_at:
-        validatedData.status !== 'draft'
-          ? validatedData.published_at || new Date().toISOString()
-          : null,
-      is_breaking: validatedData.is_breaking,
-      is_featured: validatedData.is_featured,
+      published_at: publishedAt,
+      priority: effectivePriority,
+      sort_position: sortPosition,
       sources: validatedData.sources,
     })
     .select('id')
@@ -156,7 +222,7 @@ export async function updateArticle(
   // AUTHORIZATION CHECK FIRST - verify ownership before expensive operations
   const { data: existingArticle, error: fetchError } = await supabase
     .from('articles')
-    .select('author_id, slug, status, title_ar')
+    .select('author_id, slug, status, title_ar, priority, sort_position')
     .eq('id', articleId)
     .single()
 
@@ -170,16 +236,37 @@ export async function updateArticle(
     slug: string
     status: string
     title_ar: string
+    priority: number
+    sort_position: number
   }
 
+  // Get user role - needed for both authorization and priority enforcement
+  let updaterRole: UserRole = 'editor'
   if (existing.author_id !== user.id) {
-    await logSecurityEvent('unauthorized_access', {
-      action: 'updateArticle',
-      userId: user.id,
-      attemptedArticleId: articleId,
-    })
-    // Use same error message to prevent article enumeration
-    return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    updaterRole = ((userProfile as { role: string } | null)?.role as UserRole) || 'editor'
+
+    if (updaterRole !== 'super_admin') {
+      await logSecurityEvent('unauthorized_access', {
+        action: 'updateArticle',
+        userId: user.id,
+        attemptedArticleId: articleId,
+      })
+      // Use same error message to prevent article enumeration
+      return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
+    }
+  } else {
+    // Owner editing their own article - still need their role for priority enforcement
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    updaterRole = ((ownerProfile as { role: string } | null)?.role as UserRole) || 'editor'
   }
 
   // Rate limiting - after authorization check
@@ -204,6 +291,17 @@ export async function updateArticle(
 
   const validatedData = validationResult.data
 
+  // Enforce role-based priority cap
+  const effectivePriority = clampPriority(validatedData.priority, updaterRole)
+
+  // Check pinned limit if changing TO priority 1 (not if already pinned)
+  if (effectivePriority === 1 && existing.priority !== 1) {
+    const pinnedCount = await getPinnedCount(supabase)
+    if (pinnedCount >= MAX_PINNED_ARTICLES) {
+      return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+    }
+  }
+
   const oldSlug = existing.slug
   const wasPublished = existing.status === 'published'
 
@@ -213,7 +311,21 @@ export async function updateArticle(
     newSlug = generateSlug(validatedData.title_ar, articleId.slice(0, 8))
   }
 
+  // Calculate sort_position based on priority change
+  const publishedAt =
+    validatedData.status !== 'draft' ? validatedData.published_at || new Date().toISOString() : null
+  let sortPosition = existing.sort_position
+  if (effectivePriority !== existing.priority) {
+    // Priority changed - recalculate sort_position
+    if (effectivePriority === 1) {
+      sortPosition = await getPinnedSortPosition(supabase)
+    } else {
+      sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
+    }
+  }
+
   // Update article with validated data
+  // Note: is_breaking/is_featured are auto-set by DB trigger from priority
   const { error: updateError } = await supabase
     .from('articles')
     .update({
@@ -226,12 +338,9 @@ export async function updateArticle(
       region_id: validatedData.region_id,
       country_id: validatedData.country_id,
       status: validatedData.status,
-      published_at:
-        validatedData.status !== 'draft'
-          ? validatedData.published_at || new Date().toISOString()
-          : null,
-      is_breaking: validatedData.is_breaking,
-      is_featured: validatedData.is_featured,
+      published_at: publishedAt,
+      priority: effectivePriority,
+      sort_position: sortPosition,
       sources: validatedData.sources,
     })
     .eq('id', articleId)
@@ -315,14 +424,24 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
 
   const articleData = article as { author_id: string; slug: string }
 
+  // Super admin can delete any article; others can only delete their own
   if (articleData.author_id !== user.id) {
-    await logSecurityEvent('unauthorized_access', {
-      action: 'deleteArticle',
-      userId: user.id,
-      attemptedArticleId: articleId,
-    })
-    // Use same error message to prevent article enumeration
-    return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    const userRole = (userProfile as { role: string } | null)?.role
+
+    if (userRole !== 'super_admin') {
+      await logSecurityEvent('unauthorized_access', {
+        action: 'deleteArticle',
+        userId: user.id,
+        attemptedArticleId: articleId,
+      })
+      // Use same error message to prevent article enumeration
+      return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
+    }
   }
 
   // Delete article (cascades to article_topics)

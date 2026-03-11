@@ -19,9 +19,9 @@ export default function ArticleError({
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="p-8 text-center">
         <div className="mb-6 flex justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#830005]/10">
             <svg
-              className="h-8 w-8 text-red-600"
+              className="h-8 w-8 text-[#830005]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -42,7 +42,7 @@ export default function ArticleError({
         <div className="flex justify-center gap-4">
           <button
             onClick={reset}
-            className="rounded-lg bg-[#c61b23] px-6 py-3 font-medium text-white transition-colors hover:bg-[#a01820]"
+            className="rounded-lg bg-[#830005] px-6 py-3 font-medium text-white transition-colors hover:bg-[#6b0004]"
           >
             حاول مرة أخرى
           </button>

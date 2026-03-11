@@ -99,6 +99,18 @@ export const ARTICLE_STATUSES = [
   { value: 'published', label: 'منشور' },
 ] as const
 
+// Article priority levels (1=highest, 5=lowest)
+export const ARTICLE_PRIORITIES = [
+  { value: 1, label: 'تثبيت في الأعلى', color: '#dc2626' },
+  { value: 2, label: 'عاجل', color: '#ea580c' },
+  { value: 3, label: 'مميز', color: '#7c3aed' },
+  { value: 4, label: 'عادي', color: '#6b7280' },
+  { value: 5, label: 'منخفض', color: '#94a3b8' },
+] as const
+
+// Maximum number of pinned articles (priority 1) allowed at any time
+export const MAX_PINNED_ARTICLES = 3
+
 // Error messages in Arabic
 export const ERROR_MESSAGES = {
   generic: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',
@@ -120,6 +132,8 @@ export const SUCCESS_MESSAGES = {
   articleDeleted: 'تم حذف المقال بنجاح',
   imageUploaded: 'تم رفع الصورة بنجاح',
   profileUpdated: 'تم تحديث الملف الشخصي بنجاح',
+  sectionCreated: 'تم إنشاء القسم بنجاح',
+  sectionDeleted: 'تم حذف القسم بنجاح',
 }
 
 // Metadata defaults

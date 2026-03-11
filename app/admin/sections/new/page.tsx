@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { createSection, deleteSection, getSections } from '../actions'
+import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '@/lib/constants'
 import type { Section } from '@/types/database'
 
 export default function NewSectionPage() {
@@ -15,7 +17,7 @@ export default function NewSectionPage() {
     sort_order: 0,
   })
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [deletingSectionId, setDeletingSectionId] = useState<number | null>(null)
 
   // Load existing sections on mount
   useEffect(() => {
@@ -96,7 +98,6 @@ export default function NewSectionPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setSuccess(null)
 
     // Validation
     if (!formData.name_ar.trim()) {
@@ -133,7 +134,7 @@ export default function NewSectionPage() {
         return
       }
 
-      setSuccess('تم إنشاء القسم بنجاح!')
+      toast.success(SUCCESS_MESSAGES.sectionCreated)
 
       // Reset form
       setFormData({
@@ -148,33 +149,34 @@ export default function NewSectionPage() {
       if (sectionsResult.success && sectionsResult.data) {
         setExistingSections(sectionsResult.data as Section[])
       }
-    } catch (err) {
-      console.error('Error creating section:', err)
-      setError('حدث خطأ أثناء إنشاء القسم')
+    } catch {
+      toast.error(ERROR_MESSAGES.saveError)
     } finally {
       setLoading(false)
     }
   }
 
   const handleDeleteSection = async (sectionId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا القسم؟ لن يتم حذف المقالات المرتبطة به.')) {
-      return
-    }
+    setDeletingSectionId(sectionId)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingSectionId) return
 
     try {
-      const result = await deleteSection(sectionId)
+      const result = await deleteSection(deletingSectionId)
 
       if (!result.success) {
-        setError(result.error || 'حدث خطأ أثناء حذف القسم')
+        toast.error(result.error || ERROR_MESSAGES.deleteError)
         return
       }
 
-      // Refresh sections list
-      setExistingSections((prev) => prev.filter((s) => s.id !== sectionId))
-      setSuccess('تم حذف القسم بنجاح!')
-    } catch (err) {
-      console.error('Error deleting section:', err)
-      setError('حدث خطأ أثناء حذف القسم')
+      setExistingSections((prev) => prev.filter((s) => s.id !== deletingSectionId))
+      toast.success(SUCCESS_MESSAGES.sectionDeleted)
+    } catch {
+      toast.error(ERROR_MESSAGES.deleteError)
+    } finally {
+      setDeletingSectionId(null)
     }
   }
 
@@ -202,7 +204,7 @@ export default function NewSectionPage() {
 
       {/* Alerts */}
       {error && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="mb-6 flex items-center gap-3 rounded-xl border border-[#830005]/20 bg-[#830005]/5 p-4 text-[#830005]">
           <svg
             className="h-5 w-5 flex-shrink-0"
             fill="none"
@@ -219,7 +221,7 @@ export default function NewSectionPage() {
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            className="mr-auto text-red-500 hover:text-red-700"
+            className="mr-auto text-[#830005] hover:text-[#6b0004]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -233,35 +235,46 @@ export default function NewSectionPage() {
         </div>
       )}
 
-      {success && (
-        <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700">
-          <svg
-            className="h-5 w-5 flex-shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>{success}</span>
-          <button
-            onClick={() => setSuccess(null)}
-            className="mr-auto text-green-500 hover:text-green-700"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+      {/* Delete Confirmation Modal */}
+      {deletingSectionId !== null && (
+        <div className="editor-modal-overlay" onClick={() => setDeletingSectionId(null)}>
+          <div className="editor-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#830005]/10">
+                <svg
+                  className="h-5 w-5 text-[#830005]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">حذف القسم</h3>
+            </div>
+            <p className="mb-6 text-slate-600">
+              هل أنت متأكد من حذف هذا القسم؟ لن يتم حذف المقالات المرتبطة به.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmDelete}
+                className="flex-1 rounded-xl bg-[#830005] px-4 py-2.5 font-bold text-white transition-colors hover:bg-[#6b0004]"
+              >
+                نعم، احذف
+              </button>
+              <button
+                onClick={() => setDeletingSectionId(null)}
+                className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -289,7 +302,7 @@ export default function NewSectionPage() {
             {/* Section Name */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                اسم القسم <span className="text-red-500">*</span>
+                اسم القسم <span className="text-[#830005]">*</span>
               </label>
               <input
                 type="text"
@@ -304,7 +317,7 @@ export default function NewSectionPage() {
             {/* Slug */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                الرابط (Slug) <span className="text-red-500">*</span>
+                الرابط (Slug) <span className="text-[#830005]">*</span>
               </label>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-400">/section/</span>
@@ -483,7 +496,7 @@ export default function NewSectionPage() {
                       </Link>
                       <button
                         onClick={() => handleDeleteSection(section.id)}
-                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                        className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-[#830005]/5 hover:text-[#830005]"
                         title="حذف القسم"
                       >
                         <svg

@@ -49,7 +49,7 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600">{error}</div>}
+      {error && <div className="rounded-lg bg-[#830005]/5 p-4 text-sm text-[#830005]">{error}</div>}
 
       <div>
         <label htmlFor="email" className="text-foreground mb-2 block text-sm font-medium">

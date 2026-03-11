@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { SITE_CONFIG, FOOTER_NAV, SOCIAL_LINKS } from '@/lib/constants'
 
 export function Footer() {
@@ -12,13 +11,7 @@ export function Footer() {
           {/* Logo and Social */}
           <div className="flex flex-col items-center md:items-start">
             <Link href="/" className="mb-4 block">
-              <Image
-                src="/logo-transparent.png"
-                alt="4Lebanon Logo"
-                width={150}
-                height={50}
-                className="h-10 w-auto sm:h-12"
-              />
+              <img src="/logo-alternate.png" alt="4Lebanon Logo" className="h-16 w-auto sm:h-20" />
             </Link>
             <p className="mb-4 text-sm text-white/80 sm:mb-6">{SITE_CONFIG.description}</p>
             <div className="flex justify-center gap-2 sm:gap-3 md:justify-start">

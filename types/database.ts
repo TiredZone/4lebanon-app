@@ -3,11 +3,16 @@
 
 export type ArticleStatus = 'draft' | 'scheduled' | 'published'
 
+export type UserRole = 'super_admin' | 'admin' | 'editor'
+
+export type ArticlePriority = 1 | 2 | 3 | 4 | 5
+
 export interface Profile {
   id: string
   display_name_ar: string
   avatar_url: string | null
   bio_ar: string | null
+  role: UserRole
   created_at: string
   updated_at: string
 }
@@ -66,6 +71,8 @@ export interface Article {
   published_at: string | null
   is_breaking: boolean
   is_featured: boolean
+  priority: ArticlePriority
+  sort_position: number
   sources: ArticleSource[]
   view_count: number
   created_at: string
@@ -95,6 +102,7 @@ export interface ArticleListItem {
   published_at: string | null
   is_breaking: boolean
   is_featured: boolean
+  priority: ArticlePriority
   author: Pick<Profile, 'id' | 'display_name_ar' | 'avatar_url'> | null // Can be null if author was deleted
   section: Pick<Section, 'id' | 'slug' | 'name_ar'> | null
 }
@@ -110,8 +118,7 @@ export interface ArticleFormData {
   country_id: number | null
   status: ArticleStatus
   published_at: string | null
-  is_breaking: boolean
-  is_featured: boolean
+  priority: ArticlePriority
   sources: ArticleSource[]
   topic_ids: number[]
 }

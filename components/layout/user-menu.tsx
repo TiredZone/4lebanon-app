@@ -56,34 +56,14 @@ export function UserMenu() {
   }
 
   if (!user) {
-    return (
-      <Link
-        href="/admin/login"
-        className="group flex flex-row-reverse items-center gap-2 rounded-full bg-[#c61b23] px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:scale-105 hover:bg-[#1e293b] hover:shadow-lg"
-      >
-        <svg
-          className="h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-          />
-        </svg>
-        <span>تسجيل الدخول</span>
-      </Link>
-    )
+    return null
   }
 
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex h-10 w-10 items-center justify-center rounded-full bg-[#c61b23] font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-[#8a1219] hover:shadow-lg"
+        className="group flex h-10 w-10 items-center justify-center rounded-full bg-[#830005] font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-[#6b0004] hover:shadow-lg"
         aria-label="قائمة المستخدم"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -133,7 +113,7 @@ export function UserMenu() {
                   setIsOpen(false)
                   handleLogout()
                 }}
-                className="w-full rounded-md px-3 py-2 text-right text-sm text-red-600 hover:bg-red-50"
+                className="w-full rounded-md px-3 py-2 text-right text-sm text-[#830005] hover:bg-[#830005]/5"
               >
                 تسجيل الخروج
               </button>

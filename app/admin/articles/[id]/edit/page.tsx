@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ArticleEditor } from '@/components/admin/article-editor'
-import type { Article, Section, Region, Country, Topic } from '@/types/database'
+import type { Article, Section, Region, Country, Topic, UserRole } from '@/types/database'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,8 +25,17 @@ async function getArticleAndFormData(articleId: string) {
     redirect('/admin/login')
   }
 
-  // Get article with topics
-  const { data: article } = await supabase
+  // Get user role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const userRole = ((profile as { role: string } | null)?.role || 'editor') as UserRole
+  const isSuperAdmin = userRole === 'super_admin'
+
+  // Super admin can edit any article; others can only edit their own
+  let articleQuery = supabase
     .from('articles')
     .select(
       `
@@ -35,8 +44,12 @@ async function getArticleAndFormData(articleId: string) {
     `
     )
     .eq('id', articleId)
-    .eq('author_id', user.id) // RLS enforces this, but double check
-    .single()
+
+  if (!isSuperAdmin) {
+    articleQuery = articleQuery.eq('author_id', user.id)
+  }
+
+  const { data: article } = await articleQuery.single()
 
   if (!article) {
     return null
@@ -52,6 +65,7 @@ async function getArticleAndFormData(articleId: string) {
 
   return {
     article: article as ArticleWithTopics,
+    userRole,
     sections: (sections.data || []) as Section[],
     regions: (regions.data || []) as Region[],
     countries: (countries.data || []) as Country[],
@@ -67,7 +81,7 @@ export default async function EditArticlePage({ params }: PageProps) {
     notFound()
   }
 
-  const { article, sections, regions, countries, topics } = data
+  const { article, userRole, sections, regions, countries, topics } = data
   const topicIds = article.article_topics.map((at) => at.topic_id)
 
   return (
@@ -94,6 +108,7 @@ export default async function EditArticlePage({ params }: PageProps) {
         regions={regions}
         countries={countries}
         topics={topics}
+        userRole={userRole}
       />
     </div>
   )

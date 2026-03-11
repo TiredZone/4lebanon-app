@@ -13,9 +13,9 @@
   --border: #e2e8f0;
 
   /* Premium Aura System Colors */
-  --aura-red: #e11d48;
-  --aura-red-light: #fb7185;
-  --aura-glow-red: rgba(225, 29, 72, 0.4);
+  --aura-red: #830005;
+  --aura-red-light: #a63040;
+  --aura-glow-red: rgba(131, 0, 5, 0.4);
   --aura-glow-green: rgba(34, 197, 94, 0.4);
   --aura-gray: #f8fafc;
   --aura-gray-warm: #fafaf9;
@@ -365,7 +365,7 @@ p {
 /* Hover - visible color change with background */
 .nav-link-item:hover {
   color: var(--aura-red);
-  background: rgba(198, 27, 35, 0.08);
+  background: rgba(131, 0, 5, 0.08);
   border-radius: 0.5rem;
 }
 
@@ -457,7 +457,7 @@ button,
 }
 
 /* All images should be centered and cover properly */
-img,
+img:not([class*='w-auto']),
 .next-image {
   object-fit: cover;
   object-position: center;
@@ -556,7 +556,7 @@ a:hover {
 }
 
 /* Time badge and small interactive elements */
-.group:hover .text-\[\#c61b23\],
+.group:hover .text-\[\#830005\],
 .group:hover .text-gray-900 {
   color: var(--aura-red);
   transition: color 0.2s ease;
@@ -991,20 +991,6 @@ img {
 /* Breaking news banner */
 .breaking-banner {
   background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
-}
-
-/* News ticker animation */
-@keyframes ticker {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-.ticker-content {
-  animation: ticker 30s linear infinite;
 }
 
 /* Fade in animation */
@@ -1912,7 +1898,7 @@ section a[href*='/recent'] {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--aura-red) 0%, #fb7185 100%);
+  background: linear-gradient(90deg, var(--aura-red) 0%, #a63040 100%);
   transform-origin: left;
   z-index: 9999;
   transition: transform 0.1s linear;
@@ -3255,7 +3241,7 @@ section a[href*='/recent'] {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, var(--aura-red) 0%, #b91c1c 100%);
+  background: linear-gradient(135deg, var(--aura-red) 0%, #6b0004 100%);
   border: none;
   border-radius: 0.75rem;
   cursor: pointer;
@@ -3472,7 +3458,7 @@ section a[href*='/recent'] {
 }
 
 .search-card-section:hover {
-  color: #b91c1c;
+  color: #830005;
 }
 
 .search-card-title {
@@ -4132,7 +4118,7 @@ section a[href*='/recent'] {
   border-right: 3px solid #eab308;
 }
 .admin-stat-card.red {
-  border-right: 3px solid #ef4444;
+  border-right: 3px solid #830005;
 }
 .admin-stat-card.purple {
   border-right: 3px solid #a855f7;
@@ -4163,7 +4149,7 @@ section a[href*='/recent'] {
   color: #ca8a04;
 }
 .admin-stat-label.red {
-  color: #ef4444;
+  color: #830005;
 }
 .admin-stat-label.purple {
   color: #a855f7;
@@ -4188,7 +4174,7 @@ section a[href*='/recent'] {
   color: #ca8a04;
 }
 .admin-stat-icon.red {
-  color: #ef4444;
+  color: #830005;
 }
 .admin-stat-icon.purple {
   color: #a855f7;
@@ -4212,7 +4198,7 @@ section a[href*='/recent'] {
   color: #ca8a04;
 }
 .admin-stat-value.red {
-  color: #ef4444;
+  color: #830005;
 }
 .admin-stat-value.purple {
   color: #a855f7;
@@ -4382,8 +4368,8 @@ section a[href*='/recent'] {
 }
 
 .admin-status-badge.archived {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  color: #dc2626;
+  background: linear-gradient(135deg, rgba(131, 0, 5, 0.08) 0%, rgba(131, 0, 5, 0.15) 100%);
+  color: #830005;
 }
 
 /* Article Type Badges */
@@ -4398,8 +4384,8 @@ section a[href*='/recent'] {
 }
 
 .admin-type-badge.breaking {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: rgba(131, 0, 5, 0.1);
+  color: #830005;
 }
 
 .admin-type-badge.featured {
@@ -4430,7 +4416,7 @@ section a[href*='/recent'] {
 
 /* Red variant - edit button */
 .admin-action-btn-red:hover {
-  background: #c61b23;
+  background: #830005;
 }
 
 .admin-action-btn-red:hover svg {
@@ -4596,9 +4582,9 @@ section a[href*='/recent'] {
 }
 
 .editor-message.error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(254, 202, 202, 0.3) 100%);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #dc2626;
+  background: linear-gradient(135deg, rgba(131, 0, 5, 0.1) 0%, rgba(254, 202, 202, 0.3) 100%);
+  border: 1px solid rgba(131, 0, 5, 0.2);
+  color: #830005;
 }
 
 .editor-message.success {
@@ -5008,7 +4994,7 @@ section a[href*='/recent'] {
 }
 
 .editor-checkbox-text.breaking {
-  color: #ef4444;
+  color: #830005;
 }
 
 .editor-checkbox-text.featured {
@@ -5064,7 +5050,7 @@ section a[href*='/recent'] {
 }
 
 .editor-image-remove:hover {
-  background: rgba(239, 68, 68, 0.9);
+  background: rgba(131, 0, 5, 0.9);
 }
 
 .editor-image-upload-content {
@@ -5148,14 +5134,14 @@ section a[href*='/recent'] {
   padding: 0.5rem;
   background: transparent;
   border: none;
-  color: #ef4444;
+  color: #830005;
   cursor: pointer;
   border-radius: 0.375rem;
   transition: all 0.15s ease;
 }
 
 .editor-source-remove:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(131, 0, 5, 0.1);
 }
 
 .editor-no-sources {
@@ -5212,25 +5198,25 @@ section a[href*='/recent'] {
 
 .editor-btn-danger {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.5);
-  color: #ef4444;
+  border: 1px solid rgba(131, 0, 5, 0.5);
+  color: #830005;
 }
 
 .editor-btn-danger:hover {
-  background: rgba(239, 68, 68, 0.05);
-  border-color: #ef4444;
+  background: rgba(131, 0, 5, 0.05);
+  border-color: #830005;
 }
 
 .editor-btn-delete {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, #830005 0%, #830005 100%);
   border: none;
   color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 4px 12px rgba(131, 0, 5, 0.25);
 }
 
 .editor-btn-delete:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 6px 20px rgba(131, 0, 5, 0.35);
 }
 
 .editor-btn-delete:disabled {

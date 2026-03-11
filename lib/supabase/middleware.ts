@@ -247,7 +247,7 @@ export async function updateSession(request: NextRequest) {
 
     if (!profileError && profile) {
       const role = (profile as { role?: string }).role
-      if (role && !['admin', 'editor'].includes(role)) {
+      if (role && !['super_admin', 'admin', 'editor'].includes(role)) {
         console.warn(
           `[SECURITY] Unauthorized admin access: user ${user.id} role=${role} path=${pathname} IP=${ip}`
         )

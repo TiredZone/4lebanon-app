@@ -19,12 +19,12 @@ export default function GlobalError({
       <body>
         <div className="flex min-h-screen items-center justify-center bg-gray-100">
           <div className="p-8 text-center">
-            <h1 className="mb-4 text-4xl font-bold text-red-600">حدث خطأ</h1>
+            <h1 className="mb-4 text-4xl font-bold text-[#830005]">حدث خطأ</h1>
             <p className="mb-8 text-gray-600">عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.</p>
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={reset}
-                className="rounded-lg bg-red-600 px-6 py-3 font-medium text-white transition-colors hover:bg-red-700"
+                className="rounded-lg bg-[#830005] px-6 py-3 font-medium text-white transition-colors hover:bg-[#6b0004]"
               >
                 حاول مرة أخرى
               </button>

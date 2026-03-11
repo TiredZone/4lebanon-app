@@ -113,7 +113,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
         />
         <button
           type="submit"
-          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500 transition-colors hover:text-[#c61b23]"
+          className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500 transition-colors hover:text-[#830005]"
           aria-label="بحث"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +132,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
         <div className="absolute top-full right-0 left-0 z-50 mt-2 max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-2xl">
           {isSearching ? (
             <div className="p-4 text-center text-gray-500">
-              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-[#c61b23] border-t-transparent"></div>
+              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-[#830005] border-t-transparent"></div>
             </div>
           ) : results.length > 0 ? (
             <div className="py-2">
@@ -159,7 +159,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
                   )}
                   <div className="min-w-0 flex-1">
                     {article.section && (
-                      <span className="text-xs font-medium text-[#c61b23]">
+                      <span className="text-xs font-medium text-[#830005]">
                         {article.section.name_ar}
                       </span>
                     )}
@@ -176,7 +176,7 @@ export function SearchForm({ onSearch, onFocus, onBlur }: SearchFormProps = {}) 
                   setQuery('')
                   onSearch?.()
                 }}
-                className="w-full px-4 py-2 text-center text-sm font-medium text-[#c61b23] transition-colors hover:bg-gray-50"
+                className="w-full px-4 py-2 text-center text-sm font-medium text-[#830005] transition-colors hover:bg-gray-50"
               >
                 عرض جميع النتائج ←
               </button>

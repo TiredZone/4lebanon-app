@@ -24,7 +24,7 @@ async function getHomepageData() {
     .from('articles')
     .select(
       `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking,
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, priority,
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
@@ -38,7 +38,7 @@ async function getHomepageData() {
     .from('articles')
     .select(
       `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
       author:profiles!articles_author_id_fkey(id, display_name_ar),
       section:sections!articles_section_id_fkey(id, name_ar)
     `
@@ -46,8 +46,9 @@ async function getHomepageData() {
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
-    .or('is_featured.eq.true,is_breaking.eq.true')
-    .order('published_at', { ascending: false })
+    .in('priority', [1, 2, 3])
+    .order('priority', { ascending: true })
+    .order('sort_position', { ascending: false })
     .limit(6)
 
   // Fetch all sections and a batch of recent articles in two queries (avoids N+1)
@@ -57,7 +58,7 @@ async function getHomepageData() {
       .from('articles')
       .select(
         `
-        id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+        id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
         section_id,
         author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
         section:sections!articles_section_id_fkey(id, slug, name_ar)
@@ -66,7 +67,8 @@ async function getHomepageData() {
       .eq('status', 'published')
       .not('published_at', 'is', null)
       .lte('published_at', now)
-      .order('published_at', { ascending: false })
+      .order('priority', { ascending: true })
+      .order('sort_position', { ascending: false })
       .limit(120),
   ])
 
@@ -98,15 +100,16 @@ async function getHomepageData() {
     .not('display_name_ar', 'is', null)
     .limit(10)
 
-  // Fetch breaking news for ticker
+  // Fetch breaking news for ticker (priority 1-2)
   const { data: breakingNews } = await supabase
     .from('articles')
     .select('id, slug, title_ar')
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
-    .eq('is_breaking', true)
-    .order('published_at', { ascending: false })
+    .in('priority', [1, 2])
+    .order('priority', { ascending: true })
+    .order('sort_position', { ascending: false })
     .limit(10)
 
   // Fetch most-read articles (by view_count, not recent)
@@ -114,7 +117,7 @@ async function getHomepageData() {
     .from('articles')
     .select(
       `
-      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
@@ -144,6 +147,7 @@ function transformArticles(articles: Record<string, unknown>[]): ArticleListItem
     published_at: article.published_at as string | null,
     is_breaking: article.is_breaking as boolean,
     is_featured: article.is_featured as boolean,
+    priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
     author: article.author as ArticleListItem['author'],
     section: article.section as ArticleListItem['section'],
   }))
@@ -169,7 +173,7 @@ export default async function Home() {
               {/* Header */}
               <div className="border-b border-slate-200/60 bg-white px-4 py-3 sm:px-5 sm:py-3.5">
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-1 rounded-full bg-[#c61b23]"></div>
+                  <div className="h-4 w-1 rounded-full bg-[#830005]"></div>
                   <h2 className="text-sm font-semibold tracking-tight text-slate-800 sm:text-base">
                     على مدار الساعة
                   </h2>
@@ -188,7 +192,7 @@ export default async function Home() {
                   >
                     {/* Title and excerpt - RTL aligned */}
                     <div className="min-w-0 flex-1 text-right">
-                      <h3 className="line-clamp-2 text-[11px] leading-[1.5] font-normal text-slate-600 transition-colors group-hover:text-[#c61b23] sm:text-[12px]">
+                      <h3 className="line-clamp-2 text-[11px] leading-[1.5] font-normal text-slate-600 transition-colors group-hover:text-[#830005] sm:text-[12px]">
                         {article.title_ar}
                       </h3>
                       {article.excerpt_ar && (
@@ -229,7 +233,7 @@ export default async function Home() {
                 {/* More Button */}
                 <Link
                   href="/recent"
-                  className="flex min-h-[44px] items-center justify-center gap-1.5 border-t border-slate-200/60 bg-slate-50/50 px-4 py-3 text-center text-xs font-medium text-slate-500 transition-all hover:bg-slate-100/80 hover:text-[#c61b23] sm:px-5"
+                  className="flex min-h-[44px] items-center justify-center gap-1.5 border-t border-slate-200/60 bg-slate-50/50 px-4 py-3 text-center text-xs font-medium text-slate-500 transition-all hover:bg-slate-100/80 hover:text-[#830005] sm:px-5"
                 >
                   <span>عرض المزيد</span>
                   <span className="text-[10px]">←</span>
@@ -242,7 +246,7 @@ export default async function Home() {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-200/60 bg-white px-4 py-3 sm:px-5 sm:py-3.5">
                 <div className="flex items-center gap-2">
-                  <div className="h-4 w-1 rounded-full bg-[#c61b23]"></div>
+                  <div className="h-4 w-1 rounded-full bg-[#830005]"></div>
                   <h2 className="text-sm font-semibold tracking-tight text-slate-800 sm:text-base">
                     أهم الأخبار
                   </h2>
@@ -301,7 +305,7 @@ export default async function Home() {
                       {/* Category Badge */}
                       {article.section && (
                         <div className="mb-2 sm:mb-3">
-                          <span className="inline-block rounded bg-[#c61b23] px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">
+                          <span className="inline-block rounded bg-[#830005] px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">
                             {article.section.name_ar}
                           </span>
                         </div>
@@ -367,7 +371,7 @@ export default async function Home() {
                         {/* Category Badge */}
                         {article.section && (
                           <div className="mb-1.5 sm:mb-2">
-                            <span className="inline-block rounded bg-[#c61b23] px-2 py-0.5 text-[10px] font-bold text-white sm:text-xs">
+                            <span className="inline-block rounded bg-[#830005] px-2 py-0.5 text-[10px] font-bold text-white sm:text-xs">
                               {article.section.name_ar}
                             </span>
                           </div>
@@ -398,7 +402,7 @@ export default async function Home() {
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="h-6 w-1 rounded-full bg-[#c61b23] sm:h-8 sm:w-1.5"></div>
+                  <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
                   <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
                     {section.name_ar}
                   </h2>
@@ -533,7 +537,7 @@ export default async function Home() {
           <div className="mb-8 sm:mb-10 lg:mb-12">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
-                <div className="h-6 w-1 rounded-full bg-[#c61b23] sm:h-8 sm:w-1.5"></div>
+                <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
                 <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
                   الأكثر قراءة
                 </h2>
@@ -592,7 +596,7 @@ export default async function Home() {
                     {/* Category Tag */}
                     {data.mostRead[0].section && (
                       <div className="mb-2">
-                        <span className="inline-block rounded-full bg-[#c61b23] px-3 py-1 text-xs font-bold text-white">
+                        <span className="inline-block rounded-full bg-[#830005] px-3 py-1 text-xs font-bold text-white">
                           {data.mostRead[0].section.name_ar}
                         </span>
                       </div>
@@ -637,7 +641,7 @@ export default async function Home() {
                         {/* Glassmorphism Rank Badge */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-                            <span className="text-lg font-bold text-[#c61b23] transition-colors group-hover:text-[#9a1519]">
+                            <span className="text-lg font-bold text-[#830005] transition-colors group-hover:text-[#6b0004]">
                               {rankNumber}
                             </span>
                           </div>
@@ -648,7 +652,7 @@ export default async function Home() {
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-gray-300 to-gray-400">
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-                            <span className="text-lg font-bold text-[#c61b23] transition-colors group-hover:text-[#9a1519]">
+                            <span className="text-lg font-bold text-[#830005] transition-colors group-hover:text-[#6b0004]">
                               {rankNumber}
                             </span>
                           </div>
@@ -665,7 +669,7 @@ export default async function Home() {
                         </span>
                       )}
                       {/* Headline */}
-                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#c61b23]">
+                      <h4 className="line-clamp-2 text-sm leading-snug font-bold text-gray-900 transition-colors group-hover:text-[#830005]">
                         {article.title_ar}
                       </h4>
                       {/* Excerpt */}
@@ -691,7 +695,7 @@ export default async function Home() {
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="h-6 w-1 rounded-full bg-[#c61b23] sm:h-8 sm:w-1.5"></div>
+                  <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
                   <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
                     كتابنا
                   </h2>

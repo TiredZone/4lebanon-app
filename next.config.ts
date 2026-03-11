@@ -114,8 +114,8 @@ const nextConfig: NextConfig = {
           `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com wss://${supabaseHost}`,
           // No iframes allowed to embed this site
           "frame-ancestors 'none'",
-          // No iframes from external sources
-          "frame-src 'none'",
+          // Allow Supabase iframes for auth session management
+          `frame-src 'self' https://${supabaseHost}`,
           // Base URI restriction
           "base-uri 'self'",
           // Form submissions only to same origin

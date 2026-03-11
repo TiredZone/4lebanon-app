@@ -3,21 +3,24 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDateAr, getStatusLabelAr } from '@/lib/utils'
-import type { Article, Section } from '@/types/database'
+import { ARTICLE_PRIORITIES } from '@/lib/constants'
+import type { Article, Section, ArticlePriority } from '@/types/database'
 
 interface ArticleWithSection extends Article {
   section: Section | null
+  author?: { id: string; display_name_ar: string } | null
 }
 
 interface ArticlesTableProps {
   articles: ArticleWithSection[]
+  showAuthor?: boolean
 }
 
-export function ArticlesTable({ articles }: ArticlesTableProps) {
+export function ArticlesTable({ articles, showAuthor = false }: ArticlesTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterSection, setFilterSection] = useState<string>('all')
-  const [filterType, setFilterType] = useState<string>('all')
+  const [filterPriority, setFilterPriority] = useState<string>('all')
 
   // Extract unique sections for filter dropdown
   const sections = useMemo(() => {
@@ -49,16 +52,13 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
       const matchesSection =
         filterSection === 'all' || String(article.section?.id) === filterSection
 
-      // Type filter (breaking, featured, regular)
-      const matchesType =
-        filterType === 'all' ||
-        (filterType === 'breaking' && article.is_breaking) ||
-        (filterType === 'featured' && article.is_featured) ||
-        (filterType === 'regular' && !article.is_breaking && !article.is_featured)
+      // Priority filter
+      const matchesPriority =
+        filterPriority === 'all' || String(article.priority) === filterPriority
 
-      return matchesSearch && matchesStatus && matchesSection && matchesType
+      return matchesSearch && matchesStatus && matchesSection && matchesPriority
     })
-  }, [articles, searchTerm, filterStatus, filterSection, filterType])
+  }, [articles, searchTerm, filterStatus, filterSection, filterPriority])
 
   // Get status badge class
   const getStatusClass = (status: string) => {
@@ -88,7 +88,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="ابحث بالعنوان..."
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-sm transition-all outline-none focus:border-[#c61b23] focus:ring-2 focus:ring-[#c61b23]/10"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-11 text-sm transition-all outline-none focus:border-[#830005] focus:ring-2 focus:ring-[#830005]/10"
           />
           <svg
             className="pointer-events-none absolute top-1/2 right-3.5 h-5 w-5 -translate-y-1/2 text-slate-400"
@@ -113,7 +113,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
               id="status"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#830005]"
               aria-label="فلتر الحالة"
             >
               <option value="all">كل الحالات</option>
@@ -142,7 +142,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
               id="section"
               value={filterSection}
               onChange={(e) => setFilterSection(e.target.value)}
-              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#830005]"
               aria-label="فلتر القسم"
             >
               <option value="all">كل الأقسام</option>
@@ -167,19 +167,21 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
             </svg>
           </div>
 
-          {/* Type Filter */}
+          {/* Priority Filter */}
           <div className="relative">
             <select
-              id="type"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#c61b23]"
-              aria-label="فلتر النوع"
+              id="priority"
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pr-4 pl-9 text-sm transition-all outline-none focus:border-[#830005]"
+              aria-label="فلتر الأولوية"
             >
-              <option value="all">كل الأنواع</option>
-              <option value="breaking">عاجل</option>
-              <option value="featured">مميز</option>
-              <option value="regular">عادي</option>
+              <option value="all">كل الأولويات</option>
+              {ARTICLE_PRIORITIES.map((p) => (
+                <option key={p.value} value={String(p.value)}>
+                  {p.label}
+                </option>
+              ))}
             </select>
             <svg
               className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -200,14 +202,14 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
           {(searchTerm ||
             filterStatus !== 'all' ||
             filterSection !== 'all' ||
-            filterType !== 'all') && (
+            filterPriority !== 'all') && (
             <button
               type="button"
               onClick={() => {
                 setSearchTerm('')
                 setFilterStatus('all')
                 setFilterSection('all')
-                setFilterType('all')
+                setFilterPriority('all')
               }}
               className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-200"
             >
@@ -236,7 +238,7 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/admin/articles/${article.id}/edit`}
-                    className="line-clamp-2 block text-base leading-relaxed font-bold text-slate-800 transition-colors hover:text-[#c61b23]"
+                    className="line-clamp-2 block text-base leading-relaxed font-bold text-slate-800 transition-colors hover:text-[#830005]"
                   >
                     {article.title_ar}
                   </Link>
@@ -292,6 +294,21 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
                   {getStatusLabelAr(article.status)}
                 </span>
 
+                {/* Author Badge (super admin only) */}
+                {showAuthor && article.author && (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                    {article.author.display_name_ar}
+                  </span>
+                )}
+
                 {/* Section Badge */}
                 {article.section && (
                   <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
@@ -299,35 +316,27 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
                   </span>
                 )}
 
-                {/* Breaking Badge */}
-                {article.is_breaking && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                {/* Priority Badge */}
+                {(() => {
+                  const priorityInfo = ARTICLE_PRIORITIES.find((p) => p.value === article.priority)
+                  if (!priorityInfo || article.priority === 4) return null // Don't show badge for "Normal"
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium"
+                      style={{
+                        color: priorityInfo.color,
+                        borderColor: `${priorityInfo.color}33`,
+                        backgroundColor: `${priorityInfo.color}0d`,
+                      }}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: priorityInfo.color }}
                       />
-                    </svg>
-                    عاجل
-                  </span>
-                )}
-
-                {/* Featured Badge */}
-                {article.is_featured && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                      />
-                    </svg>
-                    مميز
-                  </span>
-                )}
+                      {priorityInfo.label}
+                    </span>
+                  )
+                })()}
 
                 {/* Date - pushed to the end */}
                 <span className="ml-auto text-xs text-slate-400">
@@ -353,22 +362,28 @@ export function ArticlesTable({ articles }: ArticlesTableProps) {
             />
           </svg>
           <h3 className="mt-3 text-sm font-semibold text-slate-700">
-            {searchTerm || filterStatus !== 'all' || filterSection !== 'all' || filterType !== 'all'
+            {searchTerm ||
+            filterStatus !== 'all' ||
+            filterSection !== 'all' ||
+            filterPriority !== 'all'
               ? 'لا توجد مقالات تطابق معايير البحث'
               : 'لا توجد مقالات بعد'}
           </h3>
           <p className="mt-1 text-xs text-slate-500">
-            {searchTerm || filterStatus !== 'all' || filterSection !== 'all' || filterType !== 'all'
+            {searchTerm ||
+            filterStatus !== 'all' ||
+            filterSection !== 'all' ||
+            filterPriority !== 'all'
               ? 'حاول تغيير معايير البحث أو مسح الفلاتر'
               : 'ابدأ بإنشاء مقالك الأول'}
           </p>
           {!searchTerm &&
             filterStatus === 'all' &&
             filterSection === 'all' &&
-            filterType === 'all' && (
+            filterPriority === 'all' && (
               <Link
                 href="/admin/articles/new"
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#c61b23] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#a01820]"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#830005] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#6b0004]"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path

@@ -70,7 +70,7 @@ export default async function WritersPage() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#c61b23] to-[#a01519] text-2xl font-bold text-white sm:text-3xl">
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#830005] to-[#6b0004] text-2xl font-bold text-white sm:text-3xl">
                       {writer.display_name_ar?.[0] || 'ك'}
                     </div>
                   )}

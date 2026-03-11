@@ -46,7 +46,7 @@ export function NewsletterForm() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-white px-8 py-3.5 font-bold whitespace-nowrap text-[#c61b23] shadow-lg transition-all hover:bg-gray-100 active:scale-95 disabled:opacity-50"
+          className="rounded-lg bg-white px-8 py-3.5 font-bold whitespace-nowrap text-[#830005] shadow-lg transition-all hover:bg-gray-100 active:scale-95 disabled:opacity-50"
         >
           {loading ? 'جاري الإرسال...' : 'اشترك الآن →'}
         </button>

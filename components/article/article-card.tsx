@@ -44,7 +44,7 @@ export function ArticleCard({
         <div className="absolute inset-x-0 bottom-0 p-4 md:p-6">
           {/* Breaking badge */}
           {article.is_breaking && (
-            <span className="mb-2 inline-block rounded bg-[#c61b23] px-2 py-1 text-xs font-bold text-white md:mb-3">
+            <span className="mb-2 inline-block rounded bg-[#830005] px-2 py-1 text-xs font-bold text-white md:mb-3">
               عاجل
             </span>
           )}
@@ -100,7 +100,7 @@ export function ArticleCard({
             <div className="from-muted to-border h-full w-full bg-gradient-to-br" />
           )}
           {article.is_breaking && (
-            <span className="absolute top-1 right-1 rounded bg-[#c61b23] px-1.5 py-0.5 text-[10px] font-bold text-white">
+            <span className="absolute top-1 right-1 rounded bg-[#830005] px-1.5 py-0.5 text-[10px] font-bold text-white">
               عاجل
             </span>
           )}
@@ -111,12 +111,12 @@ export function ArticleCard({
           {showSection && article.section && (
             <Link
               href={`/section/${article.section.slug}`}
-              className="mb-1 inline-block text-xs font-medium text-[#c61b23] hover:underline"
+              className="mb-1 inline-block text-xs font-medium text-[#830005] hover:underline"
             >
               {article.section.name_ar}
             </Link>
           )}
-          <h3 className="mb-1.5 line-clamp-2 text-sm leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:mb-2 md:text-base">
+          <h3 className="mb-1.5 line-clamp-2 text-sm leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#830005] md:mb-2 md:text-base">
             <Link href={`/article/${article.slug}`}>{article.title_ar}</Link>
           </h3>
           <time className="text-xs text-gray-500">
@@ -160,7 +160,7 @@ export function ArticleCard({
           <div className="from-muted to-border h-full w-full bg-gradient-to-br" />
         )}
         {article.is_breaking && (
-          <span className="absolute top-2 right-2 rounded bg-[#c61b23] px-2 py-1 text-xs font-bold text-white md:top-3 md:right-3">
+          <span className="absolute top-2 right-2 rounded bg-[#830005] px-2 py-1 text-xs font-bold text-white md:top-3 md:right-3">
             عاجل
           </span>
         )}
@@ -171,12 +171,12 @@ export function ArticleCard({
         {showSection && article.section && (
           <Link
             href={`/section/${article.section.slug}`}
-            className="mb-1.5 inline-block text-xs font-medium text-[#c61b23] hover:underline md:mb-2"
+            className="mb-1.5 inline-block text-xs font-medium text-[#830005] hover:underline md:mb-2"
           >
             {article.section.name_ar}
           </Link>
         )}
-        <h3 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#c61b23] md:text-lg">
+        <h3 className="mb-2 line-clamp-2 text-base leading-tight font-bold text-gray-900 transition-colors group-hover:text-[#830005] md:text-lg">
           <Link href={`/article/${article.slug}`}>{article.title_ar}</Link>
         </h3>
         {showExcerpt && article.excerpt_ar && (
@@ -188,7 +188,7 @@ export function ArticleCard({
           {showAuthor && article.author && (
             <Link
               href={`/author/${article.author.id}`}
-              className="transition-colors hover:text-[#c61b23]"
+              className="transition-colors hover:text-[#830005]"
             >
               {article.author.display_name_ar}
             </Link>

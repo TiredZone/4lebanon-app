@@ -659,20 +659,49 @@ const sampleArticles = [
 ]
 
 async function getOrCreateAuthor(): Promise<string> {
-  // Try to get existing author
-  const { data: profiles } = await supabase.from('profiles').select('id').limit(1).single()
-
-  if (profiles?.id) {
-    return profiles.id
-  }
-
-  // Create a default author if none exists
+  // Get existing auth user
   const { data: authUser } = await supabase.auth.admin.listUsers()
-  if (authUser?.users?.[0]?.id) {
-    return authUser.users[0].id
+  const userId = authUser?.users?.[0]?.id
+
+  if (!userId) {
+    throw new Error(
+      'No auth user found. Please create a user account first via Supabase dashboard.'
+    )
   }
 
-  throw new Error('No author found. Please create a user account first.')
+  console.log(`🔍 Found auth user: ${userId}`)
+
+  // Check if profile exists
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, display_name_ar')
+    .eq('id', userId)
+    .single()
+
+  if (profile?.id) {
+    console.log(`✅ Profile exists: ${profile.display_name_ar}`)
+    return profile.id
+  }
+
+  // Create profile if missing
+  console.log('⚠️  Profile missing, creating one...')
+  const { data: newProfile, error: createError } = await supabase
+    .from('profiles')
+    .insert({
+      id: userId,
+      display_name_ar: 'مسؤول الموقع',
+      role: 'super_admin',
+    })
+    .select('id')
+    .single()
+
+  if (createError) {
+    console.error('Failed to create profile:', createError)
+    throw new Error('Could not create profile for auth user.')
+  }
+
+  console.log(`✅ Created profile for user: ${userId}`)
+  return newProfile!.id
 }
 
 async function getSectionId(slug: string): Promise<number | null> {
