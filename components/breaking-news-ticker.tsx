@@ -86,9 +86,9 @@ export function BreakingNewsTicker({ articles }: BreakingNewsTickerProps) {
       <Link
         key={`${keyPrefix}-${article.id}`}
         href={`/article/${article.slug}`}
-        className="group inline-flex items-center gap-3 text-sm text-white/95 transition-all hover:text-white sm:text-base"
+        className="group inline-flex items-center gap-3 text-sm text-white/95 transition-all hover:text-[#f5c518] sm:text-base"
       >
-        <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/40 group-hover:bg-white/70" />
+        <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-white/40 group-hover:bg-[#f5c518]" />
         <span className="leading-relaxed font-medium">{article.title_ar}</span>
       </Link>
     ))

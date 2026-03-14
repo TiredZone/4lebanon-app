@@ -55,7 +55,7 @@ export function Header() {
       >
         <div className="mx-auto max-w-7xl px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
-            {/* Mobile Menu Button (left side on mobile) */}
+            {/* Mobile Menu Button (right side in RTL = order-1) */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
@@ -72,8 +72,8 @@ export function Header() {
               </svg>
             </button>
 
-            {/* Logo & Date - Left side */}
-            <div className="order-2 flex items-center gap-2 sm:gap-4 lg:order-1">
+            {/* Logo (centered on mobile, left-aligned on desktop) */}
+            <div className="order-2 flex flex-1 items-center justify-center gap-2 sm:gap-4 lg:order-1 lg:flex-none lg:justify-start">
               <Link
                 href="/"
                 className="transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
@@ -81,14 +81,16 @@ export function Header() {
                 <img
                   src="/logo-transparent.png"
                   alt="Logo"
-                  className="h-10 w-auto sm:h-12 md:h-16"
+                  className="h-12 w-auto sm:h-14 md:h-16"
                 />
               </Link>
-              <time className="hidden text-sm font-medium text-slate-500 lg:block">{today}</time>
+              <time className="hidden text-xs font-medium text-slate-500 sm:block sm:text-sm">
+                {today}
+              </time>
             </div>
 
             {/* Search - Center - Desktop only */}
-            <div className="order-3 hidden flex-1 justify-center lg:flex">
+            <div className="hidden flex-1 justify-center lg:order-2 lg:flex">
               <motion.div
                 className="w-full max-w-md"
                 animate={{
@@ -110,8 +112,8 @@ export function Header() {
               </motion.div>
             </div>
 
-            {/* Profile - Right side (only shows for logged-in users) */}
-            <div className="order-3 flex items-center lg:order-4">
+            {/* Profile */}
+            <div className="order-3 flex items-center lg:order-3">
               <UserMenu />
             </div>
           </div>
@@ -128,7 +130,7 @@ export function Header() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm lg:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
 
@@ -138,7 +140,7 @@ export function Header() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 z-50 flex w-80 max-w-[85%] flex-col overflow-hidden bg-white shadow-2xl lg:hidden"
+              className="fixed top-0 right-0 bottom-0 z-[60] flex w-80 max-w-[85%] flex-col overflow-hidden bg-white shadow-2xl lg:hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Menu Header - Red accent bar */}
@@ -149,7 +151,7 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="transition-opacity hover:opacity-90"
                   >
-                    <img src="/logo-alternate.png" alt="Logo" className="h-8 w-auto" />
+                    <img src="/logo-alternate.png" alt="Logo" className="h-10 w-auto" />
                   </Link>
                   <button
                     type="button"
@@ -218,35 +220,47 @@ export function Header() {
               </nav>
 
               {/* Footer Links */}
-              <div className="border-t border-slate-200 bg-slate-50 p-4">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex gap-2">
                   <Link
                     href="/about"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition-all hover:text-[#830005] hover:shadow-md active:scale-[0.98]"
                   >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                      />
+                    </svg>
                     من نحن
                   </Link>
                   <Link
                     href="/contact"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition-all hover:text-[#830005] hover:shadow-md active:scale-[0.98]"
                   >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                      />
+                    </svg>
                     اتصل بنا
-                  </Link>
-                  <Link
-                    href="/writers"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
-                  >
-                    كتّابنا
-                  </Link>
-                  <Link
-                    href="/recent"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center rounded-lg px-3 py-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-white hover:text-slate-900"
-                  >
-                    آخر الأخبار
                   </Link>
                 </div>
               </div>

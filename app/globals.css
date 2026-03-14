@@ -498,6 +498,16 @@ a:hover {
   color: var(--aura-red);
 }
 
+/* Breaking news ticker links use accent gold on hover */
+.breaking-news-bar a:hover {
+  color: #f5c518;
+}
+
+/* Footer links use accent gold on hover */
+footer a:hover {
+  color: #f5c518;
+}
+
 /* Cards and article links - red glow on hover */
 .group:hover {
   cursor: pointer;
@@ -1784,6 +1794,185 @@ section a[href*='/recent'] {
 
 .category-header-dark p {
   color: #94a3b8;
+}
+
+/* ============================================
+   SECTION FILTERS
+   ============================================ */
+
+.section-filters {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: var(--space-lg);
+}
+
+.section-filters-dark {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+/* Period pills */
+.period-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.period-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.period-pill {
+  flex-shrink: 0;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border: 1.5px solid var(--border);
+  background: white;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  white-space: nowrap;
+}
+
+.period-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.period-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.section-filters-dark .period-pill {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
+}
+
+.section-filters-dark .period-pill:hover {
+  border-color: #8b5cf6;
+  color: #c4b5fd;
+}
+
+.section-filters-dark .period-pill.active {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  color: white;
+}
+
+/* Filter dropdowns grid */
+.section-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .section-filters-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Active filter chips */
+.active-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  background: rgba(131, 0, 5, 0.08);
+  color: var(--primary);
+  border: 1px solid rgba(131, 0, 5, 0.15);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.active-filter-chip:hover {
+  background: rgba(131, 0, 5, 0.15);
+  border-color: rgba(131, 0, 5, 0.3);
+}
+
+.active-filter-chip svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+}
+
+.active-filter-chip:hover svg {
+  opacity: 1;
+}
+
+.section-filters-dark .active-filter-chip {
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.section-filters-dark .active-filter-chip:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.clear-filters-btn {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-smooth);
+  background: none;
+  border: none;
+  padding: 0.25rem 0.5rem;
+}
+
+.clear-filters-btn:hover {
+  color: var(--primary);
+}
+
+.section-filters-dark .clear-filters-btn:hover {
+  color: #c4b5fd;
+}
+
+/* Results count */
+.section-results-count {
+  font-size: var(--font-size-sm);
+  color: var(--muted-foreground);
+  margin-bottom: var(--space-md);
+}
+
+.section-results-count strong {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.section-filters-dark .section-results-count {
+  color: #94a3b8;
+}
+
+.section-filters-dark .section-results-count strong {
+  color: #e2e8f0;
 }
 
 /* ============================================

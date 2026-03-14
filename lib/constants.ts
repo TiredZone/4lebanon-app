@@ -12,24 +12,21 @@ export const SITE_CONFIG = {
 // Navigation items
 export const NAV_ITEMS = [
   { href: '/', label: 'الرئيسية' },
-  { href: '/important', label: 'الأخبار المهمة' },
-  { href: '/section/radar', label: 'رادار' },
-  { href: '/section/investigation', label: 'بحث وتحرّي' },
-  { href: '/section/local', label: 'المحليّة' },
-  { href: '/section/security', label: 'أمن وقضاء' },
-  { href: '/section/regional', label: 'إقليمي ودولي' },
-  { href: '/writers', label: 'كتّابنا' },
-  { href: '/section/economy', label: 'اقتصاد' },
-  { href: '/section/special', label: 'خاص' },
+  { href: '/section/local', label: 'أخبار محلية' },
+  { href: '/section/regional', label: 'إقليمي' },
+  { href: '/section/international', label: 'دولي' },
+  { href: '/section/said-and-said', label: 'قيل و قال' },
+  { href: '/section/economy', label: 'إقتصاد' },
+  { href: '/section/opinions', label: 'أراء و مقالات' },
 ] as const
 
 // Footer navigation
 export const FOOTER_NAV = {
   sections: [
-    { href: '/important', label: 'أخبار عاجلة' },
-    { href: '/section/local', label: 'المحليّة' },
-    { href: '/section/radar', label: 'رادار' },
-    { href: '/section/economy', label: 'اقتصاد' },
+    { href: '/section/local', label: 'أخبار محلية' },
+    { href: '/section/regional', label: 'إقليمي' },
+    { href: '/section/international', label: 'دولي' },
+    { href: '/section/economy', label: 'إقتصاد' },
   ],
   about: [
     { href: '/about', label: 'من نحن' },
