@@ -241,32 +241,38 @@ export async function updateArticle(
   }
 
   // Get user role - needed for both authorization and priority enforcement
-  let updaterRole: UserRole = 'editor'
-  if (existing.author_id !== user.id) {
-    const { data: userProfile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    updaterRole = ((userProfile as { role: string } | null)?.role as UserRole) || 'editor'
+  const { data: currentUserProfile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const updaterRole: UserRole =
+    ((currentUserProfile as { role: string } | null)?.role as UserRole) || 'editor'
 
-    if (updaterRole !== 'super_admin') {
+  if (existing.author_id !== user.id) {
+    // Check if user can edit this article:
+    // - super_admin can edit any article
+    // - admin can edit editor's articles
+    let authorized = updaterRole === 'super_admin'
+
+    if (!authorized && updaterRole === 'admin') {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', existing.author_id)
+        .single()
+      const authorRole = (authorProfile as { role: string } | null)?.role
+      authorized = authorRole === 'editor'
+    }
+
+    if (!authorized) {
       await logSecurityEvent('unauthorized_access', {
         action: 'updateArticle',
         userId: user.id,
         attemptedArticleId: articleId,
       })
-      // Use same error message to prevent article enumeration
       return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
     }
-  } else {
-    // Owner editing their own article - still need their role for priority enforcement
-    const { data: ownerProfile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    updaterRole = ((ownerProfile as { role: string } | null)?.role as UserRole) || 'editor'
   }
 
   // Rate limiting - after authorization check
@@ -424,22 +430,33 @@ export async function deleteArticle(articleId: string): Promise<ActionResult | v
 
   const articleData = article as { author_id: string; slug: string }
 
-  // Super admin can delete any article; others can only delete their own
+  // Authorization: owner, super_admin, or admin deleting editor's article
   if (articleData.author_id !== user.id) {
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
-    const userRole = (userProfile as { role: string } | null)?.role
+    const userRole = (userProfile as { role: string } | null)?.role as UserRole
 
-    if (userRole !== 'super_admin') {
+    let authorized = userRole === 'super_admin'
+
+    if (!authorized && userRole === 'admin') {
+      const { data: authorProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', articleData.author_id)
+        .single()
+      const authorRole = (authorProfile as { role: string } | null)?.role
+      authorized = authorRole === 'editor'
+    }
+
+    if (!authorized) {
       await logSecurityEvent('unauthorized_access', {
         action: 'deleteArticle',
         userId: user.id,
         attemptedArticleId: articleId,
       })
-      // Use same error message to prevent article enumeration
       return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
     }
   }

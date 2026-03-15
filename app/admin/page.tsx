@@ -35,17 +35,19 @@ async function getDashboardData(): Promise<{
     .single()
   const role = ((profileData as Profile | null)?.role || 'editor') as UserRole
   const isSuperAdmin = role === 'super_admin'
+  const isAdmin = role === 'admin'
+  const canSeeOthers = isSuperAdmin || isAdmin
 
-  // Super admin sees all articles with author info; others see only their own
+  // Super admin sees all articles; admin sees own + editors' articles; editor sees own only
   let articlesQuery = supabase
     .from('articles')
     .select(
-      isSuperAdmin
-        ? `*, section:sections(*), author:profiles!author_id(id, display_name_ar)`
+      canSeeOthers
+        ? `*, section:sections(*), author:profiles!author_id(id, display_name_ar, role)`
         : `*, section:sections(*)`
     )
 
-  if (!isSuperAdmin) {
+  if (!canSeeOthers) {
     articlesQuery = articlesQuery.eq('author_id', user.id)
   }
 
@@ -63,6 +65,8 @@ async function getDashboardData(): Promise<{
 export default async function AdminDashboardPage() {
   const { articles, role } = await getDashboardData()
   const isSuperAdmin = role === 'super_admin'
+  const isAdmin = role === 'admin'
+  const canManageOthers = isSuperAdmin || isAdmin
 
   const draftCount = articles.filter((a) => a.status === 'draft').length
   const scheduledCount = articles.filter((a) => a.status === 'scheduled').length
@@ -89,6 +93,23 @@ export default async function AdminDashboardPage() {
           <h3>كتابة مقال</h3>
           <p>ابدأ بكتابة مقال جديد ونشره على الموقع</p>
         </Link>
+
+        {canManageOthers && (
+          <Link href="/admin/priority" className="admin-action-card primary-card">
+            <div className="admin-action-icon purple">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
+              </svg>
+            </div>
+            <h3>إدارة الأولويات</h3>
+            <p>إعادة ترتيب المقالات وتغيير أولوياتها</p>
+          </Link>
+        )}
 
         {isSuperAdmin && (
           <Link href="/admin/sections/new" className="admin-action-card primary-card">
@@ -136,12 +157,12 @@ export default async function AdminDashboardPage() {
       {/* Articles Section Header */}
       <div className="admin-section-header">
         <h2 className="admin-section-title">
-          {isSuperAdmin ? `جميع المقالات (${articles.length})` : `مقالاتي (${articles.length})`}
+          {canManageOthers ? `جميع المقالات (${articles.length})` : `مقالاتي (${articles.length})`}
         </h2>
       </div>
 
       {/* Articles Table with Search & Filter */}
-      <ArticlesTable articles={articles} showAuthor={isSuperAdmin} />
+      <ArticlesTable articles={articles} showAuthor={canManageOthers} />
     </div>
   )
 }
