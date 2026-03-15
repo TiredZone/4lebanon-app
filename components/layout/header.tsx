@@ -11,7 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export function Header() {
-  const today = toLatinNumbers(formatDateAr(new Date(), 'EEEE، dd MMMM yyyy'))
+  const today =
+    typeof window !== 'undefined'
+      ? toLatinNumbers(formatDateAr(new Date(), 'EEEE، dd MMMM yyyy'))
+      : ''
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
@@ -84,7 +87,10 @@ export function Header() {
                   className="h-12 w-auto sm:h-14 md:h-16"
                 />
               </Link>
-              <time className="hidden text-xs font-medium text-slate-500 sm:block sm:text-sm">
+              <time
+                className="hidden text-xs font-medium text-slate-500 sm:block sm:text-sm"
+                suppressHydrationWarning
+              >
                 {today}
               </time>
             </div>

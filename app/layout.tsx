@@ -61,8 +61,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={cairo.variable}>
-      <body className="aura-full font-arabic text-foreground min-h-screen antialiased">
+    <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
+      <body
+        className="aura-full font-arabic text-foreground min-h-screen antialiased"
+        suppressHydrationWarning
+      >
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:shadow-lg"
