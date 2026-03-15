@@ -2,13 +2,64 @@ import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
+import DOMPurify from 'isomorphic-dompurify'
 
 interface MarkdownRendererProps {
   content: string
   className?: string
 }
 
+const DOMPURIFY_CONFIG = {
+  ALLOWED_TAGS: [
+    'p',
+    'br',
+    'hr',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'strong',
+    'b',
+    'em',
+    'i',
+    'u',
+    's',
+    'del',
+    'a',
+    'img',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'code',
+    'pre',
+    'figure',
+    'figcaption',
+    'div',
+    'span',
+  ],
+  ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'width', 'height', 'class', 'dir', 'style'],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  ALLOW_DATA_ATTR: false,
+}
+
+function isHtmlContent(content: string): boolean {
+  return content.trimStart().startsWith('<')
+}
+
 export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+  // HTML content from the WYSIWYG editor
+  if (isHtmlContent(content)) {
+    const sanitized = DOMPurify.sanitize(content, DOMPURIFY_CONFIG)
+    return (
+      <div
+        className={`article-body ${className}`}
+        dangerouslySetInnerHTML={{ __html: sanitized }}
+      />
+    )
+  }
+
+  // Legacy Markdown content
   return (
     <div className={`article-body ${className}`}>
       <ReactMarkdown
@@ -17,12 +68,9 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
         components={{
           // Custom link component for external links with URL validation
           a: ({ href, children, ...props }) => {
-            // Validate URL to prevent XSS via javascript: or data: URLs
             const isValidUrl = (url: string | undefined): boolean => {
               if (!url) return false
-              // Allow relative URLs
               if (url.startsWith('/') || url.startsWith('#')) return true
-              // Only allow http/https protocols
               try {
                 const parsed = new URL(url)
                 return ['http:', 'https:'].includes(parsed.protocol)
@@ -35,7 +83,6 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
             const isExternal = safeHref?.startsWith('http')
 
             if (!safeHref) {
-              // Invalid URL - render as plain text
               return <span {...props}>{children}</span>
             }
 
@@ -66,31 +113,17 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
             const safeSrc = isValidSrc(srcString) ? srcString : undefined
             if (!safeSrc) return null
 
-            const isRemote = safeSrc.startsWith('http')
-
             return (
               <figure className="my-6">
-                {isRemote ? (
-                  <Image
-                    src={safeSrc}
-                    alt={alt || ''}
-                    width={800}
-                    height={450}
-                    className="mx-auto max-w-full rounded-lg"
-                    sizes="(max-width: 768px) 100vw, 800px"
-                    loading="lazy"
-                  />
-                ) : (
-                  <Image
-                    src={safeSrc}
-                    alt={alt || ''}
-                    width={800}
-                    height={450}
-                    className="mx-auto max-w-full rounded-lg"
-                    sizes="(max-width: 768px) 100vw, 800px"
-                    loading="lazy"
-                  />
-                )}
+                <Image
+                  src={safeSrc}
+                  alt={alt || ''}
+                  width={800}
+                  height={450}
+                  className="mx-auto max-w-full rounded-lg"
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  loading="lazy"
+                />
                 {alt && (
                   <figcaption className="text-muted-foreground mt-2 text-center text-sm">
                     {alt}
@@ -99,7 +132,6 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               </figure>
             )
           },
-          // Custom blockquote
           blockquote: ({ children, ...props }) => (
             <blockquote
               className="border-primary text-muted-foreground my-6 border-r-4 pr-4 italic"
@@ -108,7 +140,6 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               {children}
             </blockquote>
           ),
-          // Custom code block
           code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '')
             const isInline = !match
@@ -129,7 +160,6 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
               </pre>
             )
           },
-          // Custom table
           table: ({ children, ...props }) => (
             <div className="my-6 overflow-x-auto">
               <table

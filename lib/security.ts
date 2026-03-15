@@ -6,6 +6,7 @@
 
 import { z } from 'zod'
 import { headers } from 'next/headers'
+import DOMPurify from 'isomorphic-dompurify'
 
 // ============================================================================
 // IP BLOCKING & THREAT DETECTION
@@ -147,10 +148,10 @@ export function isBadUserAgent(userAgent: string): boolean {
 // ============================================================================
 
 /**
- * Sanitize HTML to prevent XSS attacks
+ * Strip all HTML tags to prevent XSS attacks (for plain text fields)
  * Removes all HTML tags and potentially dangerous content
  */
-export function sanitizeHtml(input: string): string {
+export function stripHtml(input: string): string {
   if (!input) return ''
 
   return (
@@ -177,6 +178,59 @@ export function sanitizeHtml(input: string): string {
       .replace(/'/g, '&#x27;')
       .trim()
   )
+}
+
+/**
+ * Sanitize rich HTML content from the WYSIWYG editor
+ * Preserves safe formatting tags while stripping dangerous content
+ */
+export function sanitizeRichContent(input: string): string {
+  if (!input) return ''
+
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [
+      'p',
+      'br',
+      'hr',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'strong',
+      'b',
+      'em',
+      'i',
+      'u',
+      's',
+      'del',
+      'a',
+      'img',
+      'ul',
+      'ol',
+      'li',
+      'blockquote',
+      'code',
+      'pre',
+      'figure',
+      'figcaption',
+      'div',
+      'span',
+    ],
+    ALLOWED_ATTR: [
+      'href',
+      'target',
+      'rel',
+      'src',
+      'alt',
+      'width',
+      'height',
+      'class',
+      'dir',
+      'style',
+    ],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+    ALLOW_DATA_ATTR: false,
+  }).trim()
 }
 
 /**
@@ -270,8 +324,8 @@ export const ArticleSchema = z.object({
   body_md: z
     .string()
     .min(1, 'محتوى المقال مطلوب')
-    .max(100000, 'المحتوى طويل جداً')
-    .transform(sanitizeText),
+    .max(200000, 'المحتوى طويل جداً')
+    .transform(sanitizeRichContent),
   cover_image_path: z.string().max(500).optional().nullable(),
   section_id: z.number().int().positive().optional().nullable(),
   region_id: z.number().int().positive().optional().nullable(),
@@ -864,7 +918,7 @@ export function generateTimedToken(expiresInMs: number = 3600000): {
 export const INPUT_LIMITS = {
   title: 500,
   excerpt: 1000,
-  body: 100000,
+  body: 200000,
   comment: 5000,
   search: 200,
   url: 2000,

@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import { marked } from 'marked'
 import {
   createArticle,
   updateArticle,
@@ -14,6 +16,14 @@ import { getStorageUrl } from '@/lib/utils'
 import { ARTICLE_STATUSES, ARTICLE_PRIORITIES, SUCCESS_MESSAGES } from '@/lib/constants'
 import { EditorSelect } from './editor-select'
 import { EditorTopics } from './editor-topics'
+
+const RichTextEditor = dynamic(
+  () => import('./rich-text-editor').then((m) => ({ default: m.RichTextEditor })),
+  {
+    ssr: false,
+    loading: () => <div className="rich-text-editor-loading">جاري تحميل المحرر...</div>,
+  }
+)
 import type {
   Article,
   Section,
@@ -53,7 +63,16 @@ export function ArticleEditor({
   // Form state
   const [title, setTitle] = useState(article?.title_ar || '')
   const [excerpt, setExcerpt] = useState(article?.excerpt_ar || '')
-  const [body, setBody] = useState(article?.body_md || '')
+  // Convert legacy Markdown to HTML for existing articles
+  const initialBody = useMemo(() => {
+    const raw = article?.body_md || ''
+    if (!raw) return ''
+    // If it already looks like HTML, use as-is
+    if (raw.trimStart().startsWith('<')) return raw
+    // Convert Markdown to HTML for the WYSIWYG editor
+    return marked.parse(raw, { async: false }) as string
+  }, [article?.body_md])
+  const [body, setBody] = useState(initialBody)
   const [coverImage, setCoverImage] = useState(article?.cover_image_path || '')
   const [sectionId, setSectionId] = useState<number | null>(article?.section_id ?? null)
   const [regionId, setRegionId] = useState<number | null>(article?.region_id ?? null)
@@ -148,7 +167,9 @@ export function ArticleEditor({
       return
     }
 
-    if (!body.trim()) {
+    // Strip HTML tags to check if body actually has content
+    const bodyText = body.replace(/<[^>]*>/g, '').trim()
+    if (!bodyText) {
       setError('محتوى المقال مطلوب')
       return
     }
@@ -273,19 +294,8 @@ export function ArticleEditor({
 
           {/* Body */}
           <div className="editor-card">
-            <label htmlFor="body" className="editor-label editor-label-required">
-              محتوى المقال (يدعم Markdown)
-            </label>
-            <textarea
-              id="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              required
-              rows={20}
-              className="editor-input editor-textarea editor-textarea-code"
-              placeholder="اكتب محتوى المقال هنا..."
-              dir="rtl"
-            />
+            <label className="editor-label editor-label-required">محتوى المقال</label>
+            <RichTextEditor content={body} onChange={setBody} />
           </div>
 
           {/* Sources */}
