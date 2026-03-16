@@ -556,122 +556,125 @@ async function scanForMaliciousContent(
 export async function uploadImage(
   formData: FormData
 ): Promise<{ error?: string; success?: boolean; path?: string }> {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    await logSecurityEvent('unauthorized_access', { action: 'uploadImage' })
-    return { error: 'يجب تسجيل الدخول' }
-  }
+    if (!user) {
+      return { error: 'يجب تسجيل الدخول' }
+    }
 
-  // Rate limiting for uploads - stricter limit
-  const clientId = await getClientIdentifier()
-  const rateLimit = checkRateLimit(clientId, 'upload')
-  if (!rateLimit.allowed) {
-    await logSecurityEvent('rate_limit_exceeded', { action: 'uploadImage', userId: user.id })
-    return { error: 'تم تجاوز حد الرفع. يرجى المحاولة لاحقاً' }
-  }
+    // Rate limiting for uploads - stricter limit
+    const clientId = await getClientIdentifier()
+    const rateLimit = checkRateLimit(clientId, 'upload')
+    if (!rateLimit.allowed) {
+      return { error: 'تم تجاوز حد الرفع. يرجى المحاولة لاحقاً' }
+    }
 
-  const file = formData.get('file') as File
+    const file = formData.get('file') as File
 
-  if (!file) {
-    return { error: 'لم يتم اختيار ملف' }
-  }
+    if (!file) {
+      return { error: 'لم يتم اختيار ملف' }
+    }
 
-  // 1. Validate file type - check both MIME type and extension
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-  const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
-  const fileExtension = file.name.split('.').pop()?.toLowerCase()
+    // 1. Validate file type - check both MIME type and extension
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+    const fileExtension = file.name.split('.').pop()?.toLowerCase()
 
-  if (
-    !allowedTypes.includes(file.type) ||
-    !fileExtension ||
-    !allowedExtensions.includes(fileExtension)
-  ) {
-    await logSecurityEvent('suspicious_activity', {
-      action: 'uploadImage',
+    if (
+      !allowedTypes.includes(file.type) ||
+      !fileExtension ||
+      !allowedExtensions.includes(fileExtension)
+    ) {
+      await logSecurityEvent('suspicious_activity', {
+        action: 'uploadImage',
+        userId: user.id,
+        reason: 'Invalid file type',
+        providedType: file.type,
+        fileName: file.name,
+      })
+      return { error: 'نوع الملف غير مدعوم' }
+    }
+
+    // 2. Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
+      return { error: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }
+    }
+
+    // 3. Validate file size minimum (prevent empty files)
+    if (file.size < 100) {
+      await logSecurityEvent('suspicious_activity', {
+        action: 'uploadImage',
+        userId: user.id,
+        reason: 'File too small',
+        fileSize: file.size,
+      })
+      return { error: 'الملف فارغ أو صغير جداً' }
+    }
+
+    // 4. SECURITY: Verify magic bytes match claimed extension
+    const magicByteCheck = await verifyImageMagicBytes(file, fileExtension)
+    if (!magicByteCheck.valid) {
+      await logSecurityEvent('suspicious_activity', {
+        action: 'uploadImage',
+        userId: user.id,
+        reason: 'Magic byte mismatch - possible file spoofing',
+        claimedExtension: fileExtension,
+        detectedType: magicByteCheck.detectedType || 'unknown',
+        fileName: file.name,
+      })
+      return { error: 'محتوى الملف لا يتطابق مع نوعه - يرجى رفع صورة صالحة' }
+    }
+
+    // 5. SECURITY: Scan for embedded malicious content
+    const malwareCheck = await scanForMaliciousContent(file, magicByteCheck.valid)
+    if (!malwareCheck.safe) {
+      await logSecurityEvent('suspicious_activity', {
+        action: 'uploadImage',
+        userId: user.id,
+        reason: malwareCheck.reason,
+        fileName: file.name,
+      })
+      return { error: 'تم اكتشاف محتوى مشبوه في الملف' }
+    }
+
+    // 6. Sanitize filename and generate secure unique name
+    const sanitizedExt = sanitizeFilename(fileExtension)
+    const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${sanitizedExt}`
+
+    // Log successful file upload
+    await logSecurityEvent('file_upload', {
       userId: user.id,
-      reason: 'Invalid file type',
-      providedType: file.type,
-      fileName: file.name,
-    })
-    return { error: 'نوع الملف غير مدعوم' }
-  }
-
-  // 2. Validate file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024
-  if (file.size > maxSize) {
-    return { error: 'حجم الملف كبير جداً (الحد الأقصى 5 ميجابايت)' }
-  }
-
-  // 3. Validate file size minimum (prevent empty files)
-  if (file.size < 100) {
-    await logSecurityEvent('suspicious_activity', {
-      action: 'uploadImage',
-      userId: user.id,
-      reason: 'File too small',
+      originalName: file.name,
       fileSize: file.size,
-    })
-    return { error: 'الملف فارغ أو صغير جداً' }
-  }
-
-  // 4. SECURITY: Verify magic bytes match claimed extension
-  const magicByteCheck = await verifyImageMagicBytes(file, fileExtension)
-  if (!magicByteCheck.valid) {
-    await logSecurityEvent('suspicious_activity', {
-      action: 'uploadImage',
-      userId: user.id,
-      reason: 'Magic byte mismatch - possible file spoofing',
-      claimedExtension: fileExtension,
-      detectedType: magicByteCheck.detectedType || 'unknown',
-      fileName: file.name,
-    })
-    return { error: 'محتوى الملف لا يتطابق مع نوعه - يرجى رفع صورة صالحة' }
-  }
-
-  // 5. SECURITY: Scan for embedded malicious content
-  const malwareCheck = await scanForMaliciousContent(file, magicByteCheck.valid)
-  if (!malwareCheck.safe) {
-    await logSecurityEvent('suspicious_activity', {
-      action: 'uploadImage',
-      userId: user.id,
-      reason: malwareCheck.reason,
-      fileName: file.name,
-    })
-    return { error: 'تم اكتشاف محتوى مشبوه في الملف' }
-  }
-
-  // 6. Sanitize filename and generate secure unique name
-  const sanitizedExt = sanitizeFilename(fileExtension)
-  const filename = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${sanitizedExt}`
-
-  // Log successful file upload
-  await logSecurityEvent('file_upload', {
-    userId: user.id,
-    originalName: file.name,
-    fileSize: file.size,
-    fileType: file.type,
-    storedAs: filename,
-  })
-
-  // 7. Upload to Supabase Storage with strict settings
-  const { error: uploadError } = await supabase.storage
-    .from('article-images')
-    .upload(filename, file, {
-      cacheControl: '31536000', // 1 year
-      upsert: false, // Never overwrite existing files
-      contentType: file.type, // Enforce content type
+      fileType: file.type,
+      storedAs: filename,
     })
 
-  if (uploadError) {
-    console.error('Upload error:', uploadError)
-    return { error: 'حدث خطأ أثناء رفع الصورة' }
-  }
+    // 7. Upload to Supabase Storage with strict settings
+    const { error: uploadError } = await supabase.storage
+      .from('article-images')
+      .upload(filename, file, {
+        cacheControl: '31536000', // 1 year
+        upsert: false, // Never overwrite existing files
+        contentType: file.type, // Enforce content type
+      })
 
-  return { success: true, path: filename }
+    if (uploadError) {
+      console.error('Upload error:', uploadError)
+      return { error: 'حدث خطأ أثناء رفع الصورة' }
+    }
+
+    return { success: true, path: filename }
+  } catch (err) {
+    console.error('uploadImage unexpected error:', err)
+    return { error: 'حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.' }
+  }
 }
 
 export async function signOut() {
