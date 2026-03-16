@@ -37,7 +37,7 @@ async function getAuthorArticles(
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `,
       { count: 'exact' }

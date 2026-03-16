@@ -26,21 +26,48 @@ const ARABIC_MONTHS = [
 
 const ARABIC_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 
+// Convert a date to Lebanon timezone (Asia/Beirut) components
+function toLebanonTime(d: Date) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Beirut',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    weekday: 'short',
+    hour12: false,
+  })
+  const parts = Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]))
+  const dayOfWeek = new Date(
+    `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:00`
+  ).getDay()
+  return {
+    day: parseInt(parts.day),
+    monthIndex: parseInt(parts.month) - 1,
+    year: parseInt(parts.year),
+    hours: parts.hour,
+    minutes: parts.minute,
+    dayOfWeek,
+  }
+}
+
 // Format date in Arabic with Levantine month names (كانون، شباط، آذار، etc.)
-// All formats use Levantine Arabic months - NOT Egyptian (يناير، فبراير)
+// All dates are displayed in Lebanon timezone (Asia/Beirut)
 export function formatDateAr(date: string | Date, formatStr: string = 'dd MMMM yyyy') {
   const d = typeof date === 'string' ? new Date(date) : date
 
   // Handle invalid dates
   if (isNaN(d.getTime())) return ''
 
-  const day = d.getDate()
-  const month = ARABIC_MONTHS[d.getMonth()]
-  const year = d.getFullYear()
-  const dayName = ARABIC_DAYS[d.getDay()]
-  const hours = d.getHours().toString().padStart(2, '0')
-  const minutes = d.getMinutes().toString().padStart(2, '0')
-  const monthNum = (d.getMonth() + 1).toString().padStart(2, '0')
+  const lt = toLebanonTime(d)
+  const day = lt.day
+  const month = ARABIC_MONTHS[lt.monthIndex]
+  const year = lt.year
+  const dayName = ARABIC_DAYS[lt.dayOfWeek]
+  const hours = lt.hours
+  const minutes = lt.minutes
+  const monthNum = (lt.monthIndex + 1).toString().padStart(2, '0')
   const dayPadded = day.toString().padStart(2, '0')
 
   switch (formatStr) {
@@ -94,10 +121,11 @@ export function formatRelativeTimeAr(date: string | Date) {
   return formatDistanceToNow(d, { locale: ar, addSuffix: true })
 }
 
-// Format time only (e.g., "14:30")
+// Format time only in Lebanon timezone (e.g., "14:30")
 export function formatTimeAr(date: string | Date) {
   const d = typeof date === 'string' ? new Date(date) : date
-  return format(d, 'HH:mm', { locale: ar })
+  const lt = toLebanonTime(d)
+  return `${lt.hours}:${lt.minutes}`
 }
 
 // Hide anonymous authors — returns null if the author has is_anonymous set
