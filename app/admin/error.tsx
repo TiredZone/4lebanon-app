@@ -11,8 +11,7 @@ export default function AdminError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Admin error:', error)
+    console.error('Admin error:', error?.message, error?.stack, error?.digest)
   }, [error])
 
   return (
@@ -36,9 +35,17 @@ export default function AdminError({
           </div>
         </div>
         <h1 className="mb-4 text-2xl font-bold text-gray-900">حدث خطأ في لوحة التحكم</h1>
-        <p className="mb-8 max-w-md text-gray-600">
+        <p className="mb-4 max-w-md text-gray-600">
           عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو العودة للوحة التحكم الرئيسية.
         </p>
+        {error?.message && (
+          <p
+            className="direction-ltr mb-8 max-w-md rounded bg-gray-100 px-3 py-2 font-mono text-xs text-gray-500"
+            dir="ltr"
+          >
+            {error.message}
+          </p>
+        )}
         <div className="flex justify-center gap-4">
           <button
             onClick={reset}

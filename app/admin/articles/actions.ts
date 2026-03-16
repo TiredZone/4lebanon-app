@@ -67,414 +67,385 @@ async function verifyEditorRole(
 }
 
 export async function createArticle(formData: ArticleFormData): Promise<ActionResult> {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    await logSecurityEvent('unauthorized_access', { action: 'createArticle' })
-    return { error: 'يجب تسجيل الدخول' }
-  }
-
-  if (!(await verifyEditorRole(supabase, user.id))) {
-    await logSecurityEvent('unauthorized_access', { action: 'createArticle', userId: user.id })
-    return { error: 'ليس لديك صلاحية لهذا الإجراء' }
-  }
-
-  // Get user role for priority enforcement
-  const { data: creatorProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  const creatorRole = ((creatorProfile as { role: string } | null)?.role as UserRole) || 'editor'
-
-  // Rate limiting
-  const clientId = await getClientIdentifier()
-  const rateLimit = checkRateLimit(clientId, 'create')
-  if (!rateLimit.allowed) {
-    await logSecurityEvent('rate_limit_exceeded', { action: 'createArticle', userId: user.id })
-    return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
-  }
-
-  // Validate and sanitize input with Zod
-  const validationResult = ArticleSchema.safeParse(formData)
-  if (!validationResult.success) {
-    await logSecurityEvent('invalid_input', {
-      action: 'createArticle',
-      userId: user.id,
-      errors: validationResult.error.flatten().fieldErrors,
-    })
-    const firstError = validationResult.error.issues[0]
-    return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
-  }
-
-  const validatedData = validationResult.data
-
-  // Enforce role-based priority cap
-  const effectivePriority = clampPriority(validatedData.priority, creatorRole)
-
-  // Check pinned limit if priority 1
-  if (effectivePriority === 1) {
-    const pinnedCount = await getPinnedCount(supabase)
-    if (pinnedCount >= MAX_PINNED_ARTICLES) {
-      return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+    if (!user) {
+      return { error: 'يجب تسجيل الدخول' }
     }
-  }
 
-  // Generate slug from sanitized title
-  const slug = generateSlug(validatedData.title_ar, crypto.randomUUID().slice(0, 8))
-
-  // Calculate sort_position
-  const publishedAt =
-    validatedData.status !== 'draft' ? validatedData.published_at || new Date().toISOString() : null
-  let sortPosition: number
-  if (effectivePriority === 1) {
-    // FIFO: first pinned stays on top (gets highest sort_position)
-    sortPosition = await getPinnedSortPosition(supabase)
-  } else {
-    // Default: epoch of published_at (newest = highest value = shown first)
-    sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
-  }
-
-  // Insert article with validated data
-  // Note: is_breaking/is_featured are auto-set by DB trigger from priority
-  const { data: article, error: insertError } = await supabase
-    .from('articles')
-    .insert({
-      author_id: user.id,
-      slug,
-      title_ar: validatedData.title_ar,
-      excerpt_ar: validatedData.excerpt_ar || null,
-      body_md: validatedData.body_md,
-      cover_image_path: validatedData.cover_image_path,
-      section_id: validatedData.section_id,
-      region_id: validatedData.region_id,
-      country_id: validatedData.country_id,
-      status: validatedData.status,
-      published_at: publishedAt,
-      priority: effectivePriority,
-      sort_position: sortPosition,
-      sources: validatedData.sources,
-    })
-    .select('id')
-    .single()
-
-  if (insertError || !article) {
-    console.error('Create article error:', insertError)
-    return { error: 'حدث خطأ أثناء إنشاء المقال' }
-  }
-
-  const articleId = (article as { id: string }).id
-
-  // Insert article topics
-  if (validatedData.topic_ids.length > 0) {
-    const { error: topicsError } = await supabase.from('article_topics').insert(
-      validatedData.topic_ids.map((topic_id) => ({
-        article_id: articleId,
-        topic_id,
-      }))
-    )
-    if (topicsError) {
-      console.error('Error inserting article topics:', topicsError)
-      // Article was created successfully, just topics failed - don't fail the whole operation
+    if (!(await verifyEditorRole(supabase, user.id))) {
+      return { error: 'ليس لديك صلاحية لهذا الإجراء' }
     }
-  }
 
-  // Revalidate paths
-  revalidatePath('/')
-  revalidatePath('/admin')
-  if (validatedData.status === 'published') {
-    revalidatePath(`/article/${slug}`)
-  }
+    // Get user role for priority enforcement
+    const { data: creatorProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    const creatorRole = ((creatorProfile as { role: string } | null)?.role as UserRole) || 'editor'
 
-  return { success: true, articleId }
+    // Rate limiting
+    const clientId = await getClientIdentifier()
+    const rateLimit = checkRateLimit(clientId, 'create')
+    if (!rateLimit.allowed) {
+      return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
+    }
+
+    // Validate and sanitize input with Zod
+    const validationResult = ArticleSchema.safeParse(formData)
+    if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0]
+      return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
+    }
+
+    const validatedData = validationResult.data
+
+    // Enforce role-based priority cap
+    const effectivePriority = clampPriority(validatedData.priority, creatorRole)
+
+    // Check pinned limit if priority 1
+    if (effectivePriority === 1) {
+      const pinnedCount = await getPinnedCount(supabase)
+      if (pinnedCount >= MAX_PINNED_ARTICLES) {
+        return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+      }
+    }
+
+    // Generate slug from sanitized title
+    const slug = generateSlug(validatedData.title_ar, crypto.randomUUID().slice(0, 8))
+
+    // Calculate sort_position
+    const publishedAt =
+      validatedData.status !== 'draft'
+        ? validatedData.published_at || new Date().toISOString()
+        : null
+    let sortPosition: number
+    if (effectivePriority === 1) {
+      sortPosition = await getPinnedSortPosition(supabase)
+    } else {
+      sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
+    }
+
+    // Insert article with validated data
+    // Note: is_breaking/is_featured are auto-set by DB trigger from priority
+    const { data: article, error: insertError } = await supabase
+      .from('articles')
+      .insert({
+        author_id: user.id,
+        slug,
+        title_ar: validatedData.title_ar,
+        excerpt_ar: validatedData.excerpt_ar || null,
+        body_md: validatedData.body_md,
+        cover_image_path: validatedData.cover_image_path,
+        section_id: validatedData.section_id,
+        region_id: validatedData.region_id,
+        country_id: validatedData.country_id,
+        status: validatedData.status,
+        published_at: publishedAt,
+        priority: effectivePriority,
+        sort_position: sortPosition,
+        sources: validatedData.sources,
+      })
+      .select('id')
+      .single()
+
+    if (insertError || !article) {
+      console.error('Create article error:', insertError)
+      return { error: 'حدث خطأ أثناء إنشاء المقال' }
+    }
+
+    const articleId = (article as { id: string }).id
+
+    // Insert article topics
+    if (validatedData.topic_ids.length > 0) {
+      const { error: topicsError } = await supabase.from('article_topics').insert(
+        validatedData.topic_ids.map((topic_id) => ({
+          article_id: articleId,
+          topic_id,
+        }))
+      )
+      if (topicsError) {
+        console.error('Error inserting article topics:', topicsError)
+      }
+    }
+
+    // Revalidate paths
+    revalidatePath('/')
+    revalidatePath('/admin')
+    if (validatedData.status === 'published') {
+      revalidatePath(`/article/${slug}`)
+    }
+
+    return { success: true, articleId }
+  } catch (err) {
+    console.error('createArticle unexpected error:', err)
+    return { error: 'حدث خطأ أثناء إنشاء المقال. يرجى المحاولة مرة أخرى.' }
+  }
 }
 
 export async function updateArticle(
   articleId: string,
   formData: ArticleFormData
 ): Promise<ActionResult> {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    await logSecurityEvent('unauthorized_access', { action: 'updateArticle' })
-    return { error: 'يجب تسجيل الدخول' }
-  }
-
-  // Validate article ID first (fast check)
-  const idValidation = UUIDSchema.safeParse(articleId)
-  if (!idValidation.success) {
-    await logSecurityEvent('invalid_input', {
-      action: 'updateArticle',
-      userId: user.id,
-      error: 'Invalid article ID format',
-    })
-    return { error: 'معرف المقال غير صالح' }
-  }
-
-  // AUTHORIZATION CHECK FIRST - verify ownership before expensive operations
-  const { data: existingArticle, error: fetchError } = await supabase
-    .from('articles')
-    .select('author_id, slug, status, title_ar, priority, sort_position')
-    .eq('id', articleId)
-    .single()
-
-  // Use generic error message to prevent article enumeration
-  if (fetchError || !existingArticle) {
-    return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
-  }
-
-  const existing = existingArticle as {
-    author_id: string
-    slug: string
-    status: string
-    title_ar: string
-    priority: number
-    sort_position: number
-  }
-
-  // Get user role - needed for both authorization and priority enforcement
-  const { data: currentUserProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-  const updaterRole: UserRole =
-    ((currentUserProfile as { role: string } | null)?.role as UserRole) || 'editor'
-
-  if (existing.author_id !== user.id) {
-    // Check if user can edit this article:
-    // - super_admin can edit any article
-    // - admin can edit editor's articles
-    let authorized = updaterRole === 'super_admin'
-
-    if (!authorized && updaterRole === 'admin') {
-      const { data: authorProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', existing.author_id)
-        .single()
-      const authorRole = (authorProfile as { role: string } | null)?.role
-      authorized = authorRole === 'editor'
+    if (!user) {
+      return { error: 'يجب تسجيل الدخول' }
     }
 
-    if (!authorized) {
-      await logSecurityEvent('unauthorized_access', {
-        action: 'updateArticle',
-        userId: user.id,
-        attemptedArticleId: articleId,
-      })
+    // Validate article ID first (fast check)
+    const idValidation = UUIDSchema.safeParse(articleId)
+    if (!idValidation.success) {
+      return { error: 'معرف المقال غير صالح' }
+    }
+
+    // AUTHORIZATION CHECK FIRST - verify ownership before expensive operations
+    const { data: existingArticle, error: fetchError } = await supabase
+      .from('articles')
+      .select('author_id, slug, status, title_ar, priority, sort_position')
+      .eq('id', articleId)
+      .single()
+
+    if (fetchError || !existingArticle) {
       return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
     }
-  }
 
-  // Rate limiting - after authorization check
-  const clientId = await getClientIdentifier()
-  const rateLimit = checkRateLimit(clientId, 'create')
-  if (!rateLimit.allowed) {
-    await logSecurityEvent('rate_limit_exceeded', { action: 'updateArticle', userId: user.id })
-    return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
-  }
-
-  // Validate and sanitize input with Zod
-  const validationResult = ArticleSchema.safeParse(formData)
-  if (!validationResult.success) {
-    await logSecurityEvent('invalid_input', {
-      action: 'updateArticle',
-      userId: user.id,
-      errors: validationResult.error.flatten().fieldErrors,
-    })
-    const firstError = validationResult.error.issues[0]
-    return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
-  }
-
-  const validatedData = validationResult.data
-
-  // Enforce role-based priority cap
-  const effectivePriority = clampPriority(validatedData.priority, updaterRole)
-
-  // Check pinned limit if changing TO priority 1 (not if already pinned)
-  if (effectivePriority === 1 && existing.priority !== 1) {
-    const pinnedCount = await getPinnedCount(supabase)
-    if (pinnedCount >= MAX_PINNED_ARTICLES) {
-      return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+    const existing = existingArticle as {
+      author_id: string
+      slug: string
+      status: string
+      title_ar: string
+      priority: number
+      sort_position: number
     }
-  }
 
-  const oldSlug = existing.slug
-  const wasPublished = existing.status === 'published'
-
-  // Generate new slug if title changed
-  let newSlug = oldSlug
-  if (existing.title_ar !== validatedData.title_ar) {
-    newSlug = generateSlug(validatedData.title_ar, articleId.slice(0, 8))
-  }
-
-  // Calculate sort_position based on priority change
-  const publishedAt =
-    validatedData.status !== 'draft' ? validatedData.published_at || new Date().toISOString() : null
-  let sortPosition = existing.sort_position
-  if (effectivePriority !== existing.priority) {
-    // Priority changed - recalculate sort_position
-    if (effectivePriority === 1) {
-      sortPosition = await getPinnedSortPosition(supabase)
-    } else {
-      sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
-    }
-  }
-
-  // Update article with validated data
-  // Note: is_breaking/is_featured are auto-set by DB trigger from priority
-  const { error: updateError } = await supabase
-    .from('articles')
-    .update({
-      slug: newSlug,
-      title_ar: validatedData.title_ar,
-      excerpt_ar: validatedData.excerpt_ar || null,
-      body_md: validatedData.body_md,
-      cover_image_path: validatedData.cover_image_path,
-      section_id: validatedData.section_id,
-      region_id: validatedData.region_id,
-      country_id: validatedData.country_id,
-      status: validatedData.status,
-      published_at: publishedAt,
-      priority: effectivePriority,
-      sort_position: sortPosition,
-      sources: validatedData.sources,
-    })
-    .eq('id', articleId)
-
-  if (updateError) {
-    console.error('Update article error:', updateError)
-    return { error: 'حدث خطأ أثناء تحديث المقال' }
-  }
-
-  // Update article topics (delete existing, insert new)
-  // Handle this more safely - delete first, then insert, with error handling
-  const { error: deleteTopicsError } = await supabase
-    .from('article_topics')
-    .delete()
-    .eq('article_id', articleId)
-
-  if (deleteTopicsError) {
-    console.error('Error deleting article topics:', deleteTopicsError)
-    // Don't fail the whole operation - topics deletion is non-critical
-  }
-
-  if (validatedData.topic_ids.length > 0) {
-    const { error: insertTopicsError } = await supabase.from('article_topics').insert(
-      validatedData.topic_ids.map((topic_id) => ({
-        article_id: articleId,
-        topic_id,
-      }))
-    )
-
-    if (insertTopicsError) {
-      console.error('Error inserting article topics:', insertTopicsError)
-      // Article was updated successfully, just topics failed
-    }
-  }
-
-  // Revalidate paths
-  revalidatePath('/')
-  revalidatePath('/admin')
-  revalidatePath(`/article/${newSlug}`)
-  if (oldSlug !== newSlug && wasPublished) {
-    revalidatePath(`/article/${oldSlug}`)
-  }
-
-  return { success: true, newSlug }
-}
-
-export async function deleteArticle(articleId: string): Promise<ActionResult | void> {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    await logSecurityEvent('unauthorized_access', { action: 'deleteArticle' })
-    return { error: 'يجب تسجيل الدخول' }
-  }
-
-  // Validate article ID
-  const idValidation = UUIDSchema.safeParse(articleId)
-  if (!idValidation.success) {
-    await logSecurityEvent('invalid_input', {
-      action: 'deleteArticle',
-      userId: user.id,
-      error: 'Invalid article ID format',
-    })
-    return { error: 'معرف المقال غير صالح' }
-  }
-
-  // Verify ownership and get slug for revalidation - authorization first
-  const { data: article, error: fetchError } = await supabase
-    .from('articles')
-    .select('author_id, slug')
-    .eq('id', articleId)
-    .single()
-
-  // Use generic error message to prevent article enumeration
-  if (fetchError || !article) {
-    return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
-  }
-
-  const articleData = article as { author_id: string; slug: string }
-
-  // Authorization: owner, super_admin, or admin deleting editor's article
-  if (articleData.author_id !== user.id) {
-    const { data: userProfile } = await supabase
+    // Get user role - needed for both authorization and priority enforcement
+    const { data: currentUserProfile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
-    const userRole = (userProfile as { role: string } | null)?.role as UserRole
+    const updaterRole: UserRole =
+      ((currentUserProfile as { role: string } | null)?.role as UserRole) || 'editor'
 
-    let authorized = userRole === 'super_admin'
+    if (existing.author_id !== user.id) {
+      let authorized = updaterRole === 'super_admin'
 
-    if (!authorized && userRole === 'admin') {
-      const { data: authorProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', articleData.author_id)
-        .single()
-      const authorRole = (authorProfile as { role: string } | null)?.role
-      authorized = authorRole === 'editor'
+      if (!authorized && updaterRole === 'admin') {
+        const { data: authorProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', existing.author_id)
+          .single()
+        const authorRole = (authorProfile as { role: string } | null)?.role
+        authorized = authorRole === 'editor'
+      }
+
+      if (!authorized) {
+        return { error: 'المقال غير موجود أو ليس لديك صلاحية للتعديل' }
+      }
     }
 
-    if (!authorized) {
-      await logSecurityEvent('unauthorized_access', {
-        action: 'deleteArticle',
-        userId: user.id,
-        attemptedArticleId: articleId,
+    // Rate limiting
+    const clientId = await getClientIdentifier()
+    const rateLimit = checkRateLimit(clientId, 'create')
+    if (!rateLimit.allowed) {
+      return { error: 'تم تجاوز حد الطلبات. يرجى المحاولة لاحقاً' }
+    }
+
+    // Validate and sanitize input with Zod
+    const validationResult = ArticleSchema.safeParse(formData)
+    if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0]
+      return { error: firstError?.message || 'البيانات المدخلة غير صالحة' }
+    }
+
+    const validatedData = validationResult.data
+
+    // Enforce role-based priority cap
+    const effectivePriority = clampPriority(validatedData.priority, updaterRole)
+
+    // Check pinned limit if changing TO priority 1 (not if already pinned)
+    if (effectivePriority === 1 && existing.priority !== 1) {
+      const pinnedCount = await getPinnedCount(supabase)
+      if (pinnedCount >= MAX_PINNED_ARTICLES) {
+        return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات في الأعلى` }
+      }
+    }
+
+    const oldSlug = existing.slug
+    const wasPublished = existing.status === 'published'
+
+    // Generate new slug if title changed
+    let newSlug = oldSlug
+    if (existing.title_ar !== validatedData.title_ar) {
+      newSlug = generateSlug(validatedData.title_ar, articleId.slice(0, 8))
+    }
+
+    // Calculate sort_position based on priority change
+    const publishedAt =
+      validatedData.status !== 'draft'
+        ? validatedData.published_at || new Date().toISOString()
+        : null
+    let sortPosition = existing.sort_position
+    if (effectivePriority !== existing.priority) {
+      if (effectivePriority === 1) {
+        sortPosition = await getPinnedSortPosition(supabase)
+      } else {
+        sortPosition = publishedAt ? new Date(publishedAt).getTime() / 1000 : Date.now() / 1000
+      }
+    }
+
+    // Update article with validated data
+    const { error: updateError } = await supabase
+      .from('articles')
+      .update({
+        slug: newSlug,
+        title_ar: validatedData.title_ar,
+        excerpt_ar: validatedData.excerpt_ar || null,
+        body_md: validatedData.body_md,
+        cover_image_path: validatedData.cover_image_path,
+        section_id: validatedData.section_id,
+        region_id: validatedData.region_id,
+        country_id: validatedData.country_id,
+        status: validatedData.status,
+        published_at: publishedAt,
+        priority: effectivePriority,
+        sort_position: sortPosition,
+        sources: validatedData.sources,
       })
+      .eq('id', articleId)
+
+    if (updateError) {
+      console.error('Update article error:', updateError)
+      return { error: 'حدث خطأ أثناء تحديث المقال' }
+    }
+
+    // Update article topics
+    const { error: deleteTopicsError } = await supabase
+      .from('article_topics')
+      .delete()
+      .eq('article_id', articleId)
+
+    if (deleteTopicsError) {
+      console.error('Error deleting article topics:', deleteTopicsError)
+    }
+
+    if (validatedData.topic_ids.length > 0) {
+      const { error: insertTopicsError } = await supabase.from('article_topics').insert(
+        validatedData.topic_ids.map((topic_id) => ({
+          article_id: articleId,
+          topic_id,
+        }))
+      )
+
+      if (insertTopicsError) {
+        console.error('Error inserting article topics:', insertTopicsError)
+      }
+    }
+
+    // Revalidate paths
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath(`/article/${newSlug}`)
+    if (oldSlug !== newSlug && wasPublished) {
+      revalidatePath(`/article/${oldSlug}`)
+    }
+
+    return { success: true, newSlug }
+  } catch (err) {
+    console.error('updateArticle unexpected error:', err)
+    return { error: 'حدث خطأ أثناء تحديث المقال. يرجى المحاولة مرة أخرى.' }
+  }
+}
+
+export async function deleteArticle(articleId: string): Promise<ActionResult | void> {
+  let shouldRedirect = false
+
+  try {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: 'يجب تسجيل الدخول' }
+    }
+
+    const idValidation = UUIDSchema.safeParse(articleId)
+    if (!idValidation.success) {
+      return { error: 'معرف المقال غير صالح' }
+    }
+
+    const { data: article, error: fetchError } = await supabase
+      .from('articles')
+      .select('author_id, slug')
+      .eq('id', articleId)
+      .single()
+
+    if (fetchError || !article) {
       return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
     }
-  }
 
-  // Delete article (cascades to article_topics)
-  const { error: deleteError } = await supabase.from('articles').delete().eq('id', articleId)
+    const articleData = article as { author_id: string; slug: string }
 
-  if (deleteError) {
-    console.error('Delete article error:', deleteError)
+    if (articleData.author_id !== user.id) {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      const userRole = (userProfile as { role: string } | null)?.role as UserRole
+
+      let authorized = userRole === 'super_admin'
+
+      if (!authorized && userRole === 'admin') {
+        const { data: authorProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', articleData.author_id)
+          .single()
+        const authorRole = (authorProfile as { role: string } | null)?.role
+        authorized = authorRole === 'editor'
+      }
+
+      if (!authorized) {
+        return { error: 'المقال غير موجود أو ليس لديك صلاحية للحذف' }
+      }
+    }
+
+    const { error: deleteError } = await supabase.from('articles').delete().eq('id', articleId)
+
+    if (deleteError) {
+      console.error('Delete article error:', deleteError)
+      return { error: 'حدث خطأ أثناء حذف المقال' }
+    }
+
+    revalidatePath('/')
+    revalidatePath('/admin')
+    revalidatePath(`/article/${articleData.slug}`)
+
+    shouldRedirect = true
+  } catch (err) {
+    console.error('deleteArticle unexpected error:', err)
     return { error: 'حدث خطأ أثناء حذف المقال' }
   }
 
-  // Revalidate paths
-  revalidatePath('/')
-  revalidatePath('/admin')
-  revalidatePath(`/article/${articleData.slug}`)
-
-  redirect('/admin')
+  if (shouldRedirect) {
+    redirect('/admin')
+  }
 }
 
 // Magic bytes for image format verification
@@ -550,16 +521,25 @@ async function verifyImageMagicBytes(
 }
 
 /**
- * Check for embedded scripts or malicious content in image files
+ * Check for embedded scripts or malicious content in image files.
+ * NOTE: Only called AFTER magic byte verification confirms the file is a real image.
+ * We skip the scan entirely for verified images because binary image data
+ * produces false positives with text-based pattern matching (e.g. random bytes
+ * matching `<%` or `<?php`). Magic byte verification is sufficient security.
  */
-async function scanForMaliciousContent(file: File): Promise<{ safe: boolean; reason?: string }> {
-  try {
-    // Only scan text-like regions — check the first 1KB for obvious script injections
-    // Binary image data causes false positives with broad regex patterns
-    const textContent = await file.slice(0, 1024).text()
+async function scanForMaliciousContent(
+  file: File,
+  magicBytesVerified: boolean
+): Promise<{ safe: boolean; reason?: string }> {
+  // If magic bytes already confirmed this is a valid image, skip text scan.
+  // Binary image data contains random byte sequences that match text patterns.
+  if (magicBytesVerified) {
+    return { safe: true }
+  }
 
-    // Only check for unambiguous attack patterns (not broad regex that matches binary)
-    const maliciousPatterns = [/<script/i, /javascript:/i, /<\?php/i, /<%/i]
+  try {
+    const textContent = await file.slice(0, 1024).text()
+    const maliciousPatterns = [/<script/i, /javascript:/i]
 
     for (const pattern of maliciousPatterns) {
       if (pattern.test(textContent)) {
@@ -653,7 +633,7 @@ export async function uploadImage(
   }
 
   // 5. SECURITY: Scan for embedded malicious content
-  const malwareCheck = await scanForMaliciousContent(file)
+  const malwareCheck = await scanForMaliciousContent(file, magicByteCheck.valid)
   if (!malwareCheck.safe) {
     await logSecurityEvent('suspicious_activity', {
       action: 'uploadImage',

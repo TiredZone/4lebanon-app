@@ -18,11 +18,16 @@ async function getFormData() {
   }
 
   // Get user role
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single()
+
+  if (profileError) {
+    console.error('Error fetching profile:', profileError)
+  }
+
   const userRole = ((profile as { role: string } | null)?.role || 'editor') as UserRole
 
   const [sections, regions, countries, topics] = await Promise.all([
