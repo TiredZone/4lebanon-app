@@ -25,7 +25,7 @@ async function getHomepageData() {
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
-      author:profiles!articles_author_id_fkey(id, display_name_ar),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, is_anonymous),
       section:sections!articles_section_id_fkey(id, name_ar)
     `
     )
@@ -46,7 +46,7 @@ async function getHomepageData() {
         `
         id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
         section_id,
-        author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
+        author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
         section:sections!articles_section_id_fkey(id, slug, name_ar)
       `
       )
@@ -79,10 +79,11 @@ async function getHomepageData() {
       .filter((s) => s.articles.length > 0)
   }
 
-  // Fetch writers/authors
+  // Fetch writers/authors (exclude anonymous)
   const { data: writersData } = await supabase
     .from('profiles')
     .select('id, display_name_ar, avatar_url')
+    .eq('is_anonymous', false)
     .not('display_name_ar', 'is', null)
     .limit(10)
 

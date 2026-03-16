@@ -13,6 +13,7 @@ export interface Profile {
   avatar_url: string | null
   bio_ar: string | null
   role: UserRole
+  is_anonymous: boolean
   created_at: string
   updated_at: string
 }
@@ -103,7 +104,7 @@ export interface ArticleListItem {
   is_breaking: boolean
   is_featured: boolean
   priority: ArticlePriority
-  author: Pick<Profile, 'id' | 'display_name_ar' | 'avatar_url'> | null // Can be null if author was deleted
+  author: Pick<Profile, 'id' | 'display_name_ar' | 'avatar_url' | 'is_anonymous'> | null // Can be null if author was deleted
   section: Pick<Section, 'id' | 'slug' | 'name_ar'> | null
 }
 

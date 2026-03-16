@@ -45,7 +45,7 @@ export const SOCIAL_LINKS = {
 }
 
 // Contact email
-export const CONTACT_EMAIL = 'anisabisaad@4lebanon.com'
+export const CONTACT_EMAIL = 'elieantoun@4lebanon.com'
 
 // Pagination defaults
 export const PAGINATION = {

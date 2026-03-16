@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatDateAr, formatRelativeTimeAr, getStorageUrl } from '@/lib/utils'
+import { formatDateAr, formatRelativeTimeAr, getStorageUrl, resolveAuthor } from '@/lib/utils'
 import type { ArticleListItem } from '@/types/database'
 
 interface ArticleCardProps {
@@ -19,6 +19,7 @@ export function ArticleCard({
   showSection = true,
 }: ArticleCardProps) {
   const imageUrl = getStorageUrl(article.cover_image_path)
+  const author = resolveAuthor(article.author)
 
   if (variant === 'featured') {
     return (
@@ -68,10 +69,10 @@ export function ArticleCard({
 
           {/* Meta */}
           <div className="flex items-center gap-2 text-xs text-white/80 md:gap-3 md:text-sm">
-            {showAuthor && article.author && (
+            {showAuthor && author && (
               <>
-                <Link href={`/author/${article.author.id}`} className="hover:text-white">
-                  {article.author.display_name_ar}
+                <Link href={`/author/${author.id}`} className="hover:text-white">
+                  {author.display_name_ar}
                 </Link>
                 <span>•</span>
               </>
@@ -185,12 +186,9 @@ export function ArticleCard({
           </p>
         )}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {showAuthor && article.author && (
-            <Link
-              href={`/author/${article.author.id}`}
-              className="transition-colors hover:text-[#830005]"
-            >
-              {article.author.display_name_ar}
+          {showAuthor && author && (
+            <Link href={`/author/${author.id}`} className="transition-colors hover:text-[#830005]">
+              {author.display_name_ar}
             </Link>
           )}
           {article.published_at && (

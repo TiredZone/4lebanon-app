@@ -100,6 +100,15 @@ export function formatTimeAr(date: string | Date) {
   return format(d, 'HH:mm', { locale: ar })
 }
 
+// Hide anonymous authors — returns null if the author has is_anonymous set
+
+export function resolveAuthor<T extends { is_anonymous?: boolean } | null | undefined>(
+  author: T
+): T | null {
+  if (!author || (author as { is_anonymous?: boolean }).is_anonymous) return null
+  return author
+}
+
 // Generate URL-safe slug from Arabic text
 export function generateSlug(text: string, id?: string): string {
   const baseSlug = slugify(text, {

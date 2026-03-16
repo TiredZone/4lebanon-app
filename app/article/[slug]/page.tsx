@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { sanitizeUrl } from '@/lib/security'
 import { SITE_CONFIG, PAGINATION } from '@/lib/constants'
-import { formatDateAr, calculateReadingTime, getStorageUrl } from '@/lib/utils'
+import { formatDateAr, calculateReadingTime, getStorageUrl, resolveAuthor } from '@/lib/utils'
 import { MarkdownRenderer } from '@/components/markdown-renderer'
 import {
   ReadingProgressBar,
@@ -34,7 +34,7 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
     .select(
       `
       *,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar, is_anonymous),
       section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar)
     `
     )
@@ -83,7 +83,7 @@ async function getRelatedArticles(
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `
     )
@@ -146,6 +146,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const imageUrl = getStorageUrl(article.cover_image_path)
+  const metaAuthor = resolveAuthor(article.author)
 
   return {
     title: article.title_ar,
@@ -156,7 +157,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: article.excerpt_ar || article.title_ar,
       type: 'article',
       publishedTime: article.published_at || undefined,
-      authors: article.author?.display_name_ar ? [article.author.display_name_ar] : undefined,
+      authors: metaAuthor?.display_name_ar ? [metaAuthor.display_name_ar] : undefined,
       images: imageUrl ? [{ url: imageUrl, width: 1200, height: 630 }] : undefined,
     },
     twitter: {
@@ -179,6 +180,7 @@ export default async function ArticlePage({ params }: PageProps) {
   // Increment view count (non-blocking)
   void incrementViewCount(article.id)
 
+  const author = resolveAuthor(article.author)
   const relatedArticles = await getRelatedArticles(article.id, article.section_id)
   const imageUrl = getStorageUrl(article.cover_image_path)
   const readingTime = calculateReadingTime(article.body_md)
@@ -206,7 +208,7 @@ export default async function ArticlePage({ params }: PageProps) {
           published_at: article.published_at,
           updated_at: article.updated_at,
           imageUrl,
-          authorName: article.author?.display_name_ar,
+          authorName: author?.display_name_ar,
           slug: article.slug,
           sectionName: article.section?.name_ar,
         })}
@@ -260,27 +262,27 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Metadata Glass Pill */}
             <div className="article-meta-pill">
-              {article.author ? (
+              {author ? (
                 <Link
-                  href={`/author/${article.author.id}`}
+                  href={`/author/${author.id}`}
                   className="flex items-center gap-2 hover:opacity-80"
                 >
                   <div className="author-avatar">
-                    {article.author.avatar_url ? (
+                    {author.avatar_url ? (
                       <Image
-                        src={getStorageUrl(article.author.avatar_url) || '/placeholder.png'}
-                        alt={article.author.display_name_ar}
+                        src={getStorageUrl(author.avatar_url) || '/placeholder.png'}
+                        alt={author.display_name_ar}
                         width={36}
                         height={36}
                         className="h-full w-full object-cover"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
-                        {article.author.display_name_ar?.charAt(0) || 'ك'}
+                        {author.display_name_ar?.charAt(0) || 'ك'}
                       </div>
                     )}
                   </div>
-                  <span className="author-name">{article.author.display_name_ar}</span>
+                  <span className="author-name">{author.display_name_ar}</span>
                 </Link>
               ) : (
                 <span className="text-gray-500">كاتب غير معروف</span>

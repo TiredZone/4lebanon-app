@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { getStorageUrl, formatDateAr } from '@/lib/utils'
+import { getStorageUrl, formatDateAr, resolveAuthor } from '@/lib/utils'
 import type { ArticleListItem } from '@/types/database'
 
 interface GlassEditorialCardProps {
@@ -17,6 +17,7 @@ export function GlassEditorialCard({
   variant = 'default',
 }: GlassEditorialCardProps) {
   const cardClass = variant === 'exclusive' ? 'glass-exclusive-card' : 'glass-editorial-card'
+  const author = resolveAuthor(article.author)
 
   return (
     <Link
@@ -56,10 +57,10 @@ export function GlassEditorialCard({
 
         {/* Meta */}
         <div className="card-meta">
-          {article.author?.display_name_ar && <span>{article.author.display_name_ar}</span>}
+          {author?.display_name_ar && <span>{author.display_name_ar}</span>}
           {article.published_at && (
             <>
-              {article.author?.display_name_ar && <span>•</span>}
+              {author?.display_name_ar && <span>•</span>}
               <time>{formatDateAr(new Date(article.published_at), 'dd MMMM yyyy')}</time>
             </>
           )}
