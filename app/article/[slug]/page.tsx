@@ -262,33 +262,32 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Metadata Glass Pill */}
             <div className="article-meta-pill">
-              {author ? (
-                <Link
-                  href={`/author/${author.id}`}
-                  className="flex items-center gap-2 hover:opacity-80"
-                >
-                  <div className="author-avatar">
-                    {author.avatar_url ? (
-                      <Image
-                        src={getStorageUrl(author.avatar_url) || '/placeholder.png'}
-                        alt={author.display_name_ar}
-                        width={36}
-                        height={36}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
-                        {author.display_name_ar?.charAt(0) || 'ك'}
-                      </div>
-                    )}
-                  </div>
-                  <span className="author-name">{author.display_name_ar}</span>
-                </Link>
-              ) : (
-                <span className="text-gray-500">كاتب غير معروف</span>
+              {author && (
+                <>
+                  <Link
+                    href={`/author/${author.id}`}
+                    className="flex items-center gap-2 hover:opacity-80"
+                  >
+                    <div className="author-avatar">
+                      {author.avatar_url ? (
+                        <Image
+                          src={getStorageUrl(author.avatar_url) || '/placeholder.png'}
+                          alt={author.display_name_ar}
+                          width={36}
+                          height={36}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#E11D48] to-[#BE123C] text-sm font-bold text-white">
+                          {author.display_name_ar?.charAt(0) || 'ك'}
+                        </div>
+                      )}
+                    </div>
+                    <span className="author-name">{author.display_name_ar}</span>
+                  </Link>
+                  <span className="separator" />
+                </>
               )}
-
-              <span className="separator" />
 
               {article.published_at && (
                 <time>{formatDateAr(article.published_at, 'dd MMMM yyyy')}</time>
