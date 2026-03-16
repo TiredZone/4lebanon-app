@@ -6,7 +6,29 @@
 
 import { z } from 'zod'
 import { headers } from 'next/headers'
-import DOMPurify from 'isomorphic-dompurify'
+
+// Lazy-load DOMPurify to prevent module initialization failures
+// from crashing the entire security module on serverless runtimes.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _DOMPurify: any = null
+let _DOMPurifyLoaded = false
+function getDOMPurify() {
+  if (!_DOMPurifyLoaded) {
+    _DOMPurifyLoaded = true
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _DOMPurify = require('isomorphic-dompurify')
+      // Handle both default export and module.exports
+      if (_DOMPurify && _DOMPurify.default) {
+        _DOMPurify = _DOMPurify.default
+      }
+    } catch (err) {
+      console.error('Failed to load DOMPurify:', err)
+      _DOMPurify = null
+    }
+  }
+  return _DOMPurify
+}
 
 // ============================================================================
 // IP BLOCKING & THREAT DETECTION
@@ -182,55 +204,68 @@ export function stripHtml(input: string): string {
 
 /**
  * Sanitize rich HTML content from the WYSIWYG editor
- * Preserves safe formatting tags while stripping dangerous content
+ * Preserves safe formatting tags while stripping dangerous content.
+ * Falls back to basic regex sanitization if DOMPurify is unavailable.
  */
 export function sanitizeRichContent(input: string): string {
   if (!input) return ''
 
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [
-      'p',
-      'br',
-      'hr',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'strong',
-      'b',
-      'em',
-      'i',
-      'u',
-      's',
-      'del',
-      'a',
-      'img',
-      'ul',
-      'ol',
-      'li',
-      'blockquote',
-      'code',
-      'pre',
-      'figure',
-      'figcaption',
-      'div',
-      'span',
-    ],
-    ALLOWED_ATTR: [
-      'href',
-      'target',
-      'rel',
-      'src',
-      'alt',
-      'width',
-      'height',
-      'class',
-      'dir',
-      'style',
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-    ALLOW_DATA_ATTR: false,
-  }).trim()
+  const purify = getDOMPurify()
+  if (!purify) {
+    // Fallback: strip dangerous content with regex if DOMPurify unavailable
+    return input
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+      .replace(/javascript:/gi, '')
+      .trim()
+  }
+
+  return purify
+    .sanitize(input, {
+      ALLOWED_TAGS: [
+        'p',
+        'br',
+        'hr',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'strong',
+        'b',
+        'em',
+        'i',
+        'u',
+        's',
+        'del',
+        'a',
+        'img',
+        'ul',
+        'ol',
+        'li',
+        'blockquote',
+        'code',
+        'pre',
+        'figure',
+        'figcaption',
+        'div',
+        'span',
+      ],
+      ALLOWED_ATTR: [
+        'href',
+        'target',
+        'rel',
+        'src',
+        'alt',
+        'width',
+        'height',
+        'class',
+        'dir',
+        'style',
+      ],
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+      ALLOW_DATA_ATTR: false,
+    })
+    .trim()
 }
 
 /**
