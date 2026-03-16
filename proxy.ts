@@ -162,8 +162,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isRateLimited(rateLimitKey, rateLimitConfig)) {
-    console.warn(`[SECURITY] Rate limit exceeded for ${rateLimitKey}`)
-    trackSuspicious(ip)
+    // Don't track as suspicious — rate limits are soft protection, not attacks
     return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
