@@ -2,7 +2,24 @@ import Image from 'next/image'
 import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
-import DOMPurify from 'isomorphic-dompurify'
+
+// Lazy-load DOMPurify to prevent crashes on Vercel serverless runtime
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _DOMPurify: any = null
+let _loaded = false
+function getDOMPurify() {
+  if (!_loaded) {
+    _loaded = true
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      _DOMPurify = require('isomorphic-dompurify')
+      if (_DOMPurify && _DOMPurify.default) _DOMPurify = _DOMPurify.default
+    } catch {
+      _DOMPurify = null
+    }
+  }
+  return _DOMPurify
+}
 
 interface MarkdownRendererProps {
   content: string
@@ -50,7 +67,13 @@ function isHtmlContent(content: string): boolean {
 export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   // HTML content from the WYSIWYG editor
   if (isHtmlContent(content)) {
-    const sanitized = DOMPurify.sanitize(content, DOMPURIFY_CONFIG)
+    const purify = getDOMPurify()
+    const sanitized = purify
+      ? purify.sanitize(content, DOMPURIFY_CONFIG)
+      : content
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+          .replace(/javascript:/gi, '')
     return (
       <div
         className={`article-body ${className}`}
