@@ -34,7 +34,7 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
     .select(
       `
       *,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar, is_anonymous),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, bio_ar),
       section:sections!articles_section_id_fkey(id, slug, name_ar, description_ar)
     `
     )
@@ -83,7 +83,7 @@ async function getRelatedArticles(
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `
     )

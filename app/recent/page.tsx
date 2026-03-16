@@ -27,7 +27,7 @@ async function getRecentArticles(page: number = 1) {
     .select(
       `
       id, slug, title_ar, published_at, is_breaking,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, is_anonymous),
+      author:profiles!articles_author_id_fkey(id, display_name_ar),
       section:sections!articles_section_id_fkey(id, name_ar)
     `,
       { count: 'exact' }

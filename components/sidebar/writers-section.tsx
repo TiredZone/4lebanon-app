@@ -7,12 +7,7 @@ import type { Profile } from '@/types/database'
 async function getAuthors(): Promise<Profile[]> {
   const supabase = await createClient()
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('is_anonymous', false)
-    .order('display_name_ar')
-    .limit(6)
+  const { data } = await supabase.from('profiles').select('*').order('display_name_ar').limit(6)
 
   return (data || []) as Profile[]
 }

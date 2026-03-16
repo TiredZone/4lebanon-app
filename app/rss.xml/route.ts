@@ -54,7 +54,7 @@ export async function GET() {
       excerpt_ar,
       cover_image_path,
       published_at,
-      author:profiles!articles_author_id_fkey(display_name_ar, is_anonymous)
+      author:profiles!articles_author_id_fkey(display_name_ar)
     `
     )
     .eq('status', 'published')

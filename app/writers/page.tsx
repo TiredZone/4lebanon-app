@@ -32,7 +32,6 @@ async function getAllWriters() {
     .from('profiles')
     .select('*')
     .in('id', uniqueAuthorIds)
-    .eq('is_anonymous', false)
     .order('display_name_ar', { ascending: true })
 
   return (data || []) as Profile[]

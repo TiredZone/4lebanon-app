@@ -37,7 +37,7 @@ async function getAuthorArticles(
     .select(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
-      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
+      author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url),
       section:sections!articles_section_id_fkey(id, slug, name_ar)
     `,
       { count: 'exact' }
@@ -95,7 +95,7 @@ export default async function AuthorPage({ params, searchParams }: PageProps) {
 
   const author = await getAuthor(id)
 
-  if (!author || author.is_anonymous === true) {
+  if (!author || (author as { is_anonymous?: boolean }).is_anonymous === true) {
     notFound()
   }
 
