@@ -47,7 +47,15 @@ async function getDashboardData(): Promise<{
         : `*, section:sections(*)`
     )
 
-  if (!canSeeOthers) {
+  if (isSuperAdmin) {
+    // No filter — super admin sees everything
+  } else if (isAdmin) {
+    // Admin sees own articles + editor articles (not other admins' or super_admin's)
+    const { data: editors } = await supabase.from('profiles').select('id').eq('role', 'editor')
+    const allowedIds = [user.id, ...(editors || []).map((e) => (e as { id: string }).id)]
+    articlesQuery = articlesQuery.in('author_id', allowedIds)
+  } else {
+    // Editor sees own only
     articlesQuery = articlesQuery.eq('author_id', user.id)
   }
 
@@ -69,7 +77,6 @@ export default async function AdminDashboardPage() {
   const canManageOthers = isSuperAdmin || isAdmin
 
   const draftCount = articles.filter((a) => a.status === 'draft').length
-  const scheduledCount = articles.filter((a) => a.status === 'scheduled').length
   const publishedCount = articles.filter((a) => a.status === 'published').length
   const breakingCount = articles.filter((a) => a.is_breaking).length
   const featuredCount = articles.filter((a) => a.is_featured).length
@@ -149,7 +156,6 @@ export default async function AdminDashboardPage() {
         <StatCard label="الإجمالي" value={articles.length} color="blue" icon="total" />
         <StatCard label="منشور" value={publishedCount} color="green" icon="published" />
         <StatCard label="مسودات" value={draftCount} color="gray" icon="draft" />
-        <StatCard label="مجدول" value={scheduledCount} color="yellow" icon="scheduled" />
         <StatCard label="عاجل" value={breakingCount} color="red" icon="breaking" />
         <StatCard label="مميز" value={featuredCount} color="purple" icon="featured" />
       </div>
@@ -176,7 +182,7 @@ function StatCard({
   label: string
   value: number
   color?: 'blue' | 'gray' | 'yellow' | 'green' | 'red' | 'purple'
-  icon?: 'total' | 'draft' | 'scheduled' | 'published' | 'breaking' | 'featured'
+  icon?: 'total' | 'draft' | 'published' | 'breaking' | 'featured'
 }) {
   const icons = {
     total: (
@@ -193,14 +199,6 @@ function StatCard({
         strokeLinejoin="round"
         strokeWidth={2}
         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-      />
-    ),
-    scheduled: (
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     ),
     published: (

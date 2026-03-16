@@ -200,3 +200,103 @@ export async function reorderArticles(
 
   return { success: true }
 }
+
+export async function saveAllPriorities(
+  changes: Array<{ id: string; priority: number; sortIndex: number }>
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient()
+  const auth = await getAuthenticatedUser(supabase)
+
+  if (!auth) {
+    return { error: 'يجب تسجيل الدخول' }
+  }
+
+  if (auth.role === 'editor') {
+    return { error: 'ليس لديك صلاحية لهذا الإجراء' }
+  }
+
+  const clientId = await getClientIdentifier()
+  const rateLimit = checkRateLimit(clientId, 'admin')
+  if (!rateLimit.allowed) {
+    return { error: 'تم تجاوز حد الطلبات' }
+  }
+
+  // Validate all IDs and priorities
+  const minAllowed = auth.role === 'super_admin' ? 1 : 2
+  for (const change of changes) {
+    if (!UUIDSchema.safeParse(change.id).success) {
+      return { error: 'معرف مقال غير صالح' }
+    }
+    if (change.priority < 1 || change.priority > 5) {
+      return { error: 'قيمة الأولوية غير صالحة' }
+    }
+    if (change.priority < minAllowed) {
+      return { error: 'ليس لديك صلاحية لتعيين هذه الأولوية' }
+    }
+  }
+
+  // Check pinned limit
+  const pinnedCount = changes.filter((c) => c.priority === 1).length
+  if (pinnedCount > MAX_PINNED_ARTICLES) {
+    return { error: `لا يمكن تثبيت أكثر من ${MAX_PINNED_ARTICLES} مقالات` }
+  }
+
+  // For admin role, verify they can only modify own + editor articles
+  if (auth.role === 'admin') {
+    const articleIds = changes.map((c) => c.id)
+    const { data: articleAuthors } = await supabase
+      .from('articles')
+      .select('id, author_id')
+      .in('id', articleIds)
+
+    if (articleAuthors) {
+      const authorIds = [
+        ...new Set(articleAuthors.map((a) => (a as { author_id: string }).author_id)),
+      ]
+      const otherAuthorIds = authorIds.filter((id) => id !== auth.user.id)
+
+      if (otherAuthorIds.length > 0) {
+        const { data: otherProfiles } = await supabase
+          .from('profiles')
+          .select('id, role')
+          .in('id', otherAuthorIds)
+
+        const nonEditorAuthor = (otherProfiles || []).find(
+          (p) => (p as { role: string }).role !== 'editor'
+        )
+        if (nonEditorAuthor) {
+          return { error: 'ليس لديك صلاحية لتعديل مقالات المسؤولين الآخرين' }
+        }
+      }
+    }
+  }
+
+  // Assign sort_positions using epoch-scale numbers
+  const baseTime = Math.floor(Date.now() / 1000)
+
+  let errorOccurred = false
+  for (const change of changes) {
+    // sortIndex 0 = first in list = highest sort_position (DESC order)
+    const sortPosition = baseTime - change.sortIndex * 10
+
+    const { error } = await supabase
+      .from('articles')
+      .update({ priority: change.priority, sort_position: sortPosition })
+      .eq('id', change.id)
+
+    if (error) {
+      console.error('saveAllPriorities error:', error)
+      errorOccurred = true
+    }
+  }
+
+  if (errorOccurred) {
+    return { error: 'حدث خطأ أثناء حفظ بعض التغييرات' }
+  }
+
+  revalidatePath('/')
+  revalidatePath('/admin')
+  revalidatePath('/admin/priority')
+
+  return { success: true }
+}

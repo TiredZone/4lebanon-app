@@ -2,7 +2,7 @@
 
 export const SITE_CONFIG = {
   name: '4Lebanon',
-  nameAr: '٤ لبنان',
+  nameAr: '4Lebanon',
   description: 'موقع إخباري لبناني مستقل',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://4lebanon.com',
   locale: 'ar',
@@ -41,10 +41,11 @@ export const SOCIAL_LINKS = {
   facebook: 'https://facebook.com/4lebanon',
   twitter: 'https://twitter.com/4lebanon',
   instagram: 'https://instagram.com/4lebanon',
-  telegram: 'https://t.me/4lebanon',
   whatsapp: 'https://wa.me/9611234567',
-  youtube: 'https://youtube.com/@4lebanon',
 }
+
+// Contact email
+export const CONTACT_EMAIL = 'anisabisaad@4lebanon.com'
 
 // Pagination defaults
 export const PAGINATION = {
@@ -92,7 +93,6 @@ export const IMAGE_SIZES = {
 // Article status options
 export const ARTICLE_STATUSES = [
   { value: 'draft', label: 'مسودة' },
-  { value: 'scheduled', label: 'مجدول' },
   { value: 'published', label: 'منشور' },
 ] as const
 

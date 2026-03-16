@@ -330,7 +330,7 @@ export const ArticleSchema = z.object({
   section_id: z.number().int().positive().optional().nullable(),
   region_id: z.number().int().positive().optional().nullable(),
   country_id: z.number().int().positive().optional().nullable(),
-  status: z.enum(['draft', 'published', 'scheduled']),
+  status: z.enum(['draft', 'published']),
   published_at: z.string().datetime().optional().nullable(),
   priority: z.number().int().min(1).max(5).default(4),
   topic_ids: z.array(z.number().int().positive()).default([]),

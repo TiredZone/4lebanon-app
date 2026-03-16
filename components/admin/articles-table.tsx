@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDateAr, getStatusLabelAr } from '@/lib/utils'
 import { ARTICLE_PRIORITIES } from '@/lib/constants'
-import type { Article, Section, ArticlePriority } from '@/types/database'
+import type { Article, Section } from '@/types/database'
 
 interface ArticleWithSection extends Article {
   section: Section | null
@@ -67,8 +67,6 @@ export function ArticlesTable({ articles, showAuthor = false }: ArticlesTablePro
         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
       case 'draft':
         return 'bg-slate-50 text-slate-600 border-slate-200'
-      case 'scheduled':
-        return 'bg-amber-50 text-amber-700 border-amber-200'
       case 'archived':
         return 'bg-gray-50 text-gray-500 border-gray-200'
       default:
@@ -119,7 +117,6 @@ export function ArticlesTable({ articles, showAuthor = false }: ArticlesTablePro
               <option value="all">كل الحالات</option>
               <option value="published">منشور</option>
               <option value="draft">مسودة</option>
-              <option value="scheduled">مجدول</option>
             </select>
             <svg
               className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -383,7 +380,7 @@ export function ArticlesTable({ articles, showAuthor = false }: ArticlesTablePro
             filterPriority === 'all' && (
               <Link
                 href="/admin/articles/new"
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#830005] px-4 py-2 text-sm font-medium text-white transition-all hover:bg-[#6b0004]"
+                className="admin-btn-primary mt-4 inline-flex items-center gap-2 rounded-lg bg-[#830005] px-4 py-2 text-sm font-medium text-white transition-colors"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path

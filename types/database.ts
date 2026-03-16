@@ -1,7 +1,7 @@
 // Database types for 4Lebanon News
 // These types mirror the Supabase schema
 
-export type ArticleStatus = 'draft' | 'scheduled' | 'published'
+export type ArticleStatus = 'draft' | 'published'
 
 export type UserRole = 'super_admin' | 'admin' | 'editor'
 

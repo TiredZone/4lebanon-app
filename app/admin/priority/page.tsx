@@ -37,12 +37,21 @@ async function getPriorityData() {
     redirect('/admin')
   }
 
-  const { data: articles } = await supabase
+  let articlesQuery = supabase
     .from('articles')
     .select(
       'id, title_ar, priority, sort_position, status, published_at, author:profiles!author_id(id, display_name_ar)'
     )
     .eq('status', 'published')
+
+  // Admin can only manage own + editor articles (not other admins')
+  if (role === 'admin') {
+    const { data: editors } = await supabase.from('profiles').select('id').eq('role', 'editor')
+    const allowedIds = [user.id, ...(editors || []).map((e) => (e as { id: string }).id)]
+    articlesQuery = articlesQuery.in('author_id', allowedIds)
+  }
+
+  const { data: articles } = await articlesQuery
     .order('priority', { ascending: true })
     .order('sort_position', { ascending: false })
 
@@ -58,6 +67,7 @@ export default async function PriorityPage() {
   return (
     <div>
       <div className="editor-page-header">
+        <h1 className="editor-page-title">إدارة الأولويات</h1>
         <Link href="/admin" className="editor-back-btn">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -69,7 +79,6 @@ export default async function PriorityPage() {
           </svg>
           العودة إلى لوحة التحكم
         </Link>
-        <h1 className="editor-page-title">إدارة الأولويات</h1>
       </div>
       <PriorityBoard articles={articles} userRole={role} />
     </div>

@@ -4,14 +4,17 @@ import { useState, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -21,10 +24,9 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useTransition } from 'react'
 import toast from 'react-hot-toast'
 import { ARTICLE_PRIORITIES } from '@/lib/constants'
-import { updateArticlePriority, reorderArticles } from '@/app/admin/priority/actions'
+import { saveAllPriorities } from '@/app/admin/priority/actions'
 import type { UserRole } from '@/types/database'
 
 interface PriorityArticle {
@@ -74,10 +76,42 @@ function ArticleCard({ article }: { article: PriorityArticle }) {
   )
 }
 
+function DroppableColumn({ priority, children }: { priority: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${priority}`,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`priority-column__body ${isOver ? 'priority-column__body--over' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// Custom collision detection: prefer sortable items (for reorder within column),
+// fall back to droppable columns (for cross-column and empty column drops)
+const customCollision: CollisionDetection = (args) => {
+  // First try pointerWithin — works great for dropping into containers
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    // Prefer sortable items over containers for within-column reorder
+    const itemCollision = pointerCollisions.find((c) => !String(c.id).startsWith('column-'))
+    if (itemCollision) return [itemCollision]
+    return pointerCollisions
+  }
+
+  // Fall back to rectIntersection for edge cases
+  return rectIntersection(args)
+}
+
 export function PriorityBoard({ articles: initialArticles, userRole }: PriorityBoardProps) {
   const [articles, setArticles] = useState(initialArticles)
+  const [savedArticles, setSavedArticles] = useState(initialArticles)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [isPending, startTransition] = useTransition()
+  const [isSaving, setIsSaving] = useState(false)
 
   const minPriority = userRole === 'super_admin' ? 1 : 2
 
@@ -93,12 +127,27 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
 
   const activeArticle = activeId ? articles.find((a) => a.id === activeId) : null
 
+  const hasChanges = (() => {
+    if (articles.length !== savedArticles.length) return true
+    for (let i = 0; i < articles.length; i++) {
+      const current = articles[i]
+      const saved = savedArticles.find((a) => a.id === current.id)
+      if (!saved || saved.priority !== current.priority) return true
+    }
+    for (const p of ARTICLE_PRIORITIES) {
+      const currentIds = articles.filter((a) => a.priority === p.value).map((a) => a.id)
+      const savedIds = savedArticles.filter((a) => a.priority === p.value).map((a) => a.id)
+      if (currentIds.length !== savedIds.length) return true
+      for (let i = 0; i < currentIds.length; i++) {
+        if (currentIds[i] !== savedIds[i]) return true
+      }
+    }
+    return false
+  })()
+
   const findContainer = (id: string): number | null => {
-    // Check if it's a column ID
     const colMatch = String(id).match(/^column-(\d+)$/)
     if (colMatch) return parseInt(colMatch[1])
-
-    // It's an article ID - find which priority group it's in
     const article = articles.find((a) => a.id === id)
     return article ? article.priority : null
   }
@@ -115,8 +164,6 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
     const overContainer = findContainer(String(over.id))
 
     if (!activeContainer || !overContainer || activeContainer === overContainer) return
-
-    // Check if user can move to this priority
     if (overContainer < minPriority) return
 
     setArticles((prev) =>
@@ -136,7 +183,6 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
     if (!activeContainer || !overContainer) return
 
     if (activeContainer === overContainer) {
-      // Reorder within same column
       const columnArticles = getArticlesByPriority(activeContainer)
       const oldIndex = columnArticles.findIndex((a) => a.id === String(active.id))
       const overArticle = columnArticles.find((a) => a.id === String(over.id))
@@ -148,35 +194,42 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
           const others = prev.filter((a) => a.priority !== activeContainer)
           return [...others, ...reordered]
         })
-
-        startTransition(async () => {
-          const result = await reorderArticles(
-            reordered.map((a) => a.id),
-            activeContainer
-          )
-          if (result.error) toast.error(result.error)
-        })
       }
-    } else {
-      // Moved to different column - priority changed
-      if (overContainer < minPriority) return
-
-      startTransition(async () => {
-        const result = await updateArticlePriority(String(active.id), overContainer)
-        if (result.error) {
-          toast.error(result.error)
-          // Revert
-          setArticles(initialArticles)
-        }
-      })
     }
   }
 
+  const handleSave = async () => {
+    setIsSaving(true)
+
+    const changes: Array<{ id: string; priority: number; sortIndex: number }> = []
+    for (const p of ARTICLE_PRIORITIES) {
+      const groupArticles = articles.filter((a) => a.priority === p.value)
+      groupArticles.forEach((article, index) => {
+        changes.push({ id: article.id, priority: p.value, sortIndex: index })
+      })
+    }
+
+    const result = await saveAllPriorities(changes)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('تم حفظ الترتيب بنجاح')
+      setSavedArticles([...articles])
+    }
+
+    setIsSaving(false)
+  }
+
+  const handleReset = () => {
+    setArticles(savedArticles)
+  }
+
   return (
-    <div className={`priority-board ${isPending ? 'priority-board--saving' : ''}`}>
+    <div className="priority-board">
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={customCollision}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -197,11 +250,10 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
               </div>
 
               <SortableContext
-                id={`column-${p.value}`}
                 items={columnArticles.map((a) => a.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="priority-column__body" id={`column-${p.value}`}>
+                <DroppableColumn priority={p.value}>
                   {columnArticles.length > 0 ? (
                     columnArticles.map((article) => (
                       <SortableCard key={article.id} article={article} />
@@ -209,7 +261,7 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
                   ) : (
                     <div className="priority-column__empty">لا توجد مقالات</div>
                   )}
-                </div>
+                </DroppableColumn>
               </SortableContext>
             </div>
           )
@@ -217,6 +269,43 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
 
         <DragOverlay>{activeArticle ? <ArticleCard article={activeArticle} /> : null}</DragOverlay>
       </DndContext>
+
+      {hasChanges && (
+        <div className="priority-save-bar">
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={isSaving}
+            className="priority-save-bar__reset"
+          >
+            تراجع
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="priority-save-bar__save"
+          >
+            {isSaving ? (
+              <>
+                <svg className="priority-save-bar__spinner" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray="31.4 31.4"
+                  />
+                </svg>
+                جاري الحفظ...
+              </>
+            ) : (
+              'حفظ التغييرات'
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

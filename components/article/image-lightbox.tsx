@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 
 interface ImageLightboxProps {
@@ -36,7 +37,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
 
   if (!isOpen) return null
 
-  return (
+  return createPortal(
     <div
       className={`image-lightbox ${isOpen ? 'open' : ''}`}
       onClick={onClose}
@@ -69,6 +70,7 @@ export function ImageLightbox({ src, alt, isOpen, onClose }: ImageLightboxProps)
         onClick={(e) => e.stopPropagation()}
         priority
       />
-    </div>
+    </div>,
+    document.body
   )
 }

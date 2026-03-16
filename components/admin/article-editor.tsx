@@ -79,15 +79,6 @@ export function ArticleEditor({
   const [countryId, setCountryId] = useState<number | null>(article?.country_id ?? null)
   const [selectedTopics, setSelectedTopics] = useState<number[]>(topicIds)
   const [status, setStatus] = useState<ArticleStatus>(article?.status || 'draft')
-  // Default to current date/time for new articles, or existing date for editing
-  const getDefaultPublishDate = () => {
-    if (article?.published_at) {
-      return new Date(article.published_at).toISOString().slice(0, 16)
-    }
-    // For new articles, default to current time
-    return new Date().toISOString().slice(0, 16)
-  }
-  const [publishedAt, setPublishedAt] = useState(getDefaultPublishDate())
   const [priority, setPriority] = useState<ArticlePriority>(article?.priority ?? 4)
 
   // Filter priorities based on user role
@@ -174,19 +165,6 @@ export function ArticleEditor({
       return
     }
 
-    // Convert datetime-local format (YYYY-MM-DDTHH:MM) to full ISO format
-    const getISODate = (dateStr: string | null): string | null => {
-      if (!dateStr) return new Date().toISOString()
-      try {
-        // datetime-local gives "2024-01-25T14:30", convert to ISO
-        const date = new Date(dateStr)
-        if (isNaN(date.getTime())) return new Date().toISOString()
-        return date.toISOString()
-      } catch {
-        return new Date().toISOString()
-      }
-    }
-
     const formData = {
       title_ar: title.trim(),
       excerpt_ar: excerpt.trim(),
@@ -196,7 +174,8 @@ export function ArticleEditor({
       region_id: regionId,
       country_id: countryId,
       status,
-      published_at: status !== 'draft' ? getISODate(publishedAt) : null,
+      published_at:
+        status === 'published' ? article?.published_at || new Date().toISOString() : null,
       priority,
       sources: sources.filter((s) => s.title && s.url),
       topic_ids: selectedTopics,
@@ -387,54 +366,8 @@ export function ArticleEditor({
               </select>
             </div>
 
-            {/* Publish date (for scheduled/published) */}
-            {status !== 'draft' && (
-              <div className="mb-4">
-                <label htmlFor="publishedAt" className="editor-label">
-                  تاريخ النشر
-                </label>
-                <input
-                  type="datetime-local"
-                  id="publishedAt"
-                  value={publishedAt}
-                  onChange={(e) => {
-                    setPublishedAt(e.target.value)
-                    // Auto-switch to scheduled if future date is selected
-                    if (e.target.value) {
-                      const selectedDate = new Date(e.target.value)
-                      const now = new Date()
-                      if (selectedDate > now && status === 'published') {
-                        setStatus('scheduled')
-                      }
-                    }
-                  }}
-                  className="editor-input"
-                  dir="ltr"
-                />
-                {/* Helper text based on date selection */}
-                {(() => {
-                  const selectedDate = publishedAt ? new Date(publishedAt) : null
-                  const now = new Date()
-                  const isFuture = selectedDate && selectedDate > now
-
-                  if (isFuture && status === 'scheduled') {
-                    return (
-                      <p className="mt-1 text-xs text-amber-600">
-                        ⏰ سيتم نشر المقال تلقائياً في التاريخ المحدد
-                      </p>
-                    )
-                  } else if (isFuture && status === 'published') {
-                    return (
-                      <p className="mt-1 text-xs text-amber-600">
-                        ⚠️ التاريخ في المستقبل - سيُنشر المقال عند وصول هذا التاريخ
-                      </p>
-                    )
-                  } else if (status === 'published') {
-                    return <p className="mt-1 text-xs text-green-600">✓ سيتم نشر المقال فوراً</p>
-                  }
-                  return null
-                })()}
-              </div>
+            {status === 'published' && (
+              <p className="mb-4 text-xs text-green-600">سيتم نشر المقال فوراً</p>
             )}
 
             {/* Priority */}

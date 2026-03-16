@@ -85,13 +85,13 @@ export function UserMenu() {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
+          <div className="fixed inset-0 z-[70]" onClick={() => setIsOpen(false)}></div>
           <div
-            className="absolute right-0 z-20 mt-2 w-48 rounded-lg bg-white shadow-lg"
+            className="absolute left-0 z-[80] mt-2 w-56 rounded-lg bg-white shadow-lg"
             role="menu"
           >
             <div className="border-b border-gray-200 p-3">
-              <p className="text-sm font-medium text-gray-900">{user.email}</p>
+              <p className="truncate text-sm font-medium text-gray-900">{user.email}</p>
             </div>
             <div className="p-2">
               <Link

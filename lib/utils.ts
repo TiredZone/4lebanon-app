@@ -244,7 +244,6 @@ export const formatLevantineDate = formatDateLatinAr
 export function getStatusLabelAr(status: string): string {
   const labels: Record<string, string> = {
     draft: 'مسودة',
-    scheduled: 'مجدول',
     published: 'منشور',
   }
   return labels[status] || status
@@ -254,7 +253,6 @@ export function getStatusLabelAr(status: string): string {
 export function getStatusBadgeClass(status: string): string {
   const classes: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-800',
-    scheduled: 'bg-yellow-100 text-yellow-800',
     published: 'bg-green-100 text-green-800',
   }
   return classes[status] || 'bg-gray-100 text-gray-800'

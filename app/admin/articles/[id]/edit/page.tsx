@@ -32,9 +32,7 @@ async function getArticleAndFormData(articleId: string) {
     .eq('id', user.id)
     .single()
   const userRole = ((profile as { role: string } | null)?.role || 'editor') as UserRole
-  const canEditOthers = userRole === 'super_admin' || userRole === 'admin'
-
-  // Super admin/admin can edit others' articles (RLS enforces scope); editors only their own
+  // Build article query with role-based access
   let articleQuery = supabase
     .from('articles')
     .select(
@@ -45,7 +43,15 @@ async function getArticleAndFormData(articleId: string) {
     )
     .eq('id', articleId)
 
-  if (!canEditOthers) {
+  if (userRole === 'super_admin') {
+    // Super admin can edit any article — no filter
+  } else if (userRole === 'admin') {
+    // Admin can edit own articles + editor articles
+    const { data: editors } = await supabase.from('profiles').select('id').eq('role', 'editor')
+    const allowedIds = [user.id, ...(editors || []).map((e) => (e as { id: string }).id)]
+    articleQuery = articleQuery.in('author_id', allowedIds)
+  } else {
+    // Editor can only edit own articles
     articleQuery = articleQuery.eq('author_id', user.id)
   }
 

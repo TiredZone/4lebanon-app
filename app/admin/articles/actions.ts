@@ -554,23 +554,12 @@ async function verifyImageMagicBytes(
  */
 async function scanForMaliciousContent(file: File): Promise<{ safe: boolean; reason?: string }> {
   try {
-    // Read file as text to check for embedded scripts
-    const textContent = await file.slice(0, 50000).text()
+    // Only scan text-like regions — check the first 1KB for obvious script injections
+    // Binary image data causes false positives with broad regex patterns
+    const textContent = await file.slice(0, 1024).text()
 
-    // Check for common attack patterns
-    const maliciousPatterns = [
-      /<script/i,
-      /javascript:/i,
-      /on\w+\s*=/i, // Event handlers
-      /<\?php/i, // PHP tags
-      /<%/i, // ASP tags
-      /eval\s*\(/i,
-      /document\./i,
-      /window\./i,
-      /alert\s*\(/i,
-      /__proto__/i,
-      /constructor\s*\[/i,
-    ]
+    // Only check for unambiguous attack patterns (not broad regex that matches binary)
+    const maliciousPatterns = [/<script/i, /javascript:/i, /<\?php/i, /<%/i]
 
     for (const pattern of maliciousPatterns) {
       if (pattern.test(textContent)) {
@@ -580,7 +569,6 @@ async function scanForMaliciousContent(file: File): Promise<{ safe: boolean; rea
 
     return { safe: true }
   } catch {
-    // If we can't read the file as text, assume it's binary (likely safe)
     return { safe: true }
   }
 }
