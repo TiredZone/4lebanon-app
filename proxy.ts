@@ -55,11 +55,13 @@ const BAD_USER_AGENTS = [
 const PROTECTED_PATHS = ['/admin', '/api/admin']
 
 // Rate limit configurations
+// Note: In serverless (Vercel), these are per-isolate so they're best-effort.
+// Keep limits generous — a single page load can trigger 20-40 requests.
 const RATE_LIMITS = {
-  global: { windowMs: 60000, maxRequests: 100 },
-  auth: { windowMs: 300000, maxRequests: 5 },
-  api: { windowMs: 60000, maxRequests: 60 },
-  admin: { windowMs: 60000, maxRequests: 40 },
+  global: { windowMs: 60000, maxRequests: 500 },
+  auth: { windowMs: 300000, maxRequests: 10 },
+  api: { windowMs: 60000, maxRequests: 120 },
+  admin: { windowMs: 60000, maxRequests: 200 },
 }
 
 function getClientIP(request: NextRequest): string {
