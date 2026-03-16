@@ -601,15 +601,14 @@ export default async function Home() {
 
               {/* Left Side - Ranked List (02-05) - Only Top 5 */}
               <div className="space-y-3 sm:space-y-4">
-                {data.mostRead.slice(1, 5).map((article, index) => {
-                  const rankNumber = (index + 2).toString().padStart(2, '0')
+                {data.mostRead.slice(1, 5).map((article) => {
                   return (
                     <Link
                       key={article.id}
                       href={`/article/${article.slug}`}
                       className="group flex gap-4 rounded-xl bg-white p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                     >
-                      {/* Thumbnail with Rank Badge */}
+                      {/* Thumbnail */}
                       {article.cover_image_path ? (
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl">
                           <Image
@@ -619,26 +618,9 @@ export default async function Home() {
                             sizes="80px"
                             className="object-cover transition-transform duration-300 group-hover:scale-110"
                           />
-                          {/* Glassmorphism Rank Badge */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-                              <span className="text-lg font-bold text-[#830005] transition-colors group-hover:text-[#6b0004]">
-                                {rankNumber}
-                              </span>
-                            </div>
-                          </div>
                         </div>
                       ) : (
-                        /* Fallback thumbnail */
-                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-gray-300 to-gray-400">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-                              <span className="text-lg font-bold text-[#830005] transition-colors group-hover:text-[#6b0004]">
-                                {rankNumber}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-gray-300 to-gray-400" />
                       )}
 
                       {/* Text Content */}
