@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { generateSlug } from '@/lib/utils'
 import {
   ArticleSchema,
   UUIDSchema,
@@ -117,8 +116,8 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       }
     }
 
-    // Generate slug from sanitized title
-    const slug = generateSlug(validatedData.title_ar, crypto.randomUUID().slice(0, 8))
+    // Generate short unique slug from UUID
+    const slug = crypto.randomUUID().slice(0, 8)
 
     // Calculate sort_position
     const publishedAt =
@@ -145,7 +144,6 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
         cover_image_path: validatedData.cover_image_path,
         section_id: validatedData.section_id,
         region_id: validatedData.region_id,
-        country_id: validatedData.country_id,
         status: validatedData.status,
         published_at: publishedAt,
         priority: effectivePriority,
@@ -172,6 +170,19 @@ export async function createArticle(formData: ArticleFormData): Promise<ActionRe
       )
       if (topicsError) {
         console.error('Error inserting article topics:', topicsError)
+      }
+    }
+
+    // Insert article countries
+    if (validatedData.country_ids.length > 0) {
+      const { error: countriesError } = await supabase.from('article_countries').insert(
+        validatedData.country_ids.map((country_id) => ({
+          article_id: articleId,
+          country_id,
+        }))
+      )
+      if (countriesError) {
+        console.error('Error inserting article countries:', countriesError)
       }
     }
 
@@ -287,11 +298,8 @@ export async function updateArticle(
     const oldSlug = existing.slug
     const wasPublished = existing.status === 'published'
 
-    // Generate new slug if title changed
-    let newSlug = oldSlug
-    if (existing.title_ar !== validatedData.title_ar) {
-      newSlug = generateSlug(validatedData.title_ar, articleId.slice(0, 8))
-    }
+    // Slug stays stable (UUID-based, not title-based)
+    const newSlug = oldSlug
 
     // Calculate sort_position based on priority change
     const publishedAt =
@@ -318,7 +326,6 @@ export async function updateArticle(
         cover_image_path: validatedData.cover_image_path,
         section_id: validatedData.section_id,
         region_id: validatedData.region_id,
-        country_id: validatedData.country_id,
         status: validatedData.status,
         published_at: publishedAt,
         priority: effectivePriority,
@@ -352,6 +359,29 @@ export async function updateArticle(
 
       if (insertTopicsError) {
         console.error('Error inserting article topics:', insertTopicsError)
+      }
+    }
+
+    // Update article countries
+    const { error: deleteCountriesError } = await supabase
+      .from('article_countries')
+      .delete()
+      .eq('article_id', articleId)
+
+    if (deleteCountriesError) {
+      console.error('Error deleting article countries:', deleteCountriesError)
+    }
+
+    if (validatedData.country_ids.length > 0) {
+      const { error: insertCountriesError } = await supabase.from('article_countries').insert(
+        validatedData.country_ids.map((country_id) => ({
+          article_id: articleId,
+          country_id,
+        }))
+      )
+
+      if (insertCountriesError) {
+        console.error('Error inserting article countries:', insertCountriesError)
       }
     }
 

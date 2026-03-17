@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
-import slugify from 'slugify'
 
 // Class name utility (Tailwind merge alternative)
 export function cn(...inputs: ClassValue[]) {
@@ -137,21 +136,9 @@ export function resolveAuthor<T extends { is_anonymous?: boolean } | null | unde
   return author
 }
 
-// Generate URL-safe slug from Arabic text
-export function generateSlug(text: string, id?: string): string {
-  const baseSlug = slugify(text, {
-    lower: true,
-    strict: true,
-    locale: 'ar',
-    remove: /[*+~.()'"!:@]/g,
-  })
-
-  // If slug is empty (pure Arabic), use a fallback with ID
-  if (!baseSlug && id) {
-    return `article-${id.slice(0, 8)}`
-  }
-
-  return baseSlug || 'article'
+// Generate short unique slug from UUID
+export function generateSlug(_text: string, id?: string): string {
+  return id || crypto.randomUUID().slice(0, 8)
 }
 
 // Calculate reading time in Arabic
