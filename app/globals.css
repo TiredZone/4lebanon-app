@@ -851,8 +851,8 @@ a[class*='btn']:active {
    ============================================ */
 
 .article-body {
-  font-size: var(--font-size-lg);
-  line-height: 2;
+  font-size: inherit;
+  line-height: inherit;
 }
 
 .article-body p {
