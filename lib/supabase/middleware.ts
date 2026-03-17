@@ -136,7 +136,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Stricter rate limiting for auth endpoints (10 requests per 5 minutes)
-  const isAuthEndpoint = pathname.includes('/login') || pathname.includes('/signup')
+  const isAuthEndpoint =
+    pathname.includes('/login') ||
+    pathname.includes('/signup') ||
+    pathname.includes('/forgot-password')
   if (isAuthEndpoint && !checkRateLimit(`auth:${ip}`, 10, 300000)) {
     console.warn(`[SECURITY] Auth rate limit exceeded for IP: ${ip}`)
     return new NextResponse('Too Many Authentication Attempts', {
@@ -218,8 +221,13 @@ export async function updateSession(request: NextRequest) {
 
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
-    // Allow access to login and signup pages
-    if (pathname === '/admin/login' || pathname === '/admin/signup') {
+    // Allow access to login, signup, and password reset pages
+    if (
+      pathname === '/admin/login' ||
+      pathname === '/admin/signup' ||
+      pathname === '/admin/forgot-password' ||
+      pathname === '/admin/reset-password'
+    ) {
       // If already logged in, redirect to admin dashboard
       if (user) {
         const url = request.nextUrl.clone()

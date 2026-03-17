@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 function isValidRedirect(path: string | null): boolean {
@@ -137,6 +138,15 @@ function LoginForm() {
       >
         {loading ? 'جاري التسجيل...' : 'تسجيل الدخول'}
       </button>
+
+      <div className="text-center">
+        <Link
+          href="/admin/forgot-password"
+          className="text-muted-foreground hover:text-primary text-sm"
+        >
+          نسيت كلمة المرور؟
+        </Link>
+      </div>
     </form>
   )
 }
