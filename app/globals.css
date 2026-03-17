@@ -856,6 +856,7 @@ a[class*='btn']:active {
 }
 
 .article-body p {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   margin-bottom: 1.5rem;
 }
 
@@ -2544,6 +2545,7 @@ section a[href*='/recent'] {
 
 /* Paragraphs */
 .article-content-body p {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
   margin-bottom: 1.75rem;
 }
 
