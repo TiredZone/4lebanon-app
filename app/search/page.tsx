@@ -88,7 +88,16 @@ async function searchArticles(params: {
       .single()
     if (country) {
       const countryData = country as { id: number }
-      query = query.eq('country_id', countryData.id)
+      const { data: articleCountries } = await supabase
+        .from('article_countries')
+        .select('article_id')
+        .eq('country_id', countryData.id)
+      if (articleCountries && articleCountries.length > 0) {
+        const articleIds = articleCountries.map((ac) => (ac as { article_id: string }).article_id)
+        query = query.in('id', articleIds)
+      } else {
+        return { articles: [], total: 0 }
+      }
     }
   }
 

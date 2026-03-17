@@ -67,7 +67,6 @@ export interface Article {
   cover_image_path: string | null
   section_id: number | null
   region_id: number | null
-  country_id: number | null
   status: ArticleStatus
   published_at: string | null
   is_breaking: boolean
@@ -85,12 +84,17 @@ export interface ArticleTopic {
   topic_id: number
 }
 
+export interface ArticleCountry {
+  article_id: string
+  country_id: number
+}
+
 // Extended types with relations
 export interface ArticleWithRelations extends Article {
   author: Profile | null // Can be null if author was deleted
   section: Section | null
   region: Region | null
-  country: Country | null
+  countries: Country[]
   topics: Topic[]
 }
 
@@ -116,12 +120,12 @@ export interface ArticleFormData {
   cover_image_path: string | null
   section_id: number | null
   region_id: number | null
-  country_id: number | null
   status: ArticleStatus
   published_at: string | null
   priority: ArticlePriority
   sources: ArticleSource[]
   topic_ids: number[]
+  country_ids: number[]
 }
 
 // Search result type

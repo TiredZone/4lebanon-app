@@ -16,6 +16,7 @@ import { getStorageUrl } from '@/lib/utils'
 import { ARTICLE_STATUSES, ARTICLE_PRIORITIES, SUCCESS_MESSAGES } from '@/lib/constants'
 import { EditorSelect } from './editor-select'
 import { EditorTopics } from './editor-topics'
+import { EditorCountries } from './editor-countries'
 
 const RichTextEditor = dynamic(
   () => import('./rich-text-editor').then((m) => ({ default: m.RichTextEditor })),
@@ -40,6 +41,7 @@ interface ArticleEditorProps {
   mode: 'create' | 'edit'
   article?: Article
   topicIds?: number[]
+  countryIds?: number[]
   sections: Section[]
   regions: Region[]
   countries: Country[]
@@ -51,6 +53,7 @@ export function ArticleEditor({
   mode,
   article,
   topicIds = [],
+  countryIds = [],
   sections,
   regions,
   countries,
@@ -76,7 +79,7 @@ export function ArticleEditor({
   const [coverImage, setCoverImage] = useState(article?.cover_image_path || '')
   const [sectionId, setSectionId] = useState<number | null>(article?.section_id ?? null)
   const [regionId, setRegionId] = useState<number | null>(article?.region_id ?? null)
-  const [countryId, setCountryId] = useState<number | null>(article?.country_id ?? null)
+  const [selectedCountries, setSelectedCountries] = useState<number[]>(countryIds)
   const [selectedTopics, setSelectedTopics] = useState<number[]>(topicIds)
   const [status, setStatus] = useState<ArticleStatus>(article?.status || 'draft')
   const [priority, setPriority] = useState<ArticlePriority>(article?.priority ?? 4)
@@ -94,13 +97,9 @@ export function ArticleEditor({
   const [uploading, setUploading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  // Filter countries by selected region
-  const filteredCountries = regionId ? countries.filter((c) => c.region_id === regionId) : countries
-
   // Convert data to select options
   const sectionOptions = sections.map((s) => ({ value: s.id, label: s.name_ar }))
   const regionOptions = regions.map((r) => ({ value: r.id, label: r.name_ar }))
-  const countryOptions = filteredCountries.map((c) => ({ value: c.id, label: c.name_ar }))
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -146,7 +145,6 @@ export function ArticleEditor({
 
   const handleRegionChange = (value: number | string | null) => {
     setRegionId(value as number | null)
-    setCountryId(null) // Reset country when region changes
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,13 +170,13 @@ export function ArticleEditor({
       cover_image_path: coverImage || null,
       section_id: sectionId,
       region_id: regionId,
-      country_id: countryId,
       status,
       published_at:
         status === 'published' ? article?.published_at || new Date().toISOString() : null,
       priority,
       sources: sources.filter((s) => s.title && s.url),
       topic_ids: selectedTopics,
+      country_ids: selectedCountries,
     }
 
     startTransition(async () => {
@@ -531,15 +529,13 @@ export function ArticleEditor({
               searchPlaceholder="ابحث عن منطقة..."
             />
 
-            {/* Country - filtered by region */}
-            <EditorSelect
-              label="الدولة"
-              options={countryOptions}
-              value={countryId}
-              onChange={(v) => setCountryId(v as number | null)}
-              placeholder="اختر الدولة"
-              searchPlaceholder="ابحث عن دولة..."
-              disabled={!regionId && countries.length > 20}
+            {/* Countries - multi-select, filtered by region */}
+            <EditorCountries
+              countries={countries}
+              regions={regions}
+              selectedCountries={selectedCountries}
+              regionId={regionId}
+              onChange={setSelectedCountries}
             />
           </div>
 

@@ -364,7 +364,7 @@ export const ArticleSchema = z.object({
   cover_image_path: z.string().max(500).optional().nullable(),
   section_id: z.number().int().positive().optional().nullable(),
   region_id: z.number().int().positive().optional().nullable(),
-  country_id: z.number().int().positive().optional().nullable(),
+  country_ids: z.array(z.number().int().positive()).default([]),
   status: z.enum(['draft', 'published']),
   published_at: z.string().datetime({ offset: true }).optional().nullable(),
   priority: z.number().int().min(1).max(5).default(4),

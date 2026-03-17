@@ -12,6 +12,7 @@ interface PageProps {
 
 interface ArticleWithTopics extends Article {
   article_topics: { topic_id: number }[]
+  article_countries: { country_id: number }[]
 }
 
 type EditDataResult =
@@ -19,6 +20,7 @@ type EditDataResult =
       ok: true
       article: ArticleWithTopics
       topicIds: number[]
+      countryIds: number[]
       userRole: UserRole
       sections: Section[]
       regions: Region[]
@@ -51,7 +53,8 @@ async function getArticleAndFormData(articleId: string): Promise<EditDataResult>
       .select(
         `
         *,
-        article_topics(topic_id)
+        article_topics(topic_id),
+        article_countries(country_id)
       `
       )
       .eq('id', articleId)
@@ -85,6 +88,7 @@ async function getArticleAndFormData(articleId: string): Promise<EditDataResult>
       ok: true,
       article: typedArticle,
       topicIds: typedArticle.article_topics.map((at) => at.topic_id),
+      countryIds: typedArticle.article_countries.map((ac) => ac.country_id),
       userRole,
       sections: (sections.data || []) as Section[],
       regions: (regions.data || []) as Region[],
@@ -150,6 +154,7 @@ export default async function EditArticlePage({ params }: PageProps) {
         mode="edit"
         article={result.article}
         topicIds={result.topicIds}
+        countryIds={result.countryIds}
         sections={result.sections}
         regions={result.regions}
         countries={result.countries}

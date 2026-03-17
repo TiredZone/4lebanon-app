@@ -94,7 +94,7 @@ async function getSectionArticles(
     }
   }
 
-  // Country filter
+  // Country filter — join through article_countries
   if (filterParams.country) {
     const { data: country } = await supabase
       .from('countries')
@@ -102,7 +102,16 @@ async function getSectionArticles(
       .eq('slug', filterParams.country)
       .single()
     if (country) {
-      query = query.eq('country_id', (country as { id: number }).id)
+      const { data: articleCountries } = await supabase
+        .from('article_countries')
+        .select('article_id')
+        .eq('country_id', (country as { id: number }).id)
+      if (articleCountries && articleCountries.length > 0) {
+        const articleIds = articleCountries.map((ac) => (ac as { article_id: string }).article_id)
+        query = query.in('id', articleIds)
+      } else {
+        return { articles: [], total: 0 }
+      }
     }
   }
 

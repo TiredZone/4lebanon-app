@@ -63,10 +63,34 @@ async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
     .map((row) => (row as unknown as { topic: Topic }).topic)
     .filter(Boolean)
 
+  // Fetch countries through the article_countries join table
+  const { data: countryRows } = await supabase
+    .from('article_countries')
+    .select('country:countries(id, slug, name_ar, region_id, sort_order, created_at)')
+    .eq('article_id', data.id)
+
+  const countries = (countryRows || [])
+    .map(
+      (row) =>
+        (
+          row as unknown as {
+            country: {
+              id: number
+              slug: string
+              name_ar: string
+              region_id: number | null
+              sort_order: number
+              created_at: string
+            }
+          }
+        ).country
+    )
+    .filter(Boolean)
+
   return {
     ...data,
     region: null,
-    country: null,
+    countries,
     topics,
   } as ArticleWithRelations
 }
