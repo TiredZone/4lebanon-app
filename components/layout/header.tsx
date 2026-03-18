@@ -154,11 +154,11 @@ export function Header() {
       <AnimatePresence>
         {mobileSearchOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden border-b border-gray-200 bg-white shadow-md lg:hidden"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="relative z-40 border-b border-gray-200 bg-white shadow-md lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-3 py-3">
               <SearchForm onSearch={() => setMobileSearchOpen(false)} />
