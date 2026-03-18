@@ -158,7 +158,7 @@ export function Header() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="relative z-40 border-b border-gray-200 bg-white shadow-md lg:hidden"
+            className="relative z-50 border-b border-gray-200 bg-white shadow-md lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-3 py-3">
               <SearchForm onSearch={() => setMobileSearchOpen(false)} />
