@@ -18,6 +18,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const pathname = usePathname()
 
   // Track scroll position for shadow effect
@@ -120,8 +121,9 @@ export function Header() {
 
             {/* Search + Profile */}
             <div className="order-3 flex items-center gap-1 lg:order-3">
-              <Link
-                href="/search"
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen((prev) => !prev)}
                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all hover:bg-gray-100/50 active:scale-95 lg:hidden"
                 aria-label="بحث"
               >
@@ -131,18 +133,39 @@ export function Header() {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                  />
+                  {mobileSearchOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  )}
                 </svg>
-              </Link>
+              </button>
               <UserMenu />
             </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile Search Dropdown */}
+      <AnimatePresence>
+        {mobileSearchOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-b border-gray-200 bg-white shadow-md lg:hidden"
+          >
+            <div className="mx-auto max-w-7xl px-3 py-3">
+              <SearchForm onSearch={() => setMobileSearchOpen(false)} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
