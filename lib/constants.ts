@@ -41,7 +41,7 @@ export const FOOTER_NAV = {
 export const SOCIAL_LINKS = {
   facebook: 'https://facebook.com/4lebanon',
   twitter: 'https://twitter.com/4lebanon',
-  instagram: 'https://instagram.com/4lebanon',
+  instagram: 'https://www.instagram.com/_4lebanon_',
   whatsapp: 'https://wa.me/9611234567',
 }
 
