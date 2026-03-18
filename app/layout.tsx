@@ -47,6 +47,11 @@ export const metadata: Metadata = {
     title: DEFAULT_METADATA.title,
     description: DEFAULT_METADATA.description,
   },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
   robots: {
     index: true,
     follow: true,
