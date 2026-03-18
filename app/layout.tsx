@@ -7,6 +7,7 @@ import { NavBar } from '@/components/layout/nav-bar'
 import { Footer } from '@/components/layout/footer'
 import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { ToastProvider } from '@/components/layout/toast-provider'
+import { ClarityProvider } from '@/components/layout/clarity-provider'
 import './globals.css'
 
 const cairo = Cairo({
@@ -84,6 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </div>
         {/* Vercel Analytics - automatically tracks Web Vitals */}
         <Analytics />
+        {/* Microsoft Clarity - session recording and heatmaps */}
+        <ClarityProvider />
       </body>
     </html>
   )

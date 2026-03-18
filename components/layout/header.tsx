@@ -118,8 +118,26 @@ export function Header() {
               </motion.div>
             </div>
 
-            {/* Profile */}
-            <div className="order-3 flex items-center lg:order-3">
+            {/* Search + Profile */}
+            <div className="order-3 flex items-center gap-1 lg:order-3">
+              <Link
+                href="/search"
+                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-all hover:bg-gray-100/50 active:scale-95 lg:hidden"
+                aria-label="بحث"
+              >
+                <svg
+                  className="h-5 w-5 stroke-[1.5] sm:h-6 sm:w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                  />
+                </svg>
+              </Link>
               <UserMenu />
             </div>
           </div>

@@ -103,15 +103,15 @@ const nextConfig: NextConfig = {
           // Default: only same origin
           "default-src 'self'",
           // Scripts: self + Vercel analytics (unsafe-inline needed for Next.js hydration)
-          "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+          "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.clarity.ms",
           // Styles: self + inline (needed for Tailwind) + Google Fonts
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           // Fonts: self + Google Fonts
           "font-src 'self' https://fonts.gstatic.com data:",
           // Images: self + Supabase storage + Unsplash
-          `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://images.unsplash.com`,
+          `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://images.unsplash.com https://www.clarity.ms https://*.clarity.ms`,
           // Connections: self + Supabase + Vercel
-          `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com wss://${supabaseHost}`,
+          `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com https://www.clarity.ms https://*.clarity.ms wss://${supabaseHost}`,
           // No iframes allowed to embed this site
           "frame-ancestors 'none'",
           // Allow Supabase iframes for auth session management
