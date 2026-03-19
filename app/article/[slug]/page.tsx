@@ -286,7 +286,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Metadata Glass Pill */}
             <div className="article-meta-pill">
-              {author && (
+              {author && !article.is_breaking && (
                 <>
                   <Link
                     href={`/author/${author.id}`}

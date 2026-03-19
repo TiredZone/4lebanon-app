@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getStorageUrl, formatDateAr } from '@/lib/utils'
 import Link from 'next/link'
 import Image from 'next/image'
-import WritersCarousel from '@/components/writers-carousel'
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker'
 import { JsonLd, organizationJsonLd, websiteJsonLd } from '@/components/json-ld'
 import type { ArticleListItem } from '@/types/database'
@@ -79,14 +78,6 @@ async function getHomepageData() {
       .filter((s) => s.articles.length > 0)
   }
 
-  // Fetch writers/authors (exclude anonymous)
-  const { data: writersData } = await supabase
-    .from('profiles')
-    .select('id, display_name_ar, avatar_url')
-    .eq('is_anonymous', false)
-    .not('display_name_ar', 'is', null)
-    .limit(10)
-
   // Fetch breaking news for ticker (priority 1-2)
   const { data: breakingNews } = await supabase
     .from('articles')
@@ -117,7 +108,6 @@ async function getHomepageData() {
   return {
     important: transformArticles((importantArticles || []) as Record<string, unknown>[]),
     mostRead: transformArticles((mostReadArticles || []) as Record<string, unknown>[]),
-    writers: writersData || [],
     sectionsWithArticles,
     breakingNews: (breakingNews || []) as { id: string; slug: string; title_ar: string }[],
   }
@@ -647,40 +637,6 @@ export default async function Home() {
                 })}
               </div>
             </div>
-          </div>
-        </section>
-      )}
-
-      {/* Writers Carousel - Our Writers */}
-      {data.writers && data.writers.length > 0 && (
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-7xl px-3 sm:px-4">
-            {/* Header */}
-            <div className="mb-8 sm:mb-10 lg:mb-12">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
-                  <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
-                    كتابنا
-                  </h2>
-                </div>
-                <Link href="/writers" className="more-link min-h-[44px]">
-                  <span>جميع الكتاب</span>
-                  <span>←</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Carousel Container */}
-            <WritersCarousel
-              writers={
-                data.writers as {
-                  id: string
-                  display_name_ar: string | null
-                  avatar_url: string | null
-                }[]
-              }
-            />
           </div>
         </section>
       )}

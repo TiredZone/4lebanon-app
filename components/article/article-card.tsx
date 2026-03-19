@@ -69,7 +69,7 @@ export function ArticleCard({
 
           {/* Meta */}
           <div className="flex items-center gap-2 text-xs text-white/80 md:gap-3 md:text-sm">
-            {showAuthor && author && (
+            {showAuthor && author && !article.is_breaking && (
               <>
                 <Link href={`/author/${author.id}`} className="hover:text-white">
                   {author.display_name_ar}
@@ -186,7 +186,7 @@ export function ArticleCard({
           </p>
         )}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {showAuthor && author && (
+          {showAuthor && author && !article.is_breaking && (
             <Link href={`/author/${author.id}`} className="transition-colors hover:text-[#830005]">
               {author.display_name_ar}
             </Link>

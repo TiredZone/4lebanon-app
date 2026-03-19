@@ -7,7 +7,16 @@
       "Bash(git stash:*)",
       "Bash(git restore:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge peter-new-devs --no-ff -m \"$\\(cat <<''EOF''\nmerge: peter-new-devs into main — full feature set with security hardening\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git merge peter-new-devs --no-ff -m \"$\\(cat <<''EOF''\nmerge: peter-new-devs into main — full feature set with security hardening\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx next:*)",
+      "Bash(npx tsx:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)",
+      "Bash(ls /Users/becharaelmaalouf/Projects/Elie_Antoun-4Lebanon/4lebanon-app/next.config.*)",
+      "Bash(npm install:*)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)"
     ]
   }
 }
