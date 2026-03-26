@@ -49,19 +49,21 @@ async function getAuthorArticles(
     .order('published_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 
-  const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
-    id: article.id as string,
-    slug: article.slug as string,
-    title_ar: article.title_ar as string,
-    excerpt_ar: article.excerpt_ar as string | null,
-    cover_image_path: article.cover_image_path as string | null,
-    published_at: article.published_at as string | null,
-    is_breaking: article.is_breaking as boolean,
-    is_featured: article.is_featured as boolean,
-    priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
-    author: article.author as ArticleListItem['author'],
-    section: article.section as ArticleListItem['section'],
-  }))
+  const articles = ((data || []) as Record<string, unknown>[])
+    .map((article) => ({
+      id: article.id as string,
+      slug: article.slug as string,
+      title_ar: article.title_ar as string,
+      excerpt_ar: article.excerpt_ar as string | null,
+      cover_image_path: article.cover_image_path as string | null,
+      published_at: article.published_at as string | null,
+      is_breaking: article.is_breaking as boolean,
+      is_featured: article.is_featured as boolean,
+      priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
+      author: article.author as ArticleListItem['author'],
+      section: article.section as ArticleListItem['section'],
+    }))
+    .filter((article) => article.section?.slug !== 'breaking')
 
   return { articles, total: count || 0 }
 }
