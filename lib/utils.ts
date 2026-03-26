@@ -127,12 +127,14 @@ export function formatTimeAr(date: string | Date) {
   return `${lt.hours}:${lt.minutes}`
 }
 
-// Hide anonymous authors — returns null if the author has is_anonymous set
+// Hide anonymous authors and authors on breaking news articles
 
 export function resolveAuthor<T extends { is_anonymous?: boolean } | null | undefined>(
-  author: T
+  author: T,
+  sectionSlug?: string | null
 ): T | null {
   if (!author || (author as { is_anonymous?: boolean }).is_anonymous) return null
+  if (sectionSlug === 'breaking') return null
   return author
 }
 

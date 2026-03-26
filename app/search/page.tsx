@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
-import { formatDateAr, getStorageUrl, escapeIlike } from '@/lib/utils'
+import { formatDateAr, getStorageUrl, escapeIlike, resolveAuthor } from '@/lib/utils'
 import { SearchFilters } from '@/components/search/search-filters'
 import type { ArticleListItem } from '@/types/database'
 
@@ -322,6 +322,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 // Search result card component
 function SearchResultCard({ article }: { article: ArticleListItem }) {
   const imageUrl = getStorageUrl(article.cover_image_path)
+  const author = resolveAuthor(article.author, article.section?.slug)
 
   return (
     <article className="search-result-card">
@@ -356,9 +357,9 @@ function SearchResultCard({ article }: { article: ArticleListItem }) {
         {article.excerpt_ar && <p className="search-card-excerpt">{article.excerpt_ar}</p>}
 
         <div className="search-card-meta">
-          {article.author && (
-            <Link href={`/author/${article.author.id}`} className="search-card-author">
-              {article.author.display_name_ar}
+          {author && (
+            <Link href={`/author/${author.id}`} className="search-card-author">
+              {author.display_name_ar}
             </Link>
           )}
           {article.published_at && (

@@ -28,7 +28,7 @@ async function getRecentArticles(page: number = 1) {
       `
       id, slug, title_ar, published_at, is_breaking,
       author:profiles!articles_author_id_fkey(id, display_name_ar, is_anonymous),
-      section:sections!articles_section_id_fkey(id, name_ar)
+      section:sections!articles_section_id_fkey(id, slug, name_ar)
     `,
       { count: 'exact' }
     )
@@ -72,7 +72,7 @@ export default async function RecentNewsPage({ searchParams }: PageProps) {
             <div className="rounded-lg bg-white shadow-sm">
               <div className="divide-border divide-y">
                 {articles.map((article) => {
-                  const author = resolveAuthor(article.author)
+                  const author = resolveAuthor(article.author, article.section?.slug)
                   return (
                     <article key={article.id} className="group">
                       <Link

@@ -54,7 +54,8 @@ export async function GET() {
       excerpt_ar,
       cover_image_path,
       published_at,
-      author:profiles!articles_author_id_fkey(display_name_ar, is_anonymous)
+      author:profiles!articles_author_id_fkey(display_name_ar, is_anonymous),
+      section:sections!articles_section_id_fkey(slug)
     `
     )
     .eq('status', 'published')
@@ -69,8 +70,10 @@ export async function GET() {
       const rawImageUrl = getStorageUrl(articleData.cover_image_path as string | null)
       const imageUrl = rawImageUrl ? escapeXml(sanitizeRssUrl(rawImageUrl) || rawImageUrl) : null
       const pubDate = new Date(articleData.published_at as string).toUTCString()
+      const sectionSlug = (articleData.section as { slug: string } | null)?.slug
       const authorData = resolveAuthor(
-        articleData.author as { display_name_ar: string; is_anonymous?: boolean } | null
+        articleData.author as { display_name_ar: string; is_anonymous?: boolean } | null,
+        sectionSlug
       )
       const slug = escapeXml(articleData.slug as string)
       const authorName = escapeXml(authorData?.display_name_ar || SITE_CONFIG.nameAr)

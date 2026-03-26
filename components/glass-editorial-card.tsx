@@ -17,7 +17,7 @@ export function GlassEditorialCard({
   variant = 'default',
 }: GlassEditorialCardProps) {
   const cardClass = variant === 'exclusive' ? 'glass-exclusive-card' : 'glass-editorial-card'
-  const author = resolveAuthor(article.author)
+  const author = resolveAuthor(article.author, article.section?.slug)
 
   return (
     <Link

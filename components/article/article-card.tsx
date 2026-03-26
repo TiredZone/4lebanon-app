@@ -19,7 +19,7 @@ export function ArticleCard({
   showSection = true,
 }: ArticleCardProps) {
   const imageUrl = getStorageUrl(article.cover_image_path)
-  const author = resolveAuthor(article.author)
+  const author = resolveAuthor(article.author, article.section?.slug)
 
   if (variant === 'featured') {
     return (
