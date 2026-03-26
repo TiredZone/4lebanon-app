@@ -187,7 +187,7 @@ export function ArticleCard({
         )}
         <div className="flex items-center justify-between text-xs text-gray-500">
           {showAuthor && author && !article.is_breaking && (
-            <Link href={`/author/${author.id}`} className="transition-colors hover:text-[#830005]">
+            <Link href={`/author/${author.id}`} className="transition-colors hover:text-[#B8860B]">
               {author.display_name_ar}
             </Link>
           )}
