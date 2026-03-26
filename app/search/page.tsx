@@ -322,7 +322,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
 // Search result card component
 function SearchResultCard({ article }: { article: ArticleListItem }) {
   const imageUrl = getStorageUrl(article.cover_image_path)
-  const author = resolveAuthor(article.author, article.section?.slug)
+  const author = resolveAuthor(article.author, article.is_breaking)
 
   return (
     <article className="search-result-card">

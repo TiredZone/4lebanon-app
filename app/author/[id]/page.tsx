@@ -44,26 +44,25 @@ async function getAuthorArticles(
     )
     .eq('author_id', authorId)
     .eq('status', 'published')
+    .eq('is_breaking', false)
     .not('published_at', 'is', null)
     .lte('published_at', now)
     .order('published_at', { ascending: false })
     .range(offset, offset + perPage - 1)
 
-  const articles = ((data || []) as Record<string, unknown>[])
-    .map((article) => ({
-      id: article.id as string,
-      slug: article.slug as string,
-      title_ar: article.title_ar as string,
-      excerpt_ar: article.excerpt_ar as string | null,
-      cover_image_path: article.cover_image_path as string | null,
-      published_at: article.published_at as string | null,
-      is_breaking: article.is_breaking as boolean,
-      is_featured: article.is_featured as boolean,
-      priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
-      author: article.author as ArticleListItem['author'],
-      section: article.section as ArticleListItem['section'],
-    }))
-    .filter((article) => article.section?.slug !== 'breaking')
+  const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
+    id: article.id as string,
+    slug: article.slug as string,
+    title_ar: article.title_ar as string,
+    excerpt_ar: article.excerpt_ar as string | null,
+    cover_image_path: article.cover_image_path as string | null,
+    published_at: article.published_at as string | null,
+    is_breaking: article.is_breaking as boolean,
+    is_featured: article.is_featured as boolean,
+    priority: ((article.priority as number) ?? 4) as ArticleListItem['priority'],
+    author: article.author as ArticleListItem['author'],
+    section: article.section as ArticleListItem['section'],
+  }))
 
   return { articles, total: count || 0 }
 }
@@ -191,7 +190,7 @@ function Pagination({
       {currentPage > 1 && (
         <Link
           href={`${baseUrl}?page=${currentPage - 1}`}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
+          className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:text-[#830005]"
         >
           السابق
         </Link>
@@ -201,10 +200,10 @@ function Pagination({
         <Link
           key={pageNum}
           href={`${baseUrl}?page=${pageNum}`}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             pageNum === currentPage
-              ? 'bg-primary text-white'
-              : 'text-foreground hover:bg-primary bg-white hover:text-white'
+              ? 'bg-[#830005] text-white'
+              : 'bg-white text-gray-900 hover:text-[#830005]'
           }`}
         >
           {pageNum}
@@ -214,7 +213,7 @@ function Pagination({
       {currentPage < totalPages && (
         <Link
           href={`${baseUrl}?page=${currentPage + 1}`}
-          className="text-foreground hover:bg-primary rounded-lg bg-white px-4 py-2 text-sm font-medium hover:text-white"
+          className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-900 transition-colors hover:text-[#830005]"
         >
           التالي
         </Link>

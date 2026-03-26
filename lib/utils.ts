@@ -131,10 +131,10 @@ export function formatTimeAr(date: string | Date) {
 
 export function resolveAuthor<T extends { is_anonymous?: boolean } | null | undefined>(
   author: T,
-  sectionSlug?: string | null
+  isBreaking?: boolean
 ): T | null {
   if (!author || (author as { is_anonymous?: boolean }).is_anonymous) return null
-  if (sectionSlug === 'breaking') return null
+  if (isBreaking) return null
   return author
 }
 
