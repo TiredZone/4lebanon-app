@@ -18,6 +18,7 @@ export const NAV_ITEMS = [
   { href: '/section/said-and-said', label: 'قيل و قال' },
   { href: '/section/economy', label: 'إقتصاد' },
   { href: '/section/technology', label: 'تكنولوجيا' },
+  { href: '/section/sports', label: 'رياضة' },
   { href: '/section/opinions', label: 'أراء و مقالات' },
 ] as const
 

@@ -5055,10 +5055,18 @@ section a[href*='/recent'] {
   padding: var(--space-xl);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   transition: all 0.3s var(--ease-smooth);
+  overflow: visible;
 }
 
 .editor-card:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+/* When a dropdown is open inside a card, elevate the card above siblings */
+.editor-card:has(.editor-select-trigger.open),
+.editor-card:has(.editor-topics-dropdown) {
+  z-index: 10;
+  position: relative;
 }
 
 .editor-card-title {
@@ -5458,6 +5466,12 @@ section a[href*='/recent'] {
 /* Searchable Select Component */
 .editor-select-container {
   position: relative;
+  overflow: visible;
+}
+
+.editor-select-container:has(.editor-select-trigger.open) {
+  isolation: isolate;
+  z-index: 100;
 }
 
 .editor-select-trigger {
@@ -5509,7 +5523,7 @@ section a[href*='/recent'] {
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 100;
   background: white;
   border: 1px solid rgba(131, 0, 5, 0.2);
   border-top: none;
@@ -5660,7 +5674,7 @@ section a[href*='/recent'] {
   top: calc(100% + 0.5rem);
   left: 0;
   right: 0;
-  z-index: 50;
+  z-index: 100;
   background: white;
   border: 1px solid rgba(226, 232, 240, 0.8);
   border-radius: 1rem;
@@ -6467,27 +6481,28 @@ section a[href*='/recent'] {
 
   .editor-input {
     padding: 0.625rem 0.75rem;
-    font-size: 0.8125rem;
+    font-size: 1rem;
     border-radius: 0.625rem;
   }
 
   .editor-input-lg {
-    font-size: var(--font-size-sm);
+    font-size: 1rem;
     padding: 0.75rem 0.875rem;
   }
 
   .editor-textarea {
     min-height: 100px;
     line-height: 1.6;
+    font-size: 1rem;
   }
 
   .editor-textarea-code {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .editor-select-trigger {
     padding: 0.625rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: 1rem;
     border-radius: 0.625rem;
   }
 
@@ -6508,13 +6523,13 @@ section a[href*='/recent'] {
   .editor-select-search-input {
     padding: 0.5rem 0.625rem;
     padding-right: 2rem;
-    font-size: 0.75rem;
+    font-size: 1rem;
     border-radius: 0.5rem;
   }
 
   .editor-select-option {
     padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
   }
 
   .editor-select-option-check {

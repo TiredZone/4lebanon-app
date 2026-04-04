@@ -119,6 +119,7 @@ export async function proxy(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') || ''
   const pathname = request.nextUrl.pathname
   const url = request.nextUrl.toString()
+  const method = request.method
 
   // 1. Check if IP is blocked
   if (blockedIPs.has(ip)) {
@@ -145,7 +146,8 @@ export async function proxy(request: NextRequest) {
   // 4. Rate limiting
   const isProtectedPath = PROTECTED_PATHS.some((p) => pathname.startsWith(p))
   const isApiPath = pathname.startsWith('/api')
-  const isAuthPath = pathname.includes('/login') || pathname.includes('/auth')
+  const isAuthPath =
+    (pathname.includes('/login') || pathname.includes('/auth')) && method === 'POST'
 
   let rateLimitConfig = RATE_LIMITS.global
   let rateLimitKey = `global:${ip}`
@@ -182,7 +184,6 @@ export async function proxy(request: NextRequest) {
   }
 
   // 6. Validate request method for specific paths
-  const method = request.method
   if (isApiPath && !['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'].includes(method)) {
     console.warn(`[SECURITY] Invalid method ${method} for ${pathname} from ${ip}`)
     return new NextResponse('Method Not Allowed', { status: 405 })

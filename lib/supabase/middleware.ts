@@ -136,10 +136,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Stricter rate limiting for auth endpoints (10 requests per 5 minutes)
+  // Only apply to POST requests (actual login/signup attempts), not page views
   const isAuthEndpoint =
-    pathname.includes('/login') ||
-    pathname.includes('/signup') ||
-    pathname.includes('/forgot-password')
+    method === 'POST' &&
+    (pathname.includes('/login') ||
+      pathname.includes('/signup') ||
+      pathname.includes('/forgot-password'))
   if (isAuthEndpoint && !checkRateLimit(`auth:${ip}`, 10, 300000)) {
     console.warn(`[SECURITY] Auth rate limit exceeded for IP: ${ip}`)
     return new NextResponse('Too Many Authentication Attempts', {

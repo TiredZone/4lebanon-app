@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
 
   // Comprehensive security headers
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development'
+
     // Get Supabase URL for CSP
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://*.supabase.co'
     const supabaseHost = supabaseUrl.replace('https://', '')
@@ -96,44 +98,48 @@ const nextConfig: NextConfig = {
         key: 'Cross-Origin-Resource-Policy',
         value: 'same-origin',
       },
-      // Content Security Policy - MAXIMUM SECURITY
-      {
-        key: 'Content-Security-Policy',
-        value: [
-          // Default: only same origin
-          "default-src 'self'",
-          // Scripts: self + Vercel analytics (unsafe-inline needed for Next.js hydration)
-          "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.clarity.ms https://scripts.clarity.ms",
-          // Styles: self + inline (needed for Tailwind) + Google Fonts
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-          // Fonts: self + Google Fonts
-          "font-src 'self' https://fonts.gstatic.com data:",
-          // Images: self + Supabase storage + Unsplash
-          `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://images.unsplash.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com`,
-          // Connections: self + Supabase + Vercel
-          `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com https://www.clarity.ms https://*.clarity.ms wss://${supabaseHost}`,
-          // No iframes allowed to embed this site
-          "frame-ancestors 'none'",
-          // Allow Supabase iframes for auth session management
-          `frame-src 'self' https://${supabaseHost}`,
-          // Base URI restriction
-          "base-uri 'self'",
-          // Form submissions only to same origin
-          "form-action 'self'",
-          // No plugins (Flash, Java, etc.)
-          "object-src 'none'",
-          // No media except from self and Supabase
-          `media-src 'self' https://${supabaseHost}`,
-          // Workers only from self
-          "worker-src 'self' blob:",
-          // Manifests only from self
-          "manifest-src 'self'",
-          // Upgrade HTTP to HTTPS
-          'upgrade-insecure-requests',
-          // Block all mixed content
-          'block-all-mixed-content',
-        ].join('; '),
-      },
+      // Content Security Policy - MAXIMUM SECURITY (skip in dev for Turbopack compatibility)
+      ...(isDev
+        ? []
+        : [
+            {
+              key: 'Content-Security-Policy',
+              value: [
+                // Default: only same origin
+                "default-src 'self'",
+                // Scripts: self + Vercel analytics (unsafe-inline needed for Next.js hydration)
+                "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://www.clarity.ms https://scripts.clarity.ms",
+                // Styles: self + inline (needed for Tailwind) + Google Fonts
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                // Fonts: self + Google Fonts
+                "font-src 'self' https://fonts.gstatic.com data:",
+                // Images: self + Supabase storage + Unsplash
+                `img-src 'self' data: blob: https://${supabaseHost} https://*.supabase.co https://images.unsplash.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com`,
+                // Connections: self + Supabase + Vercel
+                `connect-src 'self' https://${supabaseHost} https://*.supabase.co https://va.vercel-scripts.com https://www.clarity.ms https://*.clarity.ms wss://${supabaseHost}`,
+                // No iframes allowed to embed this site
+                "frame-ancestors 'none'",
+                // Allow Supabase iframes for auth session management
+                `frame-src 'self' https://${supabaseHost}`,
+                // Base URI restriction
+                "base-uri 'self'",
+                // Form submissions only to same origin
+                "form-action 'self'",
+                // No plugins (Flash, Java, etc.)
+                "object-src 'none'",
+                // No media except from self and Supabase
+                `media-src 'self' https://${supabaseHost}`,
+                // Workers only from self
+                "worker-src 'self' blob:",
+                // Manifests only from self
+                "manifest-src 'self'",
+                // Upgrade HTTP to HTTPS
+                'upgrade-insecure-requests',
+                // Block all mixed content
+                'block-all-mixed-content',
+              ].join('; '),
+            },
+          ]),
       // Cross-Origin-Embedder-Policy for enhanced isolation
       {
         key: 'Cross-Origin-Embedder-Policy',
