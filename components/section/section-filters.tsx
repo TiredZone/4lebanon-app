@@ -82,7 +82,9 @@ export function SectionFilters({
 
   const selectedRegion = filters.regions.find((r) => r.slug === currentParams.region)
   const filteredCountries = selectedRegion
-    ? filters.countries.filter((c) => c.region_id === selectedRegion.id)
+    ? selectedRegion.slug === 'global'
+      ? filters.countries
+      : filters.countries.filter((c) => c.region_id === selectedRegion.id)
     : filters.countries
 
   const countryOptions = [

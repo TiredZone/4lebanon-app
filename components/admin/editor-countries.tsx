@@ -10,6 +10,7 @@ interface Country {
 
 interface Region {
   id: number
+  slug: string
   name_ar: string
 }
 
@@ -53,8 +54,10 @@ export function EditorCountries({
   }, [isOpen])
 
   // Filter countries by region (if set) and search
+  // "global" region shows all countries
+  const selectedRegionSlug = regions.find((r) => r.id === regionId)?.slug
   const filteredCountries = countries
-    .filter((c) => !regionId || c.region_id === regionId)
+    .filter((c) => !regionId || selectedRegionSlug === 'global' || c.region_id === regionId)
     .filter(
       (c) => c.name_ar.toLowerCase().includes(search.toLowerCase()) || c.name_ar.includes(search)
     )
