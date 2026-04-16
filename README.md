@@ -7,7 +7,10 @@ A production-ready Arabic (RTL) Lebanese news website built with Next.js 16.1.1,
 ### Public Site
 
 - 🌐 Full Arabic RTL support
-- 📰 Homepage with breaking/featured articles
+- 📰 Homepage with breaking/featured articles and time-based sorting
+- ⏱️ Auto-decay news system: pinned (48h), breaking (24h), featured (24h) boost windows
+- 📰 "آخر الأخبار" latest news feed — every new article appears immediately
+- 🔄 Deduplication across homepage sections — each article shown once
 - 🔍 Full-text search with filters (region, country, section)
 - 📄 Article pages with reading time, sources, related articles
 - ✍️ Author profile pages
@@ -20,10 +23,12 @@ A production-ready Arabic (RTL) Lebanese news website built with Next.js 16.1.1,
 - 📤 Image upload to Supabase Storage
 - 📅 Scheduled publishing (no cron needed)
 - 🏷️ Article categorization (sections, regions, topics)
+- ⏱️ Priority board with boost countdown timers and expiry warnings
+- 📊 Published date display and boost duration badges on articles list
 
 ## Tech Stack
 
-- **Framework**: Next.js 16.1.1 (App Router, Turbopack)
+- **Framework**: Next.js 16.1.6 (App Router, Turbopack)
 - **Language**: TypeScript 5.x
 - **Styling**: Tailwind CSS 4.x
 - **Database**: Supabase PostgreSQL with RLS
@@ -77,6 +82,8 @@ Run migrations in Supabase SQL Editor:
 3. `supabase/migrations/003_rls.sql` - Row Level Security
 4. `supabase/migrations/004_seed.sql` - Initial data
 5. `supabase/migrations/005_functions.sql` - Helper functions
+6. `supabase/migrations/010_article_priority.sql` - Priority & ordering system
+7. `supabase/migrations/019_homepage_sorting.sql` - Time-decay sorting index
 
 ## Project Structure
 
@@ -121,8 +128,6 @@ npm run format     # Format with Prettier
 - [Stack & Costs](docs/STACK_AND_COST.md)
 
 ## Design
-
-Inspired by [Lebanon Debate](https://lebanondebate.com) with a red/black/white palette:
 
 - Primary: `#830005` (Deep red)
 - Background: `#ffffff` (White)
