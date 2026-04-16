@@ -761,7 +761,10 @@ async function createArticles(authorId: string) {
         cover_image_path: article.cover_image_path,
         section_id: sectionId,
         status: 'published',
-        published_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 7 days
+        published_at: new Date(
+          Date.now() -
+            (article.is_breaking ? Math.random() * 12 : Math.random() * 72) * 60 * 60 * 1000
+        ).toISOString(),
         is_breaking: article.is_breaking,
         is_featured: article.is_featured,
         sources: [],

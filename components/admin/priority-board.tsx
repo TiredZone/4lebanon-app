@@ -25,9 +25,35 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import toast from 'react-hot-toast'
-import { ARTICLE_PRIORITIES } from '@/lib/constants'
+import {
+  ARTICLE_PRIORITIES,
+  PINNED_BOOST_DURATION_MS,
+  BREAKING_BOOST_DURATION_MS,
+} from '@/lib/constants'
 import { saveAllPriorities } from '@/app/admin/priority/actions'
 import type { UserRole } from '@/types/database'
+
+function getBoostStatus(article: PriorityArticle): {
+  isActive: boolean
+  remainingMs: number
+  label: string
+} | null {
+  // Priority 1 (pinned) has 48h boost, priority 2 (breaking) has 24h boost
+  if (article.priority > 2 || !article.published_at) return null
+  const age = Date.now() - new Date(article.published_at).getTime()
+  const duration = article.priority === 1 ? PINNED_BOOST_DURATION_MS : BREAKING_BOOST_DURATION_MS
+  const remaining = duration - age
+  if (remaining > 0) {
+    const hours = Math.floor(remaining / (1000 * 60 * 60))
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+    return {
+      isActive: true,
+      remainingMs: remaining,
+      label: hours > 0 ? `${hours} س ${minutes} د` : `${minutes} د`,
+    }
+  }
+  return { isActive: false, remainingMs: 0, label: 'انتهت فترة التعزيز' }
+}
 
 interface PriorityArticle {
   id: string
@@ -44,23 +70,65 @@ interface PriorityBoardProps {
   userRole: UserRole
 }
 
+function BoostBadge({ article }: { article: PriorityArticle }) {
+  const boost = getBoostStatus(article)
+  if (!boost) return null
+
+  return (
+    <span
+      className={`priority-card__boost ${boost.isActive ? 'priority-card__boost--active' : 'priority-card__boost--expired'}`}
+    >
+      {boost.isActive ? `⏱ ينتهي خلال ${boost.label}` : `⚠ ${boost.label}`}
+    </span>
+  )
+}
+
+function CardMeta({ article }: { article: PriorityArticle }) {
+  return (
+    <div className="priority-card__meta">
+      {article.author && (
+        <span className="priority-card__author">{article.author.display_name_ar}</span>
+      )}
+      {article.published_at && (
+        <span className="priority-card__date">
+          {new Date(article.published_at).toLocaleDateString('ar-LB', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function SortableCard({ article }: { article: PriorityArticle }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: article.id,
   })
 
+  const boost = getBoostStatus(article)
+  const isExpired = boost && !boost.isActive
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.4 : isExpired ? 0.6 : 1,
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="priority-card">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`priority-card ${isExpired ? 'priority-card--expired' : ''}`}
+    >
       <p className="priority-card__title">{article.title_ar}</p>
-      {article.author && (
-        <span className="priority-card__author">{article.author.display_name_ar}</span>
-      )}
+      <CardMeta article={article} />
+      <BoostBadge article={article} />
     </div>
   )
 }
@@ -69,9 +137,8 @@ function ArticleCard({ article }: { article: PriorityArticle }) {
   return (
     <div className="priority-card priority-card--overlay">
       <p className="priority-card__title">{article.title_ar}</p>
-      {article.author && (
-        <span className="priority-card__author">{article.author.display_name_ar}</span>
-      )}
+      <CardMeta article={article} />
+      <BoostBadge article={article} />
     </div>
   )
 }
@@ -112,6 +179,7 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
   const [savedArticles, setSavedArticles] = useState(initialArticles)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [breakingFilter, setBreakingFilter] = useState<'all' | 'active' | 'expired'>('all')
 
   const minPriority = userRole === 'super_admin' ? 1 : 2
 
@@ -235,8 +303,33 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
         onDragEnd={handleDragEnd}
       >
         {ARTICLE_PRIORITIES.map((p) => {
-          const columnArticles = getArticlesByPriority(p.value)
+          const allColumnArticles = getArticlesByPriority(p.value)
           const isLocked = p.value < minPriority
+          const isBreakingColumn = p.value === 2
+
+          // Apply filter for breaking column
+          let columnArticles = allColumnArticles
+          let activeCount = 0
+          let expiredCount = 0
+
+          if (isBreakingColumn) {
+            for (const a of allColumnArticles) {
+              const boost = getBoostStatus(a)
+              if (boost?.isActive) activeCount++
+              else expiredCount++
+            }
+            if (breakingFilter === 'active') {
+              columnArticles = allColumnArticles.filter((a) => {
+                const boost = getBoostStatus(a)
+                return boost?.isActive ?? false
+              })
+            } else if (breakingFilter === 'expired') {
+              columnArticles = allColumnArticles.filter((a) => {
+                const boost = getBoostStatus(a)
+                return boost ? !boost.isActive : true
+              })
+            }
+          }
 
           return (
             <div
@@ -246,8 +339,35 @@ export function PriorityBoard({ articles: initialArticles, userRole }: PriorityB
               <div className="priority-column__header" style={{ borderColor: p.color }}>
                 <span className="priority-column__dot" style={{ backgroundColor: p.color }} />
                 <span className="priority-column__label">{p.label}</span>
-                <span className="priority-column__count">{columnArticles.length}</span>
+                <span className="priority-column__count">{allColumnArticles.length}</span>
               </div>
+
+              {/* Filter toggle for breaking column */}
+              {isBreakingColumn && allColumnArticles.length > 0 && (
+                <div className="priority-column__filters">
+                  <button
+                    type="button"
+                    className={`priority-column__filter-btn ${breakingFilter === 'all' ? 'priority-column__filter-btn--active' : ''}`}
+                    onClick={() => setBreakingFilter('all')}
+                  >
+                    الكل ({allColumnArticles.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`priority-column__filter-btn ${breakingFilter === 'active' ? 'priority-column__filter-btn--active' : ''}`}
+                    onClick={() => setBreakingFilter('active')}
+                  >
+                    نشط ({activeCount})
+                  </button>
+                  <button
+                    type="button"
+                    className={`priority-column__filter-btn ${breakingFilter === 'expired' ? 'priority-column__filter-btn--active' : ''}`}
+                    onClick={() => setBreakingFilter('expired')}
+                  >
+                    منتهي ({expiredCount})
+                  </button>
+                </div>
+              )}
 
               <SortableContext
                 items={columnArticles.map((a) => a.id)}

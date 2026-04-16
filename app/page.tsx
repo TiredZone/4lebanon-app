@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { getStorageUrl, formatDateAr } from '@/lib/utils'
+import { getStorageUrl, formatDateAr, sortByTier } from '@/lib/utils'
+import { BREAKING_BOOST_DURATION_MS } from '@/lib/constants'
 import Link from 'next/link'
 import Image from 'next/image'
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker'
@@ -17,9 +18,13 @@ export async function generateMetadata() {
 async function getHomepageData() {
   const supabase = await createClient()
 
-  const now = new Date().toISOString()
+  const nowMs = Date.now()
+  const now = new Date(nowMs).toISOString()
+  const twentyFourHoursAgo = new Date(nowMs - BREAKING_BOOST_DURATION_MS).toISOString()
 
-  const { data: importantArticles } = await supabase
+  // Fetch recent articles and sort by time-weighted tiers in JS.
+  // No priority filter — all articles are eligible, but active breaking/featured get boosted.
+  const { data: importantArticlesRaw } = await supabase
     .from('articles')
     .select(
       `
@@ -31,10 +36,20 @@ async function getHomepageData() {
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
-    .in('priority', [1, 2, 3])
-    .order('priority', { ascending: true })
-    .order('sort_position', { ascending: false })
-    .limit(9)
+    .order('published_at', { ascending: false })
+    .limit(30)
+
+  // Apply time-decay sorting: pinned > active breaking > active featured > recency
+  const importantArticles = sortByTier(
+    (importantArticlesRaw || []) as (Record<string, unknown> & {
+      priority: number
+      published_at: string | null
+    })[],
+    nowMs
+  ).slice(0, 9)
+
+  // Track which article IDs are already shown — cascade exclusion to avoid duplicates
+  const usedIds = new Set(importantArticles.map((a: Record<string, unknown>) => a.id as string))
 
   // Fetch all sections and a batch of recent articles in two queries (avoids N+1)
   const [{ data: allSections }, { data: sectionArticlesRaw }] = await Promise.all([
@@ -52,8 +67,7 @@ async function getHomepageData() {
       .eq('status', 'published')
       .not('published_at', 'is', null)
       .lte('published_at', now)
-      .order('priority', { ascending: true })
-      .order('sort_position', { ascending: false })
+      .order('published_at', { ascending: false })
       .limit(120),
   ])
 
@@ -65,29 +79,40 @@ async function getHomepageData() {
       const sid = (article as Record<string, unknown>).section_id as number | null
       if (sid == null) continue
       const list = grouped.get(sid) || []
-      if (list.length < 6) list.push(article as Record<string, unknown>)
+      list.push(article as Record<string, unknown>)
       grouped.set(sid, list)
     }
 
     sectionsWithArticles = allSections
-      .map((section) => ({
-        slug: section.slug,
-        name_ar: section.name_ar,
-        articles: transformArticles(grouped.get(section.id) || []),
-      }))
+      .map((section) => {
+        const sectionArticles = grouped.get(section.id) || []
+        // Filter out articles already shown in previous sections, then apply time-decay sort
+        const unique = sectionArticles.filter((a) => !usedIds.has(a.id as string))
+        const sorted = sortByTier(
+          unique as (Record<string, unknown> & { priority: number; published_at: string | null })[],
+          nowMs
+        ).slice(0, 6)
+        // Mark these as used so later sections don't repeat them
+        for (const a of sorted) usedIds.add(a.id as string)
+        return {
+          slug: section.slug,
+          name_ar: section.name_ar,
+          articles: transformArticles(sorted),
+        }
+      })
       .filter((s) => s.articles.length > 0)
   }
 
-  // Fetch breaking news for ticker (priority 1-2)
+  // Fetch breaking news for ticker (priority 1-2, within 24h window)
   const { data: breakingNews } = await supabase
     .from('articles')
     .select('id, slug, title_ar')
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
+    .gte('published_at', twentyFourHoursAgo)
     .in('priority', [1, 2])
-    .order('priority', { ascending: true })
-    .order('sort_position', { ascending: false })
+    .order('published_at', { ascending: false })
     .limit(10)
 
   // Fetch most-read articles (by view_count, not recent)
@@ -103,11 +128,40 @@ async function getHomepageData() {
     .not('published_at', 'is', null)
     .lte('published_at', now)
     .order('view_count', { ascending: false })
-    .limit(5)
+    .limit(15)
+
+  // Fetch latest articles for the "آخر الأخبار" feed (pure chronological, no priority filter)
+  // Over-fetch so we still have enough after dedup
+  const { data: latestArticles } = await supabase
+    .from('articles')
+    .select(
+      `
+      id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured, priority,
+      author:profiles!articles_author_id_fkey(id, display_name_ar, is_anonymous),
+      section:sections!articles_section_id_fkey(id, name_ar)
+    `
+    )
+    .eq('status', 'published')
+    .not('published_at', 'is', null)
+    .lte('published_at', now)
+    .order('published_at', { ascending: false })
+    .limit(30)
+
+  // Deduplicate: latest excludes articles already in important section
+  const filteredLatest = (latestArticles || [])
+    .filter((a: Record<string, unknown>) => !usedIds.has(a.id as string))
+    .slice(0, 15)
+  for (const a of filteredLatest) usedIds.add((a as Record<string, unknown>).id as string)
+
+  // Deduplicate: most-read excludes articles already shown above
+  const filteredMostRead = (mostReadArticles || [])
+    .filter((a: Record<string, unknown>) => !usedIds.has(a.id as string))
+    .slice(0, 5)
 
   return {
-    important: transformArticles((importantArticles || []) as Record<string, unknown>[]),
-    mostRead: transformArticles((mostReadArticles || []) as Record<string, unknown>[]),
+    important: transformArticles(importantArticles as Record<string, unknown>[]),
+    latest: transformArticles(filteredLatest as Record<string, unknown>[]),
+    mostRead: transformArticles(filteredMostRead as Record<string, unknown>[]),
     sectionsWithArticles,
     breakingNews: (breakingNews || []) as { id: string; slug: string; title_ar: string }[],
   }
@@ -360,6 +414,87 @@ export default async function Home() {
           )}
         </div>
       </section>
+
+      {/* ==================== آخر الأخبار - LATEST NEWS ==================== */}
+      {data.latest.length > 0 && (
+        <section className="bg-slate-50 py-8 sm:py-10">
+          <div className="mx-auto max-w-7xl px-4 sm:px-5">
+            {/* Header */}
+            <div className="mb-6 flex items-center justify-between sm:mb-8">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-1 rounded-full bg-[#830005]"></div>
+                <h2 className="text-sm font-semibold tracking-tight text-slate-800 sm:text-base">
+                  آخر الأخبار
+                </h2>
+              </div>
+              <Link href="/recent" className="more-link min-h-[44px]">
+                <span>المزيد</span>
+                <span>←</span>
+              </Link>
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              {data.latest.map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/article/${article.slug}`}
+                  className="group flex gap-3 rounded-xl bg-white p-2.5 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md sm:gap-4 sm:p-3"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-lg sm:h-[80px] sm:w-[80px]">
+                    {article.cover_image_path ? (
+                      <Image
+                        src={getStorageUrl(article.cover_image_path)!}
+                        alt={article.title_ar}
+                        fill
+                        sizes="80px"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-slate-200 to-slate-300" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    {article.section && (
+                      <span className="mb-1 text-[10px] font-semibold text-[#830005] sm:text-xs">
+                        {article.section.name_ar}
+                      </span>
+                    )}
+                    <h3 className="line-clamp-2 text-sm leading-snug font-bold text-slate-800 transition-colors group-hover:text-[#830005]">
+                      {article.title_ar}
+                    </h3>
+                    {article.published_at && (
+                      <time className="mt-1 flex items-center gap-1 text-[10px] text-slate-400 sm:text-xs">
+                        <svg
+                          className="h-3 w-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        {new Date(article.published_at).toLocaleTimeString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: false,
+                        })}
+                      </time>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ==================== DYNAMIC SECTIONS - BENTO GRID ==================== */}
       {data.sectionsWithArticles.map((section, sectionIndex) => (

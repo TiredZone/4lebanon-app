@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION } from '@/lib/constants'
 import { GlassEditorialCard } from '@/components/glass-editorial-card'
+import { sortByTier } from '@/lib/utils'
 import type { ArticleListItem } from '@/types/database'
 
 export const metadata: Metadata = {
@@ -22,6 +23,8 @@ async function getImportantArticles(page: number = 1) {
   const perPage = PAGINATION.defaultPageSize
   const offset = (page - 1) * perPage
 
+  // Fetch more articles than needed so we can apply time-decay sorting in JS
+  const fetchLimit = offset + perPage + 20
   const { data, count } = await supabase
     .from('articles')
     .select(
@@ -35,12 +38,16 @@ async function getImportantArticles(page: number = 1) {
     .eq('status', 'published')
     .not('published_at', 'is', null)
     .lte('published_at', now)
-    .in('priority', [1, 2, 3])
-    .order('priority', { ascending: true })
-    .order('sort_position', { ascending: false })
-    .range(offset, offset + perPage - 1)
+    .order('published_at', { ascending: false })
+    .limit(fetchLimit)
 
-  const articles = ((data || []) as Record<string, unknown>[]).map((article) => ({
+  // Apply time-decay sorting then paginate
+  const sorted = sortByTier(
+    (data || []) as (Record<string, unknown> & { priority: number; published_at: string | null })[]
+  )
+  const paged = sorted.slice(offset, offset + perPage)
+
+  const articles = (paged as Record<string, unknown>[]).map((article) => ({
     id: article.id as string,
     slug: article.slug as string,
     title_ar: article.title_ar as string,

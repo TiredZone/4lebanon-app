@@ -63,10 +63,17 @@ export function EditorTopics({ topics, selectedTopics, onChange }: EditorTopicsP
 
   return (
     <div ref={containerRef} className="editor-topics-container">
-      {/* Trigger */}
-      <button
-        type="button"
+      {/* Trigger — uses div+role instead of button to allow nested remove buttons */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsOpen(!isOpen)
+          }
+        }}
         className={`editor-topics-trigger ${isOpen ? 'open' : ''}`}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -95,7 +102,7 @@ export function EditorTopics({ topics, selectedTopics, onChange }: EditorTopicsP
         ) : (
           <span className="editor-topics-placeholder">اختر المواضيع...</span>
         )}
-      </button>
+      </div>
 
       {/* Dropdown */}
       {isOpen && (

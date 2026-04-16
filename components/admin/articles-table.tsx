@@ -3,7 +3,11 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { formatDateAr, getStatusLabelAr } from '@/lib/utils'
-import { ARTICLE_PRIORITIES } from '@/lib/constants'
+import {
+  ARTICLE_PRIORITIES,
+  PINNED_BOOST_DURATION_MS,
+  BREAKING_BOOST_DURATION_MS,
+} from '@/lib/constants'
 import type { Article, Section } from '@/types/database'
 
 interface ArticleWithSection extends Article {
@@ -335,9 +339,35 @@ export function ArticlesTable({ articles, showAuthor = false }: ArticlesTablePro
                   )
                 })()}
 
+                {/* Boost Duration Badge (pinned + breaking articles) */}
+                {article.priority <= 2 &&
+                  article.published_at &&
+                  (() => {
+                    const age = Date.now() - new Date(article.published_at).getTime()
+                    const duration =
+                      article.priority === 1 ? PINNED_BOOST_DURATION_MS : BREAKING_BOOST_DURATION_MS
+                    const remaining = duration - age
+                    if (remaining > 0) {
+                      const hours = Math.floor(remaining / (1000 * 60 * 60))
+                      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+                      return (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                          ⏱ {hours > 0 ? `${hours} س ${minutes} د` : `${minutes} د`}
+                        </span>
+                      )
+                    }
+                    return (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                        انتهى التعزيز
+                      </span>
+                    )
+                  })()}
+
                 {/* Date - pushed to the end */}
                 <span className="ml-auto text-xs text-slate-400">
-                  {formatDateAr(article.updated_at, 'dd/MM/yyyy HH:mm')}
+                  {article.status === 'published' && article.published_at
+                    ? `نُشر ${formatDateAr(article.published_at, 'dd/MM/yyyy HH:mm')}`
+                    : formatDateAr(article.updated_at, 'dd/MM/yyyy HH:mm')}
                 </span>
               </div>
             </div>

@@ -110,6 +110,12 @@ export const ARTICLE_PRIORITIES = [
 // Maximum number of pinned articles (priority 1) allowed at any time
 export const MAX_PINNED_ARTICLES = 3
 
+// Duration (in milliseconds) that pinned articles get a sorting boost
+export const PINNED_BOOST_DURATION_MS = 48 * 60 * 60 * 1000 // 48 hours
+
+// Duration (in milliseconds) that breaking/featured articles get a sorting boost
+export const BREAKING_BOOST_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
+
 // Error messages in Arabic
 export const ERROR_MESSAGES = {
   generic: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.',

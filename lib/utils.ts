@@ -1,5 +1,5 @@
 import { clsx, type ClassValue } from 'clsx'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
 
 // Class name utility (Tailwind merge alternative)
@@ -265,6 +265,42 @@ export function formatDateLatinAr(date: string | Date): string {
 
 // Alias for formatDateLatinAr (same format)
 export const formatLevantineDate = formatDateLatinAr
+
+// Compute sort tier for time-weighted article sorting.
+// Tier 0: Pinned (priority 1) — always on top
+// Tier 1: Breaking (priority 2) published within boost window
+// Tier 2: Featured (priority 3) published within boost window
+// Tier 3: Everything else — sorted by published_at
+import { PINNED_BOOST_DURATION_MS, BREAKING_BOOST_DURATION_MS } from '@/lib/constants'
+
+export function computeSortTier(
+  priority: number,
+  publishedAt: string | null,
+  now: number = Date.now()
+): number {
+  if (!publishedAt) return 3
+  const age = now - new Date(publishedAt).getTime()
+  if (priority === 1 && age < PINNED_BOOST_DURATION_MS) return 0
+  if (priority === 2 && age < BREAKING_BOOST_DURATION_MS) return 1
+  if (priority === 3 && age < BREAKING_BOOST_DURATION_MS) return 2
+  return 3
+}
+
+// Sort articles by tier then by published_at DESC
+export function sortByTier<T extends { priority: number; published_at: string | null }>(
+  articles: T[],
+  now: number = Date.now()
+): T[] {
+  return [...articles].sort((a, b) => {
+    const tierA = computeSortTier(a.priority, a.published_at, now)
+    const tierB = computeSortTier(b.priority, b.published_at, now)
+    if (tierA !== tierB) return tierA - tierB
+    // Within same tier, newest first
+    const dateA = a.published_at ? new Date(a.published_at).getTime() : 0
+    const dateB = b.published_at ? new Date(b.published_at).getTime() : 0
+    return dateB - dateA
+  })
+}
 
 // Get article status label in Arabic
 export function getStatusLabelAr(status: string): string {
