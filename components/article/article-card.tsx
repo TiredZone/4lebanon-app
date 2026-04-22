@@ -19,7 +19,7 @@ export function ArticleCard({
   showSection = true,
 }: ArticleCardProps) {
   const imageUrl = getStorageUrl(article.cover_image_path)
-  const author = resolveAuthor(article.author, article.is_breaking)
+  const author = resolveAuthor(article.author, article.section?.slug)
 
   if (variant === 'featured') {
     return (
@@ -69,7 +69,7 @@ export function ArticleCard({
 
           {/* Meta */}
           <div className="flex items-center gap-2 text-xs text-white/80 md:gap-3 md:text-sm">
-            {showAuthor && author && !article.is_breaking && (
+            {showAuthor && author && (
               <>
                 <Link href={`/author/${author.id}`} className="hover:text-white">
                   {author.display_name_ar}
@@ -186,7 +186,7 @@ export function ArticleCard({
           </p>
         )}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {showAuthor && author && !article.is_breaking && (
+          {showAuthor && author && (
             <Link href={`/author/${author.id}`} className="transition-colors hover:text-[#B8860B]">
               {author.display_name_ar}
             </Link>

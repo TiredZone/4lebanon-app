@@ -170,7 +170,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const imageUrl = getStorageUrl(article.cover_image_path)
-  const metaAuthor = resolveAuthor(article.author, article.is_breaking)
+  const metaAuthor = resolveAuthor(article.author, article.section?.slug)
 
   return {
     title: article.title_ar,
@@ -204,7 +204,7 @@ export default async function ArticlePage({ params }: PageProps) {
   // Increment view count (non-blocking)
   void incrementViewCount(article.id)
 
-  const author = resolveAuthor(article.author, article.is_breaking)
+  const author = resolveAuthor(article.author, article.section?.slug)
   const relatedArticles = await getRelatedArticles(article.id, article.section_id)
   const imageUrl = getStorageUrl(article.cover_image_path)
   const readingTime = calculateReadingTime(article.body_md)
@@ -286,7 +286,7 @@ export default async function ArticlePage({ params }: PageProps) {
 
             {/* Metadata Glass Pill */}
             <div className="article-meta-pill">
-              {author && !article.is_breaking && (
+              {author && (
                 <>
                   <Link
                     href={`/author/${author.id}`}

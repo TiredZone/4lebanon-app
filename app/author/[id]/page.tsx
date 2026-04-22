@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
-import { getStorageUrl } from '@/lib/utils'
+import { getStorageUrl, OPINION_SECTION_SLUG } from '@/lib/utils'
 import { ArticleGrid } from '@/components/article'
 import type { Profile, ArticleListItem } from '@/types/database'
 
@@ -38,13 +38,13 @@ async function getAuthorArticles(
       `
       id, slug, title_ar, excerpt_ar, cover_image_path, published_at, is_breaking, is_featured,
       author:profiles!articles_author_id_fkey(id, display_name_ar, avatar_url, is_anonymous),
-      section:sections!articles_section_id_fkey(id, slug, name_ar)
+      section:sections!articles_section_id_fkey!inner(id, slug, name_ar)
     `,
       { count: 'exact' }
     )
     .eq('author_id', authorId)
     .eq('status', 'published')
-    .eq('is_breaking', false)
+    .eq('section.slug', OPINION_SECTION_SLUG)
     .not('published_at', 'is', null)
     .lte('published_at', now)
     .order('published_at', { ascending: false })

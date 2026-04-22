@@ -127,14 +127,16 @@ export function formatTimeAr(date: string | Date) {
   return `${lt.hours}:${lt.minutes}`
 }
 
-// Hide anonymous authors and authors on breaking news articles
+// Only the opinion section credits a byline. Everywhere else the author is hidden,
+// and anonymous authors are hidden regardless of section.
+export const OPINION_SECTION_SLUG = 'opinions'
 
 export function resolveAuthor<T extends { is_anonymous?: boolean } | null | undefined>(
   author: T,
-  isBreaking?: boolean
+  sectionSlug?: string | null
 ): T | null {
   if (!author || (author as { is_anonymous?: boolean }).is_anonymous) return null
-  if (isBreaking) return null
+  if (sectionSlug !== OPINION_SECTION_SLUG) return null
   return author
 }
 

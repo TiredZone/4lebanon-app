@@ -72,7 +72,7 @@ export default async function RecentNewsPage({ searchParams }: PageProps) {
             <div className="rounded-lg bg-white shadow-sm">
               <div className="divide-border divide-y">
                 {articles.map((article) => {
-                  const author = resolveAuthor(article.author, article.is_breaking)
+                  const author = resolveAuthor(article.author, article.section?.slug)
                   return (
                     <article key={article.id} className="group">
                       <Link
