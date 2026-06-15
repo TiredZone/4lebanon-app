@@ -15,6 +15,7 @@ import {
   RecommendedArticles,
 } from '@/components/article'
 import { JsonLd, newsArticleJsonLd, breadcrumbJsonLd } from '@/components/json-ld'
+import { AdSlot } from '@/components/ads'
 import type { ArticleWithRelations, ArticleListItem, Topic } from '@/types/database'
 
 export const revalidate = 600 // 10 minutes
@@ -389,12 +390,21 @@ export default async function ArticlePage({ params }: PageProps) {
             {/* Mobile Social Bar */}
             <SocialShareBar url={articleUrl} title={article.title_ar} variant="mobile" />
 
+            {/* Promo slot — in body */}
+            <AdSlot placement="article-in-body" variant="card" />
+
             {/* Recommended Articles */}
             <RecommendedArticles articles={relatedArticles} />
+
+            {/* Promo slot — after recommended */}
+            <AdSlot placement="article-after-recommended" variant="card" />
           </div>
 
-          {/* Right Sidebar - Trending (Desktop only) */}
-          <TrendingSidebar />
+          {/* Right Sidebar - Trending + Promo (Desktop only, single grid column) */}
+          <div className="article-right-rail">
+            <TrendingSidebar />
+            <AdSlot placement="article-sidebar" variant="sidebar" />
+          </div>
         </div>
       </article>
     </>
