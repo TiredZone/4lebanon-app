@@ -59,4 +59,19 @@ describe('pickAd', () => {
     const ads: AdCreative[] = [base, { ...base, id: 'b' }]
     expect(pickAd(ads)?.id).toBe('a')
   })
+
+  it('selects by weight using the seed', () => {
+    const ads: AdCreative[] = [base, { ...base, id: 'b', weight: 3 }]
+    // total weight = 1 + 3 = 4. target 0 -> 'a'; targets 1..3 -> 'b'.
+    expect(pickAd(ads, 0)?.id).toBe('a')
+    expect(pickAd(ads, 1)?.id).toBe('b')
+    expect(pickAd(ads, 3)?.id).toBe('b')
+  })
+
+  it('handles negative and fractional seeds deterministically', () => {
+    const ads: AdCreative[] = [base, { ...base, id: 'b' }]
+    // total weight = 2; seed -1 -> ((-1 % 2) + 2) % 2 = 1 -> 'b'; 2.9 -> trunc 2 -> 0 -> 'a'
+    expect(pickAd(ads, -1)?.id).toBe('b')
+    expect(pickAd(ads, 2.9)?.id).toBe('a')
+  })
 })
