@@ -33,6 +33,9 @@ const clientEnvSchema = z.object({
     .string()
     .url('NEXT_PUBLIC_SITE_URL must be a valid URL')
     .default('https://4lebanon.com'),
+
+  // Custom ad system toggle (off by default; merge-safe)
+  NEXT_PUBLIC_ADS_ENABLED: z.enum(['true', 'false']).default('false'),
 })
 
 // Combined schema for server-side usage
@@ -68,6 +71,7 @@ export function validateClientEnv(): ClientEnv {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_ADS_ENABLED: process.env.NEXT_PUBLIC_ADS_ENABLED,
   })
 
   if (!parsed.success) {
