@@ -114,7 +114,7 @@ Named slots are inserted as single JSX lines so positions can move/prune trivial
 - **Article** (`app/article/[slug]/page.tsx`): `article-sidebar` (inside the ≥1500px sticky trending
   aside), `article-in-body` (before `<RecommendedArticles>`), `article-after-recommended`.
 
-Three visual variants in `app/globals.css`, reusing existing tokens: `banner` (full-width, blends
+Three visual variants in `app/globals.css`, reusing existing tokens: `wide` (full-width, blends
 with `.bento-card`), `card` (`.bento-card`/`.glass-card`), `sidebar` (`.trending-widget`). RTL via
 **logical CSS only** (`inset-inline-start`, `ps-/pe-`), never `left/right`. **Ad-blocker-safe
 naming:** rendered classes/attributes use `promo-` (e.g. `.promo-slot`, `data-promo-id`), never
@@ -164,8 +164,8 @@ slots), `app/privacy/page.tsx` (sponsored clause).
 
 ## Verification
 
-No test framework installed; verify manually (and optionally add the repo's first Vitest unit tests
-for the pure `getEligibleAds`/`pickAd`):
+Vitest was added with unit tests for the pure `getEligibleAds`/`pickAd` selectors; the rest is
+verified manually:
 
 1. `npm run typecheck` && `npm run lint` clean.
 2. Flag **off** (default): pages render with **zero** ad DOM, identical to before.

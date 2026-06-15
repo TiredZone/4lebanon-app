@@ -184,7 +184,7 @@ export type AdPlacement =
   | 'article-in-body'
   | 'article-after-recommended'
 
-export type AdVariant = 'banner' | 'card' | 'sidebar'
+export type AdVariant = 'wide' | 'card' | 'sidebar'
 
 export interface AdCreative {
   /** Stable slug; used as React key and data-promo-id. */
@@ -474,7 +474,7 @@ function resolveSrc(src: string): string | null {
   return getStorageUrl(src)
 }
 
-export function AdSlot({ placement, variant = 'banner', className }: AdSlotProps) {
+export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) {
   if (!adsEnabled()) return null
 
   const ad = pickAd(getEligibleAds(ADS, placement))
@@ -577,8 +577,8 @@ Append to the end of `app/globals.css`:
   object-position: center;
 }
 
-/* Banner: centered within the page, matches max-w-7xl content width */
-.promo-slot--banner {
+/* Wide: full-width promo centered within the page, matches max-w-7xl content width */
+.promo-slot--wide {
   max-width: 80rem;
   margin-inline: auto;
   padding-inline: 1rem;
@@ -654,7 +654,7 @@ In `app/page.tsx`, find the end of the latest-news section (the `)}` closing `{d
       )}
 
       {/* Promo slot — after latest news */}
-      <AdSlot placement="home-after-latest" variant="banner" />
+      <AdSlot placement="home-after-latest" variant="wide" />
 
       {/* ==================== DYNAMIC SECTIONS - BENTO GRID ==================== */}
 ```
@@ -692,7 +692,7 @@ to:
 
 ```tsx
         </section>
-        {sectionIndex === 1 && <AdSlot placement="home-mid-sections" variant="banner" />}
+        {sectionIndex === 1 && <AdSlot placement="home-mid-sections" variant="wide" />}
         </Fragment>
       ))}
 ```
@@ -705,7 +705,7 @@ In `app/page.tsx`, between the map's closing `))}` (line ~636) and the `{/* ====
       ))}
 
       {/* Promo slot — before most read */}
-      <AdSlot placement="home-before-mostread" variant="banner" />
+      <AdSlot placement="home-before-mostread" variant="wide" />
 
       {/* ==================== MOST READ (الأكثر قراءة) SECTION ==================== */}
 ```
