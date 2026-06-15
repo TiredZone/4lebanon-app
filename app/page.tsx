@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { BreakingNewsTicker } from '@/components/breaking-news-ticker'
 import { JsonLd, organizationJsonLd, websiteJsonLd } from '@/components/json-ld'
 import type { ArticleListItem } from '@/types/database'
+import { Fragment } from 'react'
+import { AdSlot } from '@/components/ads'
 
 export const revalidate = 120
 
@@ -496,56 +498,111 @@ export default async function Home() {
         </section>
       )}
 
+      {/* Promo slot — after latest news */}
+      <AdSlot placement="home-after-latest" variant="wide" />
+
       {/* ==================== DYNAMIC SECTIONS - BENTO GRID ==================== */}
       {data.sectionsWithArticles.map((section, sectionIndex) => (
-        <section
-          key={section.slug}
-          className={`py-12 sm:py-16 lg:py-20 ${sectionIndex % 2 === 0 ? 'bg-slate-50' : 'bg-white'}`}
-        >
-          <div className="mx-auto max-w-7xl px-3 sm:px-4">
-            {/* Header */}
-            <div className="mb-8 sm:mb-10 lg:mb-12">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
-                  <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
-                    {section.name_ar}
-                  </h2>
+        <Fragment key={section.slug}>
+          <section
+            className={`py-12 sm:py-16 lg:py-20 ${sectionIndex % 2 === 0 ? 'bg-slate-50' : 'bg-white'}`}
+          >
+            <div className="mx-auto max-w-7xl px-3 sm:px-4">
+              {/* Header */}
+              <div className="mb-8 sm:mb-10 lg:mb-12">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="h-6 w-1 rounded-full bg-[#830005] sm:h-8 sm:w-1.5"></div>
+                    <h2 className="text-lg font-bold text-slate-900 sm:text-xl lg:text-2xl xl:text-3xl">
+                      {section.name_ar}
+                    </h2>
+                  </div>
+                  <Link href={`/section/${section.slug}`} className="more-link min-h-[44px]">
+                    <span>المزيد</span>
+                    <span>←</span>
+                  </Link>
                 </div>
-                <Link href={`/section/${section.slug}`} className="more-link min-h-[44px]">
-                  <span>المزيد</span>
-                  <span>←</span>
-                </Link>
               </div>
-            </div>
 
-            {/* Bento Grid: 3 columns on desktop - Hero RIGHT (2 cols x 2 rows) + 3 cards LEFT */}
-            <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-              {/* 3 Smaller Cards - LEFT side */}
-              <div className="grid grid-cols-1 gap-5 sm:gap-6 md:col-span-1 lg:order-1 lg:col-span-1 lg:gap-8">
-                {section.articles.slice(1, 4).map((article) => (
+              {/* Bento Grid: 3 columns on desktop - Hero RIGHT (2 cols x 2 rows) + 3 cards LEFT */}
+              <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                {/* 3 Smaller Cards - LEFT side */}
+                <div className="grid grid-cols-1 gap-5 sm:gap-6 md:col-span-1 lg:order-1 lg:col-span-1 lg:gap-8">
+                  {section.articles.slice(1, 4).map((article) => (
+                    <Link
+                      key={article.id}
+                      href={`/article/${article.slug}`}
+                      className="group relative cursor-pointer"
+                    >
+                      <div className="bento-card relative h-[180px] sm:h-[190px] lg:h-[200px]">
+                        {article.cover_image_path ? (
+                          <>
+                            <Image
+                              src={getStorageUrl(article.cover_image_path)!}
+                              alt={article.title_ar}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 33vw"
+                              className="object-cover object-center"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <svg
+                                className="h-12 w-12 text-white/20 sm:h-16 sm:w-16"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-5 lg:p-6">
+                          <h3 className="mb-2 line-clamp-2 text-right text-sm leading-relaxed font-bold text-white text-shadow-md sm:mb-2.5 sm:line-clamp-3 sm:text-base sm:leading-relaxed lg:text-lg lg:leading-relaxed">
+                            {article.title_ar}
+                          </h3>
+                          {article.published_at && (
+                            <time className="block text-right text-[10px] text-white/70 text-shadow-sm sm:text-xs">
+                              {formatDateAr(article.published_at, 'full')}
+                            </time>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Hero Card - RIGHT side spanning 2 columns and 2 rows */}
+                {section.articles[0] && (
                   <Link
-                    key={article.id}
-                    href={`/article/${article.slug}`}
-                    className="group relative cursor-pointer"
+                    href={`/article/${section.articles[0].slug}`}
+                    className="group cursor-pointer md:col-span-1 lg:order-2 lg:col-span-2 lg:row-span-2"
                   >
-                    <div className="bento-card relative h-[180px] sm:h-[190px] lg:h-[200px]">
-                      {article.cover_image_path ? (
+                    <div className="bento-card relative h-[260px] sm:h-[320px] md:h-[400px] lg:h-full lg:min-h-[450px]">
+                      {section.articles[0].cover_image_path ? (
                         <>
                           <Image
-                            src={getStorageUrl(article.cover_image_path)!}
-                            alt={article.title_ar}
+                            src={getStorageUrl(section.articles[0].cover_image_path)!}
+                            alt={section.articles[0].title_ar}
                             fill
-                            sizes="(max-width: 768px) 100vw, 33vw"
+                            sizes="(max-width: 1024px) 100vw, 66vw"
                             className="object-cover object-center"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
                         </>
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
                           <div className="absolute inset-0 flex items-center justify-center">
                             <svg
-                              className="h-12 w-12 text-white/20 sm:h-16 sm:w-16"
+                              className="h-16 w-16 text-white/20 sm:h-24 sm:w-24 lg:h-32 lg:w-32"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -560,80 +617,33 @@ export default async function Home() {
                           </div>
                         </div>
                       )}
-                      <div className="absolute right-0 bottom-0 left-0 p-4 sm:p-5 lg:p-6">
-                        <h3 className="mb-2 line-clamp-2 text-right text-sm leading-relaxed font-bold text-white text-shadow-md sm:mb-2.5 sm:line-clamp-3 sm:text-base sm:leading-relaxed lg:text-lg lg:leading-relaxed">
-                          {article.title_ar}
+                      <div className="absolute right-0 bottom-0 left-0 p-5 sm:p-7 lg:p-10 xl:p-12">
+                        <h3 className="mb-3 text-right text-xl leading-relaxed font-bold text-white text-shadow-lg sm:mb-4 sm:text-2xl sm:leading-relaxed md:text-3xl lg:mb-5 lg:text-4xl lg:leading-relaxed xl:text-5xl">
+                          {section.articles[0].title_ar}
                         </h3>
-                        {article.published_at && (
-                          <time className="block text-right text-[10px] text-white/70 text-shadow-sm sm:text-xs">
-                            {formatDateAr(article.published_at, 'full')}
+                        {section.articles[0].excerpt_ar && (
+                          <p className="mb-3 line-clamp-2 text-right text-sm leading-loose text-white/90 text-shadow-md sm:mb-4 sm:text-base sm:leading-loose lg:mb-5 lg:text-lg lg:leading-loose">
+                            {section.articles[0].excerpt_ar}
+                          </p>
+                        )}
+                        {section.articles[0].published_at && (
+                          <time className="block text-right text-xs text-white/70 text-shadow-sm sm:text-sm lg:text-base">
+                            {formatDateAr(section.articles[0].published_at, 'full')}
                           </time>
                         )}
                       </div>
                     </div>
                   </Link>
-                ))}
+                )}
               </div>
-
-              {/* Hero Card - RIGHT side spanning 2 columns and 2 rows */}
-              {section.articles[0] && (
-                <Link
-                  href={`/article/${section.articles[0].slug}`}
-                  className="group cursor-pointer md:col-span-1 lg:order-2 lg:col-span-2 lg:row-span-2"
-                >
-                  <div className="bento-card relative h-[260px] sm:h-[320px] md:h-[400px] lg:h-full lg:min-h-[450px]">
-                    {section.articles[0].cover_image_path ? (
-                      <>
-                        <Image
-                          src={getStorageUrl(section.articles[0].cover_image_path)!}
-                          alt={section.articles[0].title_ar}
-                          fill
-                          sizes="(max-width: 1024px) 100vw, 66vw"
-                          className="object-cover object-center"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-50% to-transparent" />
-                      </>
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900">
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <svg
-                            className="h-16 w-16 text-white/20 sm:h-24 sm:w-24 lg:h-32 lg:w-32"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                    <div className="absolute right-0 bottom-0 left-0 p-5 sm:p-7 lg:p-10 xl:p-12">
-                      <h3 className="mb-3 text-right text-xl leading-relaxed font-bold text-white text-shadow-lg sm:mb-4 sm:text-2xl sm:leading-relaxed md:text-3xl lg:mb-5 lg:text-4xl lg:leading-relaxed xl:text-5xl">
-                        {section.articles[0].title_ar}
-                      </h3>
-                      {section.articles[0].excerpt_ar && (
-                        <p className="mb-3 line-clamp-2 text-right text-sm leading-loose text-white/90 text-shadow-md sm:mb-4 sm:text-base sm:leading-loose lg:mb-5 lg:text-lg lg:leading-loose">
-                          {section.articles[0].excerpt_ar}
-                        </p>
-                      )}
-                      {section.articles[0].published_at && (
-                        <time className="block text-right text-xs text-white/70 text-shadow-sm sm:text-sm lg:text-base">
-                          {formatDateAr(section.articles[0].published_at, 'full')}
-                        </time>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )}
             </div>
-          </div>
-        </section>
+          </section>
+          {sectionIndex === 1 && <AdSlot placement="home-mid-sections" variant="wide" />}
+        </Fragment>
       ))}
+
+      {/* Promo slot — before most read */}
+      <AdSlot placement="home-before-mostread" variant="wide" />
 
       {/* ==================== MOST READ (الأكثر قراءة) SECTION ==================== */}
       {data.mostRead.length > 0 && (
