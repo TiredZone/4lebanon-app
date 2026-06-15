@@ -20,7 +20,7 @@ function resolveSrc(src: string): string | null {
   return getStorageUrl(src)
 }
 
-export function AdSlot({ placement, variant = 'banner', className }: AdSlotProps) {
+export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) {
   if (!adsEnabled()) return null
 
   const ad = pickAd(getEligibleAds(ADS, placement))

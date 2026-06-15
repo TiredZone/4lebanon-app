@@ -6,7 +6,7 @@ export type AdPlacement =
   | 'article-in-body'
   | 'article-after-recommended'
 
-export type AdVariant = 'banner' | 'card' | 'sidebar'
+export type AdVariant = 'wide' | 'card' | 'sidebar'
 
 export interface AdCreative {
   /** Stable slug; used as React key and data-promo-id. */
