@@ -196,6 +196,9 @@ export default async function Home() {
       {/* Breaking News Ticker */}
       <BreakingNewsTicker articles={data.breakingNews} />
 
+      {/* Promo slot — top of homepage */}
+      <AdSlot placement="home-top" variant="wide" />
+
       {/* أهم الأخبار - Unified Featured Section */}
       <section className="bg-white">
         <div className="mx-auto max-w-7xl">

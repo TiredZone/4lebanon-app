@@ -1,7 +1,9 @@
 export type AdPlacement =
+  | 'home-top'
   | 'home-after-latest'
   | 'home-mid-sections'
   | 'home-before-mostread'
+  | 'article-top'
   | 'article-sidebar'
   | 'article-in-body'
   | 'article-after-recommended'

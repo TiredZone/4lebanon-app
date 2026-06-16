@@ -250,6 +250,9 @@ export default async function ArticlePage({ params }: PageProps) {
 
           {/* Main Reading Column */}
           <div className="article-reading-column">
+            {/* Promo slot — top of article (above breadcrumbs) */}
+            <AdSlot placement="article-top" variant="card" />
+
             {/* Breadcrumbs */}
             <nav className="article-breadcrumbs">
               <Link href="/">الرئيسية</Link>

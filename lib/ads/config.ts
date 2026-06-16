@@ -6,11 +6,19 @@ import type { AdCreative } from './types'
  * image (drop it in /public/ads/), set `href` to the advertiser URL, and update
  * width/height to the image's intrinsic dimensions.
  *
- * Demo build: only home-after-latest, article-in-body, and article-sidebar are
- * populated (a tasteful subset). The other three placements are wired in the
- * pages but intentionally have no creative, so <AdSlot> renders nothing there.
+ * Any placement listed below renders the demo creative; any placement with no
+ * entry here renders nothing (so wiring an <AdSlot> in a page is always safe).
  */
 export const ADS: AdCreative[] = [
+  {
+    id: 'demo-home-top',
+    placement: 'home-top',
+    src: '/ads/placeholder-banner.svg',
+    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
+    alt: 'مساحة إعلانية',
+    width: 1200,
+    height: 200,
+  },
   {
     id: 'demo-home-banner',
     placement: 'home-after-latest',
@@ -18,6 +26,15 @@ export const ADS: AdCreative[] = [
     href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
     alt: 'مساحة إعلانية',
     width: 1200,
+    height: 200,
+  },
+  {
+    id: 'demo-article-top',
+    placement: 'article-top',
+    src: '/ads/placeholder-card.svg',
+    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
+    alt: 'مساحة إعلانية',
+    width: 728,
     height: 200,
   },
   {
