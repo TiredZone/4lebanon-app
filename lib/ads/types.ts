@@ -1,5 +1,6 @@
 export type AdPlacement =
   | 'home-top'
+  | 'home-after-featured'
   | 'home-after-latest'
   | 'home-mid-sections'
   | 'home-before-mostread'

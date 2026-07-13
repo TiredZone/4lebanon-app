@@ -420,6 +420,9 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Promo slot — between featured and latest */}
+      <AdSlot placement="home-after-featured" variant="wide" />
+
       {/* ==================== آخر الأخبار - LATEST NEWS ==================== */}
       {data.latest.length > 0 && (
         <section className="bg-slate-50 py-8 sm:py-10">
@@ -641,7 +644,9 @@ export default async function Home() {
               </div>
             </div>
           </section>
-          {sectionIndex === 1 && <AdSlot placement="home-mid-sections" variant="wide" />}
+          {sectionIndex < data.sectionsWithArticles.length - 1 && (
+            <AdSlot placement="home-mid-sections" variant="wide" />
+          )}
         </Fragment>
       ))}
 

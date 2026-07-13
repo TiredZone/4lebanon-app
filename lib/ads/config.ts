@@ -20,8 +20,35 @@ export const ADS: AdCreative[] = [
     height: 200,
   },
   {
+    id: 'demo-home-after-featured',
+    placement: 'home-after-featured',
+    src: '/ads/placeholder-banner.svg',
+    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
+    alt: 'مساحة إعلانية',
+    width: 1200,
+    height: 200,
+  },
+  {
     id: 'demo-home-banner',
     placement: 'home-after-latest',
+    src: '/ads/placeholder-banner.svg',
+    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
+    alt: 'مساحة إعلانية',
+    width: 1200,
+    height: 200,
+  },
+  {
+    id: 'demo-home-mid',
+    placement: 'home-mid-sections',
+    src: '/ads/placeholder-banner.svg',
+    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
+    alt: 'مساحة إعلانية',
+    width: 1200,
+    height: 200,
+  },
+  {
+    id: 'demo-home-before-mostread',
+    placement: 'home-before-mostread',
     src: '/ads/placeholder-banner.svg',
     href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
     alt: 'مساحة إعلانية',
