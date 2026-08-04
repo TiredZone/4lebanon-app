@@ -60,14 +60,25 @@ rel="noopener noreferrer sponsored" data-promo-id="...">` wrapping a `next/image
 
 ### Live slots
 
-**Homepage — 7 positions (one at every section boundary):**
-`home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
-[dynamic section] → `home-mid-sections` (repeats after every section except the last) → …
-→ `home-before-mostread` → الأكثر قراءة
+Five `<AdSlot>`s are wired into the homepage and four into the article page, but **a slot only
+renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
+a placeholder.
 
-**Article — 3 populated:** `article-top` (above breadcrumbs), `article-in-body` (before
-recommended), `article-sidebar` (under trending, desktop ≥1500px only).
-`article-after-recommended` is wired but has no creative (renders nothing).
+**Homepage — 5 wired, 4 filled:**
+`home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
+[dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
+الأكثر قراءة
+
+`home-mid-sections` repeats after every section except the last, so filling it adds ~3 more
+banners at once. It was deliberately left empty to keep the page from feeling cluttered — add an
+entry to switch it back on.
+
+**Article — 4 wired, 2 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
+recommended) are live. `article-sidebar` (under trending, desktop ≥1500px only) and
+`article-after-recommended` have no creative and render nothing; the sidebar needs a 300×250.
+
+The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
+case an unsold slot should ever advertise itself again — delete them freely.
 
 ---
 
@@ -137,10 +148,10 @@ request a squarer ratio (3:1/4:1) or add an optional separate mobile creative la
 
 - [ ] Client signs off on the preview URL.
 - [x] Replace demo creatives in `lib/ads/config.ts` with the real advertiser image + URL + dims.
-      **Done** — all 7 homepage/article slots now run the Toyota Lebanon (BUMC) Lite Ace / Dyna
-      creative pointing at `https://toyotalebanon.com/Vehicles/11/Dyna`. Only `article-sidebar`
-      still holds a demo placeholder (no 300×250 creative supplied yet).
-- [ ] Get a **300×250** sidebar creative from the advertiser, then replace `demo-article-sidebar`.
+      **Done** — the Toyota Lebanon (BUMC) Lite Ace / Dyna creative runs in 4 homepage slots and
+      2 article slots, pointing at `https://toyotalebanon.com/Vehicles/11/Dyna`. Unsold slots
+      render nothing.
+- [ ] Get a **300×250** sidebar creative from the advertiser and add an `article-sidebar` entry.
 - [ ] Merge PR #1 into `main`. _(Optionally squash the noisy commits —`17be41f` is an empty
       rebuild-trigger commit.)_
 - [ ] In Vercel, add `NEXT_PUBLIC_ADS_ENABLED=true` to the **Production** environment.

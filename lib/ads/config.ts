@@ -46,15 +46,10 @@ export const ADS: AdCreative[] = [
     width: 1200,
     height: 250,
   },
-  {
-    id: 'toyota-home-mid',
-    placement: 'home-mid-sections',
-    src: '/ads/toyota-lite-ace-dyna-wide-1200x200.jpg',
-    href: TOYOTA_HREF,
-    alt: TOYOTA_ALT,
-    width: 1200,
-    height: 200,
-  },
+  // NOTE: `home-mid-sections` is deliberately left empty. Its <AdSlot> repeats
+  // after every section except the last, so a single creative there rendered
+  // three more banners and made the homepage feel cluttered. The slot stays
+  // wired in app/page.tsx — add an entry here to switch it back on.
   {
     id: 'toyota-home-before-mostread',
     placement: 'home-before-mostread',
@@ -82,15 +77,8 @@ export const ADS: AdCreative[] = [
     width: 728,
     height: 200,
   },
-  {
-    // No 300x250 creative supplied yet — keeps the slot visible as unsold
-    // inventory. Swap `src`/`href`/`alt` once the advertiser sends one.
-    id: 'demo-article-sidebar',
-    placement: 'article-sidebar',
-    src: '/ads/placeholder-sidebar.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
-    width: 300,
-    height: 250,
-  },
+  // NOTE: `article-sidebar` and `article-after-recommended` are deliberately
+  // left empty. An unfilled slot renders nothing at all rather than a grey
+  // placeholder. Add a 300x250 entry for the sidebar once the advertiser
+  // supplies one.
 ]
