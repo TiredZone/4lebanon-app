@@ -136,8 +136,11 @@ request a squarer ratio (3:1/4:1) or add an optional separate mobile creative la
 ## 5. Go-live checklist (when the client approves)
 
 - [ ] Client signs off on the preview URL.
-- [ ] Replace demo creatives in `lib/ads/config.ts` with the real advertiser image + URL + dims
-      (all demo entries currently point at `https://www.4lebanon.com` with a `// TODO` comment).
+- [x] Replace demo creatives in `lib/ads/config.ts` with the real advertiser image + URL + dims.
+      **Done** — all 7 homepage/article slots now run the Toyota Lebanon (BUMC) Lite Ace / Dyna
+      creative pointing at `https://toyotalebanon.com/Vehicles/11/Dyna`. Only `article-sidebar`
+      still holds a demo placeholder (no 300×250 creative supplied yet).
+- [ ] Get a **300×250** sidebar creative from the advertiser, then replace `demo-article-sidebar`.
 - [ ] Merge PR #1 into `main`. _(Optionally squash the noisy commits —`17be41f` is an empty
       rebuild-trigger commit.)_
 - [ ] In Vercel, add `NEXT_PUBLIC_ADS_ENABLED=true` to the **Production** environment.

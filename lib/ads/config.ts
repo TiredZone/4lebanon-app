@@ -2,78 +2,89 @@ import type { AdCreative } from './types'
 
 /**
  * The single source of truth for ads. Edit this file (+ deploy) to change ads.
- * To go live with a real advertiser: replace the demo `src` with the advertiser
- * image (drop it in /public/ads/), set `href` to the advertiser URL, and update
- * width/height to the image's intrinsic dimensions.
+ * To add a new advertiser: drop the image in /public/ads/, add an entry below
+ * with the image's REAL intrinsic width/height, and set `href` to the
+ * advertiser URL.
  *
- * Any placement listed below renders the demo creative; any placement with no
- * entry here renders nothing (so wiring an <AdSlot> in a page is always safe).
+ * Any placement listed below renders its creative; any placement with no entry
+ * here renders nothing (so wiring an <AdSlot> in a page is always safe).
+ *
+ * Naming note: keep filenames in /ads/ free of the tokens `banner`, `image(s)`,
+ * `leaderboard`, `square` and `rectangle` — EasyList blocks those specific
+ * sub-paths (e.g. `/ads/banners/*$image`). A plain descriptive slug is fine.
  */
+
+/** Toyota Lebanon (BUMC) — Lite Ace / Dyna 200 commercial vehicles campaign. */
+const TOYOTA_HREF = 'https://toyotalebanon.com/Vehicles/11/Dyna'
+const TOYOTA_ALT = 'تويوتا لبنان — لايت إيس ودينا 200 للمركبات التجارية'
+
 export const ADS: AdCreative[] = [
   {
-    id: 'demo-home-top',
+    id: 'toyota-home-top',
     placement: 'home-top',
-    src: '/ads/placeholder-banner.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 1200,
-    height: 200,
+    height: 250,
   },
   {
-    id: 'demo-home-after-featured',
+    id: 'toyota-home-after-featured',
     placement: 'home-after-featured',
-    src: '/ads/placeholder-banner.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-wide-1200x200.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 1200,
     height: 200,
   },
   {
-    id: 'demo-home-banner',
+    id: 'toyota-home-after-latest',
     placement: 'home-after-latest',
-    src: '/ads/placeholder-banner.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 1200,
-    height: 200,
+    height: 250,
   },
   {
-    id: 'demo-home-mid',
+    id: 'toyota-home-mid',
     placement: 'home-mid-sections',
-    src: '/ads/placeholder-banner.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-wide-1200x200.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 1200,
     height: 200,
   },
   {
-    id: 'demo-home-before-mostread',
+    id: 'toyota-home-before-mostread',
     placement: 'home-before-mostread',
-    src: '/ads/placeholder-banner.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 1200,
-    height: 200,
+    height: 250,
   },
   {
-    id: 'demo-article-top',
+    id: 'toyota-article-top',
     placement: 'article-top',
-    src: '/ads/placeholder-card.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-card-728x200.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 728,
     height: 200,
   },
   {
-    id: 'demo-article-card',
+    id: 'toyota-article-in-body',
     placement: 'article-in-body',
-    src: '/ads/placeholder-card.svg',
-    href: 'https://www.4lebanon.com', // TODO: replace with advertiser URL
-    alt: 'مساحة إعلانية',
+    src: '/ads/toyota-lite-ace-dyna-card-728x200.jpg',
+    href: TOYOTA_HREF,
+    alt: TOYOTA_ALT,
     width: 728,
     height: 200,
   },
   {
+    // No 300x250 creative supplied yet — keeps the slot visible as unsold
+    // inventory. Swap `src`/`href`/`alt` once the advertiser sends one.
     id: 'demo-article-sidebar',
     placement: 'article-sidebar',
     src: '/ads/placeholder-sidebar.svg',
