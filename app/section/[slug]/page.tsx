@@ -2,13 +2,23 @@ import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
 import { GlassEditorialCard } from '@/components/glass-editorial-card'
 import { SectionFilters } from '@/components/section/section-filters'
 import type { ArticleListItem, Section } from '@/types/database'
 
-export const revalidate = 180 // 3 minutes
+/**
+ * Rendered on demand, not statically.
+ *
+ * This page reads `searchParams` (page / topic / region / country / sort /
+ * period), which is a dynamic API. Pairing that with `generateStaticParams` +
+ * `revalidate` made every slug that was not prerendered at build time fail at
+ * request time with DYNAMIC_SERVER_USAGE (a 500) — which is every slug whenever
+ * the build-time `generateStaticParams` query comes back empty. A filter-driven
+ * listing is per-request by nature, so it is declared dynamic explicitly.
+ */
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -23,7 +33,7 @@ interface PageProps {
 }
 
 async function getSection(slug: string): Promise<Section | null> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const { data } = await supabase.from('sections').select('*').eq('slug', slug).single()
 
@@ -31,7 +41,7 @@ async function getSection(slug: string): Promise<Section | null> {
 }
 
 async function getSectionFilters() {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const [regions, countries, topics] = await Promise.all([
     supabase.from('regions').select('id, slug, name_ar').order('sort_order'),
@@ -62,7 +72,7 @@ async function getSectionArticles(
     period?: string
   } = {}
 ): Promise<{ articles: ArticleListItem[]; total: number }> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const perPage = PAGINATION.defaultPageSize
   const offset = (page - 1) * perPage
   const now = new Date().toISOString()
@@ -213,13 +223,6 @@ function getBackgroundClass(variant: 'default' | 'exclusive' | 'authors'): strin
     default:
       return 'category-page-bg'
   }
-}
-
-export async function generateStaticParams() {
-  const { createServiceClient } = await import('@/lib/supabase/server')
-  const supabase = createServiceClient()
-  const { data } = await supabase.from('sections').select('slug')
-  return (data || []).map((s) => ({ slug: (s as { slug: string }).slug }))
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

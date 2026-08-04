@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { getStorageUrl, formatDateAr, sortByTier } from '@/lib/utils'
 import { BREAKING_BOOST_DURATION_MS } from '@/lib/constants'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ export async function generateMetadata() {
 }
 
 async function getHomepageData() {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const nowMs = Date.now()
   const now = new Date(nowMs).toISOString()

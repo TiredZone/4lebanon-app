@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 
 interface TrendingArticle {
   id: string
@@ -8,7 +8,7 @@ interface TrendingArticle {
 }
 
 async function getTrendingArticles(): Promise<TrendingArticle[]> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const now = new Date().toISOString()
 
   const { data } = await supabase

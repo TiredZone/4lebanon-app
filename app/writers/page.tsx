@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getStorageUrl } from '@/lib/utils'
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const revalidate = 120
 
 async function getAllWriters() {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const now = new Date().toISOString()
 
   // Only show authors who have at least one published article

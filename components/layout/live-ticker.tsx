@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 
 interface TickerItem {
   id: string
@@ -9,7 +9,7 @@ interface TickerItem {
 }
 
 async function getTickerItems(): Promise<TickerItem[]> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const now = new Date().toISOString()
   const { data } = await supabase

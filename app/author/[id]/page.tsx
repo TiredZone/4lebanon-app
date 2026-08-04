@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { PAGINATION, SITE_CONFIG } from '@/lib/constants'
 import { getStorageUrl, OPINION_SECTION_SLUG } from '@/lib/utils'
 import { ArticleGrid } from '@/components/article'
@@ -16,7 +16,7 @@ interface PageProps {
 }
 
 async function getAuthor(id: string): Promise<Profile | null> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
 
@@ -27,7 +27,7 @@ async function getAuthorArticles(
   authorId: string,
   page: number = 1
 ): Promise<{ articles: ArticleListItem[]; total: number }> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const perPage = PAGINATION.defaultPageSize
   const offset = (page - 1) * perPage
   const now = new Date().toISOString()
