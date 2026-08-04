@@ -162,6 +162,17 @@ request a squarer ratio (3:1/4:1) or add an optional separate mobile creative la
 - Article-page ads are **below the fold** — screenshots of the top of an article won't show them.
 - The article page is a 3-column CSS grid; the sidebar ad lives inside `.article-right-rail`
   alongside `<TrendingSidebar />` so it doesn't become a 4th grid child and break the layout.
+- **Never call `createClient()` (the cookie one) from a public page.** `cookies()` is a dynamic
+  API, so it opts the route out of static rendering. On `article/[slug]` — which pairs
+  `generateStaticParams` with `revalidate` — that made every slug _not_ prerendered at build time
+  500 with `DYNAMIC_SERVER_USAGE`. Public reads use **`createStaticClient()`** (cookie-free anon).
+  Only admin / auth-callback / upload / search keep `createClient()`.
+- **A page that reads `searchParams` can never be SSG.** `section/[slug]` is filter-driven, so it
+  is `force-dynamic` on purpose. Don't "optimise" it back to `revalidate`.
+- **`generateStaticParams` fails silently on a bad service key.** An invalid
+  `SUPABASE_SERVICE_ROLE_KEY` returns zero rows, not an error, so the build ships with nothing
+  prerendered — which is exactly what used to trigger the 500 above. There is now a
+  `console.warn` in the build log for this; check it if pages feel slow.
 
 ---
 
