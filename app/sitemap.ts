@@ -1,11 +1,11 @@
 import { MetadataRoute } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { SITE_CONFIG } from '@/lib/constants'
 
 export const revalidate = 3600 // 1 hour
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const baseUrl = SITE_CONFIG.url
 
   // Static pages

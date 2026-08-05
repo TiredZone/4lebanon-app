@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { PAGINATION } from '@/lib/constants'
 
 interface MostReadArticle {
@@ -10,7 +10,7 @@ interface MostReadArticle {
 }
 
 async function getMostReadArticles(): Promise<MostReadArticle[]> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const now = new Date().toISOString()
   const { data } = await supabase

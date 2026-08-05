@@ -29,6 +29,15 @@ export default function PrivacyPage() {
           </section>
 
           <section>
+            <h2 className="mb-3 text-xl font-bold text-gray-800">الإعلانات والمحتوى المموّل</h2>
+            <p className="leading-relaxed text-gray-600">
+              قد يعرض الموقع صوراً إعلانية مموّلة موسومة بكلمة «إعلان». عند النقر عليها يتم تحويلكم
+              إلى مواقع جهات خارجية تخضع لسياسات الخصوصية الخاصة بها. لا يستخدم الموقع نصوصاً برمجية
+              إعلانية من جهات خارجية ولا ملفات تعريف ارتباط لاستهداف الإعلانات.
+            </p>
+          </section>
+
+          <section>
             <h2 className="mb-3 text-xl font-bold text-gray-800">حماية البيانات</h2>
             <p className="leading-relaxed text-gray-600">
               نتخذ إجراءات أمنية مناسبة لحماية معلوماتكم من الوصول غير المصرح به أو التعديل أو

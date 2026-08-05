@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { formatTimeAr, formatDateAr, resolveAuthor } from '@/lib/utils'
 import Link from 'next/link'
 import type { ArticleListItem } from '@/types/database'
@@ -18,7 +18,7 @@ interface PageProps {
 }
 
 async function getRecentArticles(page: number = 1) {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const now = new Date().toISOString()
   const offset = (page - 1) * RECENT_PER_PAGE
 

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { sanitizeUrl } from '@/lib/security'
 import { SITE_CONFIG, PAGINATION } from '@/lib/constants'
 import { formatDateAr, calculateReadingTime, getStorageUrl, resolveAuthor } from '@/lib/utils'
@@ -15,6 +15,7 @@ import {
   RecommendedArticles,
 } from '@/components/article'
 import { JsonLd, newsArticleJsonLd, breadcrumbJsonLd } from '@/components/json-ld'
+import { AdSlot } from '@/components/ads'
 import type { ArticleWithRelations, ArticleListItem, Topic } from '@/types/database'
 
 export const revalidate = 600 // 10 minutes
@@ -24,7 +25,7 @@ interface PageProps {
 }
 
 async function getArticle(slug: string): Promise<ArticleWithRelations | null> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const decodedSlug = decodeURIComponent(slug)
   const now = new Date().toISOString()
 
@@ -99,7 +100,7 @@ async function getRelatedArticles(
   articleId: string,
   sectionId: number | null
 ): Promise<ArticleListItem[]> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const now = new Date().toISOString()
 
   let query = supabase
@@ -142,7 +143,7 @@ async function getRelatedArticles(
 // Increment view count (fire and forget)
 async function incrementViewCount(articleId: string) {
   try {
-    const supabase = await createClient()
+    const supabase = await createStaticClient()
     await supabase.rpc('increment_view_count', { article_id: articleId })
   } catch {
     // Silently fail - view count is not critical
@@ -152,12 +153,23 @@ async function incrementViewCount(articleId: string) {
 export async function generateStaticParams() {
   const { createServiceClient } = await import('@/lib/supabase/server')
   const supabase = createServiceClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('articles')
     .select('slug')
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .limit(100)
+
+  // A bad/missing SUPABASE_SERVICE_ROLE_KEY makes this return zero rows, which
+  // silently ships a build where no article is prerendered. Articles still
+  // render on demand, so this is not fatal — but it must not pass unnoticed.
+  if (error) {
+    console.warn(
+      `[generateStaticParams] article prerender list failed (${error.message}); ` +
+        'no articles will be prerendered. Check SUPABASE_SERVICE_ROLE_KEY for this environment.'
+    )
+  }
+
   return (data || []).map((a) => ({ slug: (a as { slug: string }).slug }))
 }
 
@@ -249,6 +261,9 @@ export default async function ArticlePage({ params }: PageProps) {
 
           {/* Main Reading Column */}
           <div className="article-reading-column">
+            {/* Promo slot — top of article (above breadcrumbs) */}
+            <AdSlot placement="article-top" variant="card" />
+
             {/* Breadcrumbs */}
             <nav className="article-breadcrumbs">
               <Link href="/">الرئيسية</Link>
@@ -389,12 +404,21 @@ export default async function ArticlePage({ params }: PageProps) {
             {/* Mobile Social Bar */}
             <SocialShareBar url={articleUrl} title={article.title_ar} variant="mobile" />
 
+            {/* Promo slot — in body */}
+            <AdSlot placement="article-in-body" variant="card" />
+
             {/* Recommended Articles */}
             <RecommendedArticles articles={relatedArticles} />
+
+            {/* Promo slot — after recommended */}
+            <AdSlot placement="article-after-recommended" variant="card" />
           </div>
 
-          {/* Right Sidebar - Trending (Desktop only) */}
-          <TrendingSidebar />
+          {/* Right Sidebar - Trending + Promo (Desktop only, single grid column) */}
+          <div className="article-right-rail">
+            <TrendingSidebar />
+            <AdSlot placement="article-sidebar" variant="sidebar" />
+          </div>
         </div>
       </article>
     </>

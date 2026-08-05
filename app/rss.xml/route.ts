@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { SITE_CONFIG } from '@/lib/constants'
 import { getStorageUrl, resolveAuthor } from '@/lib/utils'
 
@@ -41,7 +41,7 @@ function sanitizeRssUrl(url: string | null): string | null {
 }
 
 export async function GET() {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const baseUrl = SITE_CONFIG.url
 
   // Get latest published articles

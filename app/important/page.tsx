@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { PAGINATION } from '@/lib/constants'
 import { GlassEditorialCard } from '@/components/glass-editorial-card'
 import { sortByTier } from '@/lib/utils'
@@ -18,7 +18,7 @@ interface PageProps {
 }
 
 async function getImportantArticles(page: number = 1) {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
   const now = new Date().toISOString()
   const perPage = PAGINATION.defaultPageSize
   const offset = (page - 1) * perPage

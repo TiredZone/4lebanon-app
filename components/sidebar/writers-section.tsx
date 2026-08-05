@@ -1,11 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createStaticClient } from '@/lib/supabase/server'
 import { getStorageUrl } from '@/lib/utils'
 import type { Profile } from '@/types/database'
 
 async function getAuthors(): Promise<Profile[]> {
-  const supabase = await createClient()
+  const supabase = await createStaticClient()
 
   const { data } = await supabase
     .from('profiles')
