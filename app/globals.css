@@ -6912,6 +6912,106 @@ section a[href*='/recent'] {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
+/* ---- Rotating promo -------------------------------------------------------
+   All slides stack inside the one reserved box and crossfade, so advancing
+   never moves the page. Inactive slides are click-through-proof so only the
+   visible advertiser can receive a click. */
+.promo-carousel {
+  display: block;
+  /* Vertical panning stays the browser's; horizontal is ours. Without this iOS
+     Safari claims a sideways drag for scrolling and fires touchcancel instead of
+     touchend, so the swipe never registers. */
+  touch-action: pan-y;
+}
+
+.promo-carousel .promo-slot__frame {
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: box-shadow var(--duration-slow, 350ms) var(--ease-out-expo, ease);
+}
+
+.promo-carousel:hover .promo-slot__frame {
+  box-shadow: 0 8px 32px rgba(225, 29, 72, 0.12);
+}
+
+.promo-slot--sidebar .promo-carousel .promo-slot__frame {
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.promo-carousel__slide {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms var(--ease-smooth, ease);
+  /* Stop iOS long-press link preview / image drag stealing the gesture. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+.promo-carousel__slide[data-active] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* The frame clips with overflow:hidden, so the global focus outline (drawn 2px
+   OUTSIDE the border box) would be cut away entirely. Draw the ring inside the
+   slide instead, on a pseudo-element that paints above the image. */
+.promo-carousel__slide:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--aura-red, #830005);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.promo-carousel__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-block-start: 0.5rem;
+}
+
+/* 8px visible dot inside a 22px hit area (border-box + padding + content-box clip). */
+.promo-carousel__dot {
+  width: 22px;
+  height: 22px;
+  padding: 7px;
+  border: 0;
+  border-radius: 999px;
+  /* Solid, not a 0.4 alpha — the inactive dots are the only manual control and
+     need to clear 3:1 against white (WCAG 1.4.11). */
+  background-color: var(--muted-foreground, #64748b);
+  background-clip: content-box;
+  cursor: pointer;
+  transition: background-color var(--duration-normal, 250ms) var(--ease-smooth, ease);
+}
+
+.promo-carousel__dot:hover {
+  background-color: #334155;
+}
+
+.promo-carousel__dot[data-active] {
+  background-color: var(--aura-red, #830005);
+}
+
+.promo-carousel__dot:focus-visible {
+  outline: 2px solid var(--aura-red, #830005);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-carousel__slide {
+    transition: none;
+  }
+}
+
 /* Right rail wraps trending + sidebar ad into the single 3rd grid column. */
 .article-right-rail {
   display: none;

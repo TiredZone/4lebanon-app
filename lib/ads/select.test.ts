@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { AdCreative } from './types'
-import { getEligibleAds, pickAd } from './select'
+import { getEligibleAds, pickAd, startIndexFor } from './select'
+import { ADS } from './config'
 
 const base: AdCreative = {
   id: 'a',
@@ -73,5 +74,70 @@ describe('pickAd', () => {
     // total weight = 2; seed -1 -> ((-1 % 2) + 2) % 2 = 1 -> 'b'; 2.9 -> trunc 2 -> 0 -> 'a'
     expect(pickAd(ads, -1)?.id).toBe('b')
     expect(pickAd(ads, 2.9)?.id).toBe('a')
+  })
+})
+
+describe('startIndexFor', () => {
+  it('returns 0 when there is nothing to rotate', () => {
+    expect(startIndexFor('home-top', 0)).toBe(0)
+    expect(startIndexFor('home-top', 1)).toBe(0)
+  })
+
+  it('is stable for the same placement — SSR and hydration must agree', () => {
+    expect(startIndexFor('home-top', 3)).toBe(startIndexFor('home-top', 3))
+  })
+
+  it('always lands inside the slide range', () => {
+    const placements = ['home-top', 'home-after-featured', 'home-after-latest', 'article-top']
+    for (const placement of placements) {
+      for (const count of [2, 3, 4, 7]) {
+        const index = startIndexFor(placement, count)
+        expect(Number.isInteger(index)).toBe(true)
+        expect(index).toBeGreaterThanOrEqual(0)
+        expect(index).toBeLessThan(count)
+      }
+    }
+  })
+
+  it('does not give every placement the same lead slide', () => {
+    const leads = new Set(
+      ['home-top', 'home-after-featured', 'home-after-latest', 'home-before-mostread'].map((p) =>
+        startIndexFor(p, 2)
+      )
+    )
+    expect(leads.size).toBeGreaterThan(1)
+  })
+})
+
+describe('ADS config invariants', () => {
+  it('gives every placement a single aspect ratio', () => {
+    // A slot reserves ONE box for all of its creatives. Mixed ratios inside a
+    // placement would shift the page each time the carousel advances, which is
+    // the exact CLS failure the ad system exists to avoid.
+    const byPlacement = new Map<string, AdCreative[]>()
+    for (const ad of ADS) {
+      byPlacement.set(ad.placement, [...(byPlacement.get(ad.placement) ?? []), ad])
+    }
+
+    const offenders: string[] = []
+    for (const [placement, ads] of byPlacement) {
+      const ratios = new Set(ads.map((ad) => (ad.width / ad.height).toFixed(4)))
+      if (ratios.size > 1) {
+        offenders.push(
+          `${placement}: ${ads.map((ad) => `${ad.id}=${ad.width}x${ad.height}`).join(', ')}`
+        )
+      }
+    }
+
+    expect(offenders).toEqual([])
+  })
+
+  it('gives every creative a unique id and positive dimensions', () => {
+    const ids = ADS.map((ad) => ad.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const ad of ADS) {
+      expect(ad.width).toBeGreaterThan(0)
+      expect(ad.height).toBeGreaterThan(0)
+    }
   })
 })

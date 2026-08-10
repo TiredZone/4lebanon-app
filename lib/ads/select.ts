@@ -28,6 +28,23 @@ export function getEligibleAds(
 }
 
 /**
+ * Which slide a placement should lead with, derived from the placement name.
+ *
+ * Every wide slot shares the same creative pool, so without an offset all of
+ * them would lead with the same advertiser. Hashing the placement name spreads
+ * the lead position around while staying fully deterministic — server and
+ * client compute the same value, so hydration matches.
+ */
+export function startIndexFor(placement: string, count: number): number {
+  if (count <= 1) return 0
+  let hash = 0
+  for (let i = 0; i < placement.length; i++) {
+    hash = (hash * 31 + placement.charCodeAt(i)) | 0
+  }
+  return Math.abs(hash) % count
+}
+
+/**
  * Pick one ad by weight. Deterministic: with no seed it returns the first ad,
  * so server and client render identically (no hydration mismatch).
  */
