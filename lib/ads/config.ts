@@ -93,10 +93,8 @@ export const ADS: AdCreative[] = [
     height: 200,
   },
 
-  // MDM Atelier shares the four wide homepage slots with Toyota, so each of
-  // those slots rotates between the two. The article slots stay single-advertiser
-  // for now; adding `mdm-atelier-card-728x200.jpg` entries there would rotate
-  // them too.
+  // MDM Atelier shares every filled slot with Toyota, so all of them rotate
+  // between the two advertisers.
   {
     id: 'mdm-home-top',
     placement: 'home-top',
@@ -132,6 +130,24 @@ export const ADS: AdCreative[] = [
     alt: MDM_ALT,
     width: 1200,
     height: 250,
+  },
+  {
+    id: 'mdm-article-top',
+    placement: 'article-top',
+    src: '/ads/mdm-atelier-card-728x200.jpg',
+    href: MDM_HREF,
+    alt: MDM_ALT,
+    width: 728,
+    height: 200,
+  },
+  {
+    id: 'mdm-article-in-body',
+    placement: 'article-in-body',
+    src: '/ads/mdm-atelier-card-728x200.jpg',
+    href: MDM_HREF,
+    alt: MDM_ALT,
+    width: 728,
+    height: 200,
   },
   // NOTE: `article-sidebar` and `article-after-recommended` are deliberately
   // left empty. An unfilled slot renders nothing at all rather than a grey

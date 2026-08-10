@@ -86,53 +86,103 @@ function useTabVisible(): boolean {
 export function PromoCarousel({ slides, aspectRatio, sizes, startIndex }: PromoCarouselProps) {
   const count = slides.length
   const [active, setActive] = useState(() => (count > 0 ? startIndex % count : 0))
-  const [interacting, setInteracting] = useState(false)
+
+  // Three independent pause reasons. Sharing one flag let a mouseleave cancel a
+  // pause that focus was still asserting, which advanced the slide out from
+  // under a focused link.
+  const [hovering, setHovering] = useState(false)
+  const [focusWithin, setFocusWithin] = useState(false)
+  const [touching, setTouching] = useState(false)
+
   const touchStartX = useRef<number | null>(null)
+  /** Set once a touch passes the threshold, so the trailing click can be swallowed. */
+  const swiped = useRef(false)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const tabVisible = useTabVisible()
   // Only rotate while the slot is actually on screen.
   const { ref: inViewRef, inView } = useInView({ threshold: 0.25 })
 
+  const setRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef.current = node
+      inViewRef(node)
+    },
+    [inViewRef]
+  )
+
   const go = useCallback(
     (delta: number) => setActive((current) => (current + delta + count) % count),
     [count]
   )
 
-  const autoplay = count > 1 && inView && tabVisible && !interacting && !reducedMotion
+  const autoplay =
+    count > 1 && inView && tabVisible && !hovering && !focusWithin && !touching && !reducedMotion
 
   useEffect(() => {
     if (!autoplay) return
-    const timer = window.setInterval(() => go(1), AUTOPLAY_MS)
+    const timer = window.setInterval(() => {
+      // Never advance while something inside holds focus: the focused link would
+      // become aria-hidden mid-keypress and Enter would open the wrong advertiser.
+      const node = containerRef.current
+      if (node && node.contains(document.activeElement)) return
+      go(1)
+    }, AUTOPLAY_MS)
     return () => window.clearInterval(timer)
   }, [autoplay, go])
 
   const onTouchStart = (event: React.TouchEvent) => {
     touchStartX.current = event.touches[0]?.clientX ?? null
-    setInteracting(true)
+    swiped.current = false
+    setTouching(true)
+  }
+
+  const onTouchMove = (event: React.TouchEvent) => {
+    const start = touchStartX.current
+    if (start === null) return
+    const delta = (event.touches[0]?.clientX ?? start) - start
+    if (Math.abs(delta) >= SWIPE_THRESHOLD) swiped.current = true
+  }
+
+  /** Runs for touchend AND touchcancel — a cancelled touch must not latch the pause. */
+  const endTouch = () => {
+    touchStartX.current = null
+    setTouching(false)
   }
 
   const onTouchEnd = (event: React.TouchEvent) => {
     const start = touchStartX.current
-    touchStartX.current = null
-    setInteracting(false)
+    endTouch()
     if (start === null || count < 2) return
     const delta = (event.changedTouches[0]?.clientX ?? start) - start
     // Below the threshold this was a tap, so leave the link's click alone.
     if (Math.abs(delta) < SWIPE_THRESHOLD) return
+    swiped.current = true
     go(delta < 0 ? 1 : -1)
+  }
+
+  // A swipe must never be treated as a tap on the advertiser.
+  const onClickCapture = (event: React.MouseEvent) => {
+    if (!swiped.current) return
+    swiped.current = false
+    event.preventDefault()
+    event.stopPropagation()
   }
 
   return (
     <div
-      ref={inViewRef}
+      ref={setRefs}
       className="promo-carousel"
-      onMouseEnter={() => setInteracting(true)}
-      onMouseLeave={() => setInteracting(false)}
-      onFocus={() => setInteracting(true)}
-      onBlur={() => setInteracting(false)}
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      onFocus={() => setFocusWithin(true)}
+      onBlur={() => setFocusWithin(false)}
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onTouchCancel={endTouch}
+      onClickCapture={onClickCapture}
     >
       <span className="promo-slot__frame" style={{ aspectRatio }}>
         {slides.map((slide, index) => {
