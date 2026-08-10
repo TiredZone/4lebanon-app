@@ -2,9 +2,10 @@ import Image from 'next/image'
 import { sanitizeUrl } from '@/lib/security'
 import { getStorageUrl } from '@/lib/utils'
 import { ADS } from '@/lib/ads/config'
-import { getEligibleAds, pickAd } from '@/lib/ads/select'
+import { getEligibleAds, startIndexFor } from '@/lib/ads/select'
 import { adsEnabled } from '@/lib/ads/flags'
 import type { AdPlacement, AdVariant } from '@/lib/ads/types'
+import { PromoCarousel, type PromoSlide } from './promo-carousel'
 
 interface AdSlotProps {
   placement: AdPlacement
@@ -20,18 +21,40 @@ function resolveSrc(src: string): string | null {
   return getStorageUrl(src)
 }
 
+/** A slide that has passed URL sanitizing and src resolution. */
+type ValidatedSlide = PromoSlide & { width: number; height: number; label?: string }
+
 export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) {
   if (!adsEnabled()) return null
 
-  const ad = pickAd(getEligibleAds(ADS, placement))
-  if (!ad) return null
+  // Every eligible creative becomes a slide. One creative renders as a plain
+  // ad; two or more rotate. Validation happens here, on the server, so the
+  // client component only ever receives hrefs that passed sanitizeUrl().
+  const slides: ValidatedSlide[] = getEligibleAds(ADS, placement).flatMap((ad) => {
+    const href = sanitizeUrl(ad.href)
+    const src = resolveSrc(ad.src)
+    if (!href || !src) return []
+    return [
+      {
+        id: ad.id,
+        href,
+        src,
+        alt: ad.alt,
+        unoptimized: src.toLowerCase().endsWith('.svg'),
+        width: ad.width,
+        height: ad.height,
+        label: ad.label,
+      },
+    ]
+  })
 
-  const safeHref = sanitizeUrl(ad.href)
-  const resolvedSrc = resolveSrc(ad.src)
-  if (!safeHref || !resolvedSrc) return null
+  if (slides.length === 0) return null
 
-  const label = ad.label ?? 'إعلان'
-  const isSvg = resolvedSrc.toLowerCase().endsWith('.svg')
+  const first = slides[0]
+  const label = first.label ?? 'إعلان'
+  // One shared box for the whole slot, taken from the first creative. Every
+  // creative in a placement must share this ratio — enforced by a unit test.
+  const aspectRatio = `${first.width} / ${first.height}`
   const sizes =
     variant === 'sidebar'
       ? '320px'
@@ -45,24 +68,33 @@ export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) 
       aria-label="محتوى مموّل"
     >
       <span className="promo-slot__label">{label}</span>
-      <a
-        href={safeHref}
-        target="_blank"
-        rel="noopener noreferrer sponsored"
-        className="promo-slot__link"
-        data-promo-id={ad.id}
-      >
-        <span className="promo-slot__frame" style={{ aspectRatio: `${ad.width} / ${ad.height}` }}>
-          <Image
-            src={resolvedSrc}
-            alt={ad.alt}
-            fill
-            sizes={sizes}
-            className="promo-slot__img"
-            unoptimized={isSvg}
-          />
-        </span>
-      </a>
+      {slides.length === 1 ? (
+        <a
+          href={first.href}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="promo-slot__link"
+          data-promo-id={first.id}
+        >
+          <span className="promo-slot__frame" style={{ aspectRatio }}>
+            <Image
+              src={first.src}
+              alt={first.alt}
+              fill
+              sizes={sizes}
+              className="promo-slot__img"
+              unoptimized={first.unoptimized}
+            />
+          </span>
+        </a>
+      ) : (
+        <PromoCarousel
+          slides={slides}
+          aspectRatio={aspectRatio}
+          sizes={sizes}
+          startIndex={startIndexFor(placement, slides.length)}
+        />
+      )}
     </aside>
   )
 }

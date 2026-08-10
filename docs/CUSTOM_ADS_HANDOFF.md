@@ -1,25 +1,35 @@
 # Custom Ads — Session Handoff / Resume Here
 
-> **Purpose:** pick up the custom ad work on a different machine. Everything below reflects the
-> real state of the code as of the last commit on `feat/custom-ads`. Read this top-to-bottom and
-> you have the whole context — no prior chat needed.
+> **Purpose:** pick up the custom ad work on a different machine. Read this top-to-bottom and you
+> have the whole context — no prior chat needed.
 >
-> **On the new device:** `git fetch && git checkout feat/custom-ads && git pull && npm install`
+> **On the new device:** `git fetch && git checkout main && git pull && npm install`
 
 ---
 
 ## 1. Where things stand right now
 
-|                 |                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------- |
-| **Branch**      | `feat/custom-ads` (16 commits ahead of `main`, working tree clean)                 |
-| **PR**          | https://github.com/TiredZone/4lebanon-app/pull/1 — open, **not merged** on purpose |
-| **Preview URL** | https://4lebanon-app-git-feat-custom-ads-tiredzones-projects.vercel.app            |
-| **Production**  | `4lebanon.com` — **untouched**, no ads visible (flag off)                          |
-| **Status**      | Built, reviewed, verified, deployed to preview. Waiting on client sign-off.        |
+|                 |                                                                              |
+| --------------- | ---------------------------------------------------------------------------- |
+| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com** |
+| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`        |
+| **Advertisers** | Toyota Lebanon (BUMC) · MDM Atelier                                          |
+| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                 |
 
-**Ads are ON in the Vercel Preview environment only** (`NEXT_PUBLIC_ADS_ENABLED=true` scoped to
-Preview). Production has no such variable, so `main` stays clean.
+**Live today (phase 1):** 4 wide homepage banners + 2 article banners, all Toyota.
+
+**Phase 2 (carousel) adds:** the 4 wide homepage slots rotate between Toyota and MDM Atelier. Built
+on `feat/promo-carousel`, reviewed on that branch's Vercel preview before merge. Article slots stay
+single-advertiser.
+
+⚠️ **The flag is now build-time-baked into Production too.** Changing it requires a redeploy, not
+just an env edit.
+
+Also shipped in the phase-1 merge, unrelated to ads: **`createStaticClient()`** in
+`lib/supabase/server.ts`. `createClient()` awaits `cookies()` (a dynamic API), which combined with
+`generateStaticParams` + `revalidate` made non-prerendered article/section pages return 500
+(`DYNAMIC_SERVER_USAGE`). The 13 public read paths now use the cookie-free client; **admin, auth
+callback, upload and search must keep `createClient()`**.
 
 ---
 
@@ -38,12 +48,14 @@ controls who advertises.
 | --------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `lib/ads/types.ts`                            | `AdPlacement` union, `AdVariant` (`wide`\|`card`\|`sidebar`), `AdCreative` interface |
 | `lib/ads/config.ts`                           | **THE file you edit to change ads** — the `ADS[]` array                              |
-| `lib/ads/select.ts`                           | Pure `getEligibleAds()` + `pickAd()`                                                 |
-| `lib/ads/select.test.ts`                      | 9 Vitest unit tests (repo's first tests)                                             |
+| `lib/ads/select.ts`                           | Pure `getEligibleAds()`, `pickAd()`, `startIndexFor()`                               |
+| `lib/ads/select.test.ts`                      | Unit tests, incl. the per-placement aspect-ratio invariant over the real config      |
 | `lib/ads/flags.ts`                            | `adsEnabled()`                                                                       |
-| `components/ads/ad-slot.tsx`                  | `<AdSlot>` **server** component (renders the ad)                                     |
+| `components/ads/ad-slot.tsx`                  | `<AdSlot>` **server** component: validates creatives, static vs rotating             |
+| `components/ads/promo-carousel.tsx`           | `'use client'` crossfade rotator (autoplay, swipe, dots)                             |
 | `components/ads/index.ts`                     | Barrel export                                                                        |
-| `public/ads/*.svg`                            | 3 grey "مساحة إعلانية / Your ad here" demo placeholders                              |
+| `public/ads/*.jpg`                            | Toyota + MDM Atelier creatives (`*-source-*` files are advertiser originals)         |
+| `public/ads/*.svg`                            | 3 grey "مساحة إعلانية / Your ad here" demo placeholders (unreferenced)               |
 | `lib/env.ts`                                  | `NEXT_PUBLIC_ADS_ENABLED` in Zod schema **and** `validateClientEnv()`                |
 | `app/globals.css`                             | `.promo-slot*` styles (3 variants) + `.article-right-rail`                           |
 | `app/page.tsx`, `app/article/[slug]/page.tsx` | `<AdSlot>` insertions                                                                |
@@ -57,6 +69,19 @@ controls who advertises.
 3. Otherwise it renders an `<aside>` with an "إعلان" label + `<a target="_blank"
 rel="noopener noreferrer sponsored" data-promo-id="...">` wrapping a `next/image` inside an
    `aspect-ratio` box built from the creative's own `width`/`height` → **zero CLS**.
+4. **One creative for that placement → static ad** (no JS). **Two or more → they rotate** in
+   `<PromoCarousel>`: every slide is in the SSR HTML inside the one reserved box and crossfades, so
+   advancing never moves the page and no-JS visitors still see an ad. Autoplays every 6s; pauses on
+   hover/focus, on a hidden tab, and when scrolled out of view; honours `prefers-reduced-motion`;
+   supports swipe and dots. Hidden slides get `aria-hidden` + `tabIndex={-1}` + `pointer-events:none`
+   so only the visible advertiser can be tabbed to or clicked.
+
+**Hard rule:** every creative sharing a placement must have the **same width/height ratio** — the
+slot reserves one box. A unit test over the real `ADS` config enforces this, so a bad config edit
+fails `npm test` rather than silently shipping layout shift.
+
+`weight` only affects `pickAd()` and has **no effect** on a rotating placement (every eligible
+creative is shown in turn).
 
 ### Live slots
 
@@ -64,18 +89,24 @@ Five `<AdSlot>`s are wired into the homepage and four into the article page, but
 renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
 a placeholder.
 
-**Homepage — 5 wired, 4 filled:**
+**Homepage — 5 wired, 4 filled, all four rotating (Toyota + MDM):**
 `home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
 [dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
 الأكثر قراءة
+
+All four filled wide slots use **1200×250** (4.8:1) so they can rotate. Each slot's lead slide is
+offset deterministically by `startIndexFor(placement, count)`, so they don't all open with the same
+advertiser.
 
 `home-mid-sections` repeats after every section except the last, so filling it adds ~3 more
 banners at once. It was deliberately left empty to keep the page from feeling cluttered — add an
 entry to switch it back on.
 
-**Article — 4 wired, 2 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
-recommended) are live. `article-sidebar` (under trending, desktop ≥1500px only) and
-`article-after-recommended` have no creative and render nothing; the sidebar needs a 300×250.
+**Article — 4 wired, 2 filled, single-advertiser:** `article-top` (above breadcrumbs) and
+`article-in-body` (before recommended) run Toyota's 728×200. `article-sidebar` (under trending,
+desktop ≥1500px only) and `article-after-recommended` have no creative and render nothing; the
+sidebar needs a 300×250. An `mdm-atelier-card-728x200.jpg` already exists — adding entries for it
+would make the article slots rotate too.
 
 The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
 case an unsold slot should ever advertise itself again — delete them freely.

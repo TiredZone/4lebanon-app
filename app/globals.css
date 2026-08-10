@@ -6912,6 +6912,84 @@ section a[href*='/recent'] {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
 
+/* ---- Rotating promo -------------------------------------------------------
+   All slides stack inside the one reserved box and crossfade, so advancing
+   never moves the page. Inactive slides are click-through-proof so only the
+   visible advertiser can receive a click. */
+.promo-carousel {
+  display: block;
+}
+
+.promo-carousel .promo-slot__frame {
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: box-shadow var(--duration-slow, 350ms) var(--ease-out-expo, ease);
+}
+
+.promo-carousel:hover .promo-slot__frame {
+  box-shadow: 0 8px 32px rgba(225, 29, 72, 0.12);
+}
+
+.promo-slot--sidebar .promo-carousel .promo-slot__frame {
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.promo-carousel__slide {
+  position: absolute;
+  inset: 0;
+  display: block;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms var(--ease-smooth, ease);
+}
+
+.promo-carousel__slide[data-active] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.promo-carousel__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-block-start: 0.5rem;
+}
+
+/* 8px visible dot inside a 22px hit area (border-box + padding + content-box clip). */
+.promo-carousel__dot {
+  width: 22px;
+  height: 22px;
+  padding: 7px;
+  border: 0;
+  border-radius: 999px;
+  background-color: rgba(100, 116, 139, 0.4);
+  background-clip: content-box;
+  cursor: pointer;
+  transition: background-color var(--duration-normal, 250ms) var(--ease-smooth, ease);
+}
+
+.promo-carousel__dot:hover {
+  background-color: rgba(100, 116, 139, 0.7);
+}
+
+.promo-carousel__dot[data-active] {
+  background-color: var(--aura-red, #830005);
+}
+
+.promo-carousel__dot:focus-visible {
+  outline: 2px solid var(--aura-red, #830005);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-carousel__slide {
+    transition: none;
+  }
+}
+
 /* Right rail wraps trending + sidebar ad into the single 3rd grid column. */
 .article-right-rail {
   display: none;
