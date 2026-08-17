@@ -23,7 +23,15 @@ import type { AdCreative } from './types'
  * rotating placement, where every eligible creative is shown in turn.
  */
 
-/** Toyota Lebanon (BUMC) — Lite Ace / Dyna 200 commercial vehicles campaign. */
+/**
+ * Toyota Lebanon (BUMC) — Lite Ace / Dyna 200 commercial vehicles campaign.
+ *
+ * PAUSED: every Toyota entry below carries `active: false` at the client's
+ * request, so none of them render. The creatives stay in /public/ads/ and the
+ * entries stay here — drop the `active: false` lines to switch the campaign
+ * back on. While Toyota is paused, MDM Atelier is the only advertiser in each
+ * shared slot, so those slots render as plain static ads instead of rotating.
+ */
 const TOYOTA_HREF = 'https://toyotalebanon.com/Vehicles/11/Dyna'
 const TOYOTA_ALT = 'تويوتا لبنان — لايت إيس ودينا 200 للمركبات التجارية'
 
@@ -34,6 +42,7 @@ const MDM_ALT = 'إم دي إم أتيليه — أزياء نسائية'
 export const ADS: AdCreative[] = [
   {
     id: 'toyota-home-top',
+    active: false,
     placement: 'home-top',
     src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
     href: TOYOTA_HREF,
@@ -43,6 +52,7 @@ export const ADS: AdCreative[] = [
   },
   {
     id: 'toyota-home-after-featured',
+    active: false,
     // Uses the 1200x250 creative like the other wide slots: every slot that
     // rotates has to reserve one shared box, so all wide creatives match 4.8:1.
     placement: 'home-after-featured',
@@ -54,6 +64,7 @@ export const ADS: AdCreative[] = [
   },
   {
     id: 'toyota-home-after-latest',
+    active: false,
     placement: 'home-after-latest',
     src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
     href: TOYOTA_HREF,
@@ -67,6 +78,7 @@ export const ADS: AdCreative[] = [
   // wired in app/page.tsx — add an entry here to switch it back on.
   {
     id: 'toyota-home-before-mostread',
+    active: false,
     placement: 'home-before-mostread',
     src: '/ads/toyota-lite-ace-dyna-wide-1200x250.jpg',
     href: TOYOTA_HREF,
@@ -76,6 +88,7 @@ export const ADS: AdCreative[] = [
   },
   {
     id: 'toyota-article-top',
+    active: false,
     placement: 'article-top',
     src: '/ads/toyota-lite-ace-dyna-card-728x200.jpg',
     href: TOYOTA_HREF,
@@ -85,6 +98,7 @@ export const ADS: AdCreative[] = [
   },
   {
     id: 'toyota-article-in-body',
+    active: false,
     placement: 'article-in-body',
     src: '/ads/toyota-lite-ace-dyna-card-728x200.jpg',
     href: TOYOTA_HREF,
@@ -93,8 +107,9 @@ export const ADS: AdCreative[] = [
     height: 200,
   },
 
-  // MDM Atelier shares every filled slot with Toyota, so all of them rotate
-  // between the two advertisers.
+  // MDM Atelier fills the same slots as Toyota. Those slots rotate between the
+  // two advertisers whenever both are active; with Toyota paused, MDM is the
+  // sole creative in each one and they render statically.
   {
     id: 'mdm-home-top',
     placement: 'home-top',
