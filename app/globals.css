@@ -6882,6 +6882,15 @@ section a[href*='/recent'] {
   box-shadow: 0 8px 32px rgba(225, 29, 72, 0.12);
 }
 
+/* Same plate as __link, for an advertiser with no landing page. Deliberately
+   has no hover state and no pointer cursor: there is nothing to click. */
+.promo-slot__plate {
+  display: block;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
 .promo-slot__frame {
   position: relative;
   display: block;
@@ -6907,7 +6916,8 @@ section a[href*='/recent'] {
 }
 
 /* Sidebar: rounder glass-ish look to match the trending widget */
-.promo-slot--sidebar .promo-slot__link {
+.promo-slot--sidebar .promo-slot__link,
+.promo-slot--sidebar .promo-slot__plate {
   border-radius: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
 }

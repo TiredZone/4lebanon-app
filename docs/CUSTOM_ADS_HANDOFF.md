@@ -9,14 +9,24 @@
 
 ## 1. Where things stand right now
 
-|                 |                                                                              |
-| --------------- | ---------------------------------------------------------------------------- |
-| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com** |
-| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`        |
-| **Advertisers** | MDM Atelier · ~~Toyota Lebanon (BUMC)~~ **paused**                           |
-| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                 |
+|                 |                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**             |
+| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                    |
+| **Advertisers** | MDM Atelier · Jisr Al Kadi Restaurant _(no link)_ · ~~Toyota Lebanon (BUMC)~~ **paused** |
+| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                             |
 
-**Live today:** 4 wide homepage banners + 2 article banners, all MDM Atelier.
+**Live today:** 4 wide homepage banners + 2 article banners, each rotating between **MDM Atelier**
+and **Jisr Al Kadi Restaurant**.
+
+⚠️ **Jisr Al Kadi has no landing page.** The client supplied the logo only, so its six entries in
+`lib/ads/config.ts` carry **no `href`** and render as _unlinked plates_ — same reserved box, same
+`إعلان` label, nothing to click. `href` is now **optional** on `AdCreative`; add
+`href: 'https://…'` to those entries the moment a URL exists and they become links, no other
+change needed. Its artwork was a near-square logo (1290×1295), which cannot be cropped into the
+4.8:1 wide box, so the banners were **recomposed**: the logo tight-cropped out of the source
+(the original has 4px black bars on the top and bottom edges) and centred at 84% of the box
+height on white. The trimmed original is kept at `public/ads/jisr-al-kadi-source-1290x1287.png`.
 
 ⚠️ **Toyota is paused** (client request, 2026-08-17). Every Toyota entry in `lib/ads/config.ts`
 carries `active: false`, so `getEligibleAds()` filters them out and nothing Toyota renders. The
@@ -95,7 +105,7 @@ Five `<AdSlot>`s are wired into the homepage and four into the article page, but
 renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
 a placeholder.
 
-**Homepage — 5 wired, 4 filled (MDM only while Toyota is paused; all four rotate once it returns):**
+**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Jisr Al Kadi; a third joins once Toyota returns):**
 `home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
 [dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
 الأكثر قراءة
@@ -108,9 +118,9 @@ advertiser.
 banners at once. It was deliberately left empty to keep the page from feeling cluttered — add an
 entry to switch it back on.
 
-**Article — 4 wired, 2 filled, single-advertiser:** `article-top` (above breadcrumbs) and
-`article-in-body` (before recommended) run MDM Atelier's 728×200 (Toyota's matching 728×200 entries
-are paused). `article-sidebar` (under trending, desktop ≥1500px only) and
+**Article — 4 wired, 2 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
+recommended) rotate MDM Atelier ⇄ Jisr Al Kadi at 728×200 (Toyota's matching 728×200 entries are
+paused). `article-sidebar` (under trending, desktop ≥1500px only) and
 `article-after-recommended` have no creative and render nothing; the sidebar needs a 300×250.
 
 The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
@@ -152,12 +162,23 @@ privacy note OK.
   id: 'toyota-home-top',            // stable slug, also the data-promo-id
   placement: 'home-top',            // must be a value from AdPlacement
   src: '/ads/toyota-banner.webp',
-  href: 'https://toyota-lebanon.example/landing',
+  href: 'https://toyota-lebanon.example/landing',  // OPTIONAL — omit for an unlinked ad
   alt: 'إعلان تويوتا لبنان',        // Arabic alt text
   width: 1200,                      // ← the image's REAL pixel dimensions
   height: 200,
 },
 ```
+
+**No landing page?** Omit `href` entirely (don't pass `''`). The creative still runs — `<AdSlot>`
+renders a `<span class="promo-slot__plate">` instead of an `<a>`, with no hover affordance and no
+tab stop, and in a rotating slot it takes its turn like any other slide. An `href` that is present
+but _fails_ `sanitizeUrl()` is still dropped, so a typo'd URL can't silently de-link an advertiser
+— a unit test guards that.
+
+**Square/odd-shaped artwork?** The slot cannot crop a 1:1 logo into a 4.8:1 box without cutting the
+brand name off, so recompose instead of forcing it: tight-crop the artwork, then centre it on a
+canvas of the slot's exact dimensions (see the Jisr Al Kadi note in §1). `sharp` is already a
+dependency, so this is a ~10-line script.
 
 3. Commit + push. Merge to `main` when it should go live.
 
@@ -248,7 +269,7 @@ real click reporting (paid add-on), optional per-slot mobile creatives.
 
 ```bash
 npm run dev          # localhost:3000 (ads OFF unless .env.local has NEXT_PUBLIC_ADS_ENABLED=true)
-npm test             # 9 selector unit tests
+npm test             # 18 selector unit tests
 npm run typecheck    # tsc --noEmit
 npm run lint         # 3 pre-existing warnings in unrelated files are expected
 npm run build        # full production build

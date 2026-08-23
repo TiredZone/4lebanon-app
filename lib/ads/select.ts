@@ -12,7 +12,9 @@ export function getEligibleAds(
   return ads.filter((ad) => {
     if (ad.placement !== placement) return false
     if (ad.active === false) return false
-    if (!ad.src || !ad.href) return false
+    // `href` is optional — a creative with no landing page still renders,
+    // unlinked. Only a missing image makes an entry unusable.
+    if (!ad.src) return false
     // Fail safe: a malformed date string parses to NaN — ignore the constraint
     // rather than letting NaN comparisons silently keep (or hide) the ad.
     if (ad.startAt) {

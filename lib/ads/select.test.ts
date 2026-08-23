@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { sanitizeUrl } from '../security'
 import type { AdCreative } from './types'
 import { getEligibleAds, pickAd, startIndexFor } from './select'
 import { ADS } from './config'
@@ -24,12 +27,20 @@ describe('getEligibleAds', () => {
     expect(getEligibleAds(ads, 'home-after-latest')).toEqual([])
   })
 
-  it('excludes ads missing src or href', () => {
-    const ads: AdCreative[] = [
-      { ...base, id: 'no-src', src: '' },
-      { ...base, id: 'no-href', href: '' },
-    ]
+  it('excludes ads missing src', () => {
+    const ads: AdCreative[] = [{ ...base, id: 'no-src', src: '' }]
     expect(getEligibleAds(ads, 'home-after-latest')).toEqual([])
+  })
+
+  it('keeps a creative with no href — it renders unlinked', () => {
+    // An advertiser can supply artwork without a landing page. That creative
+    // must still run; AdSlot renders it as a plate instead of a link.
+    const noHref: AdCreative = { ...base, id: 'no-href', href: undefined }
+    const emptyHref: AdCreative = { ...base, id: 'empty-href', href: '' }
+    expect(getEligibleAds([noHref, emptyHref], 'home-after-latest').map((a) => a.id)).toEqual([
+      'no-href',
+      'empty-href',
+    ])
   })
 
   it('respects startAt / endAt flight window', () => {
@@ -138,6 +149,25 @@ describe('ADS config invariants', () => {
     for (const ad of ADS) {
       expect(ad.width).toBeGreaterThan(0)
       expect(ad.height).toBeGreaterThan(0)
+    }
+  })
+
+  it('points every creative at a real local file under /ads/', () => {
+    // A typo'd src renders a broken slot, which no test would otherwise catch.
+    for (const ad of ADS) {
+      if (!ad.src.startsWith('/')) continue
+      expect(existsSync(join(process.cwd(), 'public', ad.src)), `missing file: ${ad.src}`).toBe(
+        true
+      )
+    }
+  })
+
+  it('only carries hrefs that survive sanitizing', () => {
+    // An href that fails sanitizeUrl() is dropped at render time, so the slot
+    // would silently lose that advertiser. Omitting href is fine; a bad one is not.
+    for (const ad of ADS) {
+      if (ad.href === undefined) continue
+      expect(sanitizeUrl(ad.href), `bad href on ${ad.id}: ${ad.href}`).not.toBeNull()
     }
   })
 })

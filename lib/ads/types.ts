@@ -17,8 +17,12 @@ export interface AdCreative {
   placement: AdPlacement
   /** '/ads/foo.svg' (local) | full https URL | bare Supabase storage path. */
   src: string
-  /** Advertiser destination URL. */
-  href: string
+  /**
+   * Advertiser destination URL. OPTIONAL: an advertiser that supplied artwork
+   * but no landing page renders as an unlinked plate — same box, same label,
+   * just nothing to click. Omit the field entirely rather than passing ''.
+   */
+  href?: string
   /** Arabic alt text (accessibility + SEO). */
   alt: string
   /** Optional label override; defaults to 'إعلان'. */

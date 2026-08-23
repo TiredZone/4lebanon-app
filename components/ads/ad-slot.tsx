@@ -31,9 +31,13 @@ export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) 
   // ad; two or more rotate. Validation happens here, on the server, so the
   // client component only ever receives hrefs that passed sanitizeUrl().
   const slides: ValidatedSlide[] = getEligibleAds(ADS, placement).flatMap((ad) => {
-    const href = sanitizeUrl(ad.href)
+    // No href at all is legitimate (advertiser gave artwork but no landing
+    // page) and renders unlinked. An href that FAILS sanitizing is a config
+    // error, so that creative is dropped rather than silently de-linked.
+    const href = ad.href ? sanitizeUrl(ad.href) : null
     const src = resolveSrc(ad.src)
-    if (!href || !src) return []
+    if (!src) return []
+    if (ad.href && !href) return []
     return [
       {
         id: ad.id,
@@ -62,13 +66,33 @@ export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) 
         ? '(max-width: 850px) 100vw, 850px'
         : '(max-width: 1280px) 100vw, 1216px'
 
+  const frame = (
+    <span className="promo-slot__frame" style={{ aspectRatio }}>
+      <Image
+        src={first.src}
+        alt={first.alt}
+        fill
+        sizes={sizes}
+        className="promo-slot__img"
+        unoptimized={first.unoptimized}
+      />
+    </span>
+  )
+
   return (
     <aside
       className={['promo-slot', `promo-slot--${variant}`, className].filter(Boolean).join(' ')}
       aria-label="محتوى مموّل"
     >
       <span className="promo-slot__label">{label}</span>
-      {slides.length === 1 ? (
+      {slides.length > 1 ? (
+        <PromoCarousel
+          slides={slides}
+          aspectRatio={aspectRatio}
+          sizes={sizes}
+          startIndex={startIndexFor(placement, slides.length)}
+        />
+      ) : first.href ? (
         <a
           href={first.href}
           target="_blank"
@@ -76,24 +100,13 @@ export function AdSlot({ placement, variant = 'wide', className }: AdSlotProps) 
           className="promo-slot__link"
           data-promo-id={first.id}
         >
-          <span className="promo-slot__frame" style={{ aspectRatio }}>
-            <Image
-              src={first.src}
-              alt={first.alt}
-              fill
-              sizes={sizes}
-              className="promo-slot__img"
-              unoptimized={first.unoptimized}
-            />
-          </span>
+          {frame}
         </a>
       ) : (
-        <PromoCarousel
-          slides={slides}
-          aspectRatio={aspectRatio}
-          sizes={sizes}
-          startIndex={startIndexFor(placement, slides.length)}
-        />
+        // Unlinked advertiser: same plate and label, nothing to click.
+        <span className="promo-slot__plate" data-promo-id={first.id}>
+          {frame}
+        </span>
       )}
     </aside>
   )

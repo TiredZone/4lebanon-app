@@ -4,7 +4,8 @@ import type { AdCreative } from './types'
  * The single source of truth for ads. Edit this file (+ deploy) to change ads.
  * To add a new advertiser: drop the image in /public/ads/, add an entry below
  * with the image's REAL intrinsic width/height, and set `href` to the
- * advertiser URL.
+ * advertiser URL. `href` is optional — omit it and the creative renders as an
+ * unlinked plate, which is how an advertiser with no landing page runs.
  *
  * Any placement listed below renders its creative; any placement with no entry
  * here renders nothing (so wiring an <AdSlot> in a page is always safe).
@@ -38,6 +39,21 @@ const TOYOTA_ALT = 'تويوتا لبنان — لايت إيس ودينا 200 �
 /** MDM Atelier — women's fashion. Banners recomposed from the supplied 1600x800 source. */
 const MDM_HREF = 'https://mdm-atelier.com/'
 const MDM_ALT = 'إم دي إم أتيليه — أزياء نسائية'
+
+/**
+ * Jisr Al Kadi Restaurant — مطعم جسر القاضي.
+ *
+ * NO LANDING PAGE: the client supplied the logo only, so these entries have no
+ * `href` and render as unlinked plates (same box, same 'إعلان' label, nothing
+ * to click). Add `href: '...'` to every entry below once a URL exists — no
+ * other change is needed.
+ *
+ * The supplied artwork is a near-square logo, which cannot be cropped into the
+ * 4.8:1 wide box, so the banners are recomposed: the logo is centred at 84% of
+ * the box height on the white field it already sits on. Source kept alongside
+ * as jisr-al-kadi-source-1290x1287.png.
+ */
+const JISR_ALT = 'مطعم جسر القاضي'
 
 export const ADS: AdCreative[] = [
   {
@@ -161,6 +177,56 @@ export const ADS: AdCreative[] = [
     src: '/ads/mdm-atelier-card-728x200.jpg',
     href: MDM_HREF,
     alt: MDM_ALT,
+    width: 728,
+    height: 200,
+  },
+  // Jisr Al Kadi joins the same six slots, so each one now rotates between two
+  // advertisers (and three once Toyota is switched back on).
+  {
+    id: 'jisr-home-top',
+    placement: 'home-top',
+    src: '/ads/jisr-al-kadi-wide-1200x250.png',
+    alt: JISR_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'jisr-home-after-featured',
+    placement: 'home-after-featured',
+    src: '/ads/jisr-al-kadi-wide-1200x250.png',
+    alt: JISR_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'jisr-home-after-latest',
+    placement: 'home-after-latest',
+    src: '/ads/jisr-al-kadi-wide-1200x250.png',
+    alt: JISR_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'jisr-home-before-mostread',
+    placement: 'home-before-mostread',
+    src: '/ads/jisr-al-kadi-wide-1200x250.png',
+    alt: JISR_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'jisr-article-top',
+    placement: 'article-top',
+    src: '/ads/jisr-al-kadi-card-728x200.png',
+    alt: JISR_ALT,
+    width: 728,
+    height: 200,
+  },
+  {
+    id: 'jisr-article-in-body',
+    placement: 'article-in-body',
+    src: '/ads/jisr-al-kadi-card-728x200.png',
+    alt: JISR_ALT,
     width: 728,
     height: 200,
   },

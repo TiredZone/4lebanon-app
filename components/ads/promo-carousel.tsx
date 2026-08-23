@@ -11,8 +11,11 @@ const SWIPE_THRESHOLD = 40
 
 export interface PromoSlide {
   id: string
-  /** Already validated by the server component. */
-  href: string
+  /**
+   * Already validated by the server component. `null` when the advertiser has
+   * no landing page — that slide renders as an unlinked plate.
+   */
+  href: string | null
   src: string
   alt: string
   unoptimized: boolean
@@ -187,29 +190,41 @@ export function PromoCarousel({ slides, aspectRatio, sizes, startIndex }: PromoC
       <span className="promo-slot__frame" style={{ aspectRatio }}>
         {slides.map((slide, index) => {
           const isActive = index === active
-          return (
+          const image = (
+            <Image
+              src={slide.src}
+              alt={slide.alt}
+              fill
+              sizes={sizes}
+              className="promo-slot__img"
+              unoptimized={slide.unoptimized}
+            />
+          )
+          // Hidden slides stay out of the reading order and can't be clicked
+          // through, so only the visible advertiser ever receives a click.
+          const shared = {
+            className: 'promo-carousel__slide',
+            'data-promo-id': slide.id,
+            'data-active': isActive || undefined,
+            'aria-hidden': !isActive,
+          }
+          // An advertiser with no landing page still takes its turn in the
+          // rotation; it just isn't a link, so it never enters the tab order.
+          return slide.href ? (
             <a
               key={slide.id}
+              {...shared}
               href={slide.href}
               target="_blank"
               rel="noopener noreferrer sponsored"
-              className="promo-carousel__slide"
-              data-promo-id={slide.id}
-              data-active={isActive || undefined}
-              // Hidden slides stay out of the reading order and can't be clicked
-              // through, so only the visible advertiser ever receives a click.
-              aria-hidden={!isActive}
               tabIndex={isActive ? undefined : -1}
             >
-              <Image
-                src={slide.src}
-                alt={slide.alt}
-                fill
-                sizes={sizes}
-                className="promo-slot__img"
-                unoptimized={slide.unoptimized}
-              />
+              {image}
             </a>
+          ) : (
+            <span key={slide.id} {...shared}>
+              {image}
+            </span>
           )
         })}
       </span>
