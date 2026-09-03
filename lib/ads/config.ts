@@ -53,21 +53,6 @@ const VELOZ_ALT = 'تويوتا فيلوز 2026 — سبعة مقاعد من ت�
 const MDM_HREF = 'https://mdm-atelier.com/'
 const MDM_ALT = 'إم دي إم أتيليه — أزياء نسائية'
 
-/**
- * Jisr Al Kadi Restaurant — مطعم جسر القاضي.
- *
- * NO LANDING PAGE: the client supplied the logo only, so these entries have no
- * `href` and render as unlinked plates (same box, same 'إعلان' label, nothing
- * to click). Add `href: '...'` to every entry below once a URL exists — no
- * other change is needed.
- *
- * The supplied artwork is a near-square logo, which cannot be cropped into the
- * 4.8:1 wide box, so the banners are recomposed: the logo is centred at 84% of
- * the box height on the white field it already sits on. Source kept alongside
- * as jisr-al-kadi-source-1290x1287.png.
- */
-const JISR_ALT = 'مطعم جسر القاضي'
-
 export const ADS: AdCreative[] = [
   {
     id: 'toyota-home-top',
@@ -136,9 +121,9 @@ export const ADS: AdCreative[] = [
     height: 200,
   },
 
-  // MDM Atelier fills the same slots as Toyota. Those slots rotate between the
-  // two advertisers whenever both are active; with Toyota paused, MDM is the
-  // sole creative in each one and they render statically.
+  // MDM Atelier fills the same six slots as Toyota. With Toyota paused, it
+  // shares each of them with Toyota Veloz below, so they rotate between those
+  // two; un-pausing Toyota would make it three.
   {
     id: 'mdm-home-top',
     placement: 'home-top',
@@ -193,59 +178,9 @@ export const ADS: AdCreative[] = [
     width: 728,
     height: 200,
   },
-  // Jisr Al Kadi joins the same six slots, so each one now rotates between two
-  // advertisers (and three once Toyota is switched back on).
-  {
-    id: 'jisr-home-top',
-    placement: 'home-top',
-    src: '/ads/jisr-al-kadi-wide-1200x250.png',
-    alt: JISR_ALT,
-    width: 1200,
-    height: 250,
-  },
-  {
-    id: 'jisr-home-after-featured',
-    placement: 'home-after-featured',
-    src: '/ads/jisr-al-kadi-wide-1200x250.png',
-    alt: JISR_ALT,
-    width: 1200,
-    height: 250,
-  },
-  {
-    id: 'jisr-home-after-latest',
-    placement: 'home-after-latest',
-    src: '/ads/jisr-al-kadi-wide-1200x250.png',
-    alt: JISR_ALT,
-    width: 1200,
-    height: 250,
-  },
-  {
-    id: 'jisr-home-before-mostread',
-    placement: 'home-before-mostread',
-    src: '/ads/jisr-al-kadi-wide-1200x250.png',
-    alt: JISR_ALT,
-    width: 1200,
-    height: 250,
-  },
-  {
-    id: 'jisr-article-top',
-    placement: 'article-top',
-    src: '/ads/jisr-al-kadi-card-728x200.png',
-    alt: JISR_ALT,
-    width: 728,
-    height: 200,
-  },
-  {
-    id: 'jisr-article-in-body',
-    placement: 'article-in-body',
-    src: '/ads/jisr-al-kadi-card-728x200.png',
-    alt: JISR_ALT,
-    width: 728,
-    height: 200,
-  },
-  // Toyota Veloz 2026 joins the six shared slots, so each now rotates between
-  // three advertisers, and takes `article-sidebar` on its own (a placement with
-  // one creative renders as a plain static ad, no carousel).
+  // Toyota Veloz 2026 joins the six shared slots, so each rotates between two
+  // advertisers, and takes `article-sidebar` on its own (a placement with one
+  // creative renders as a plain static ad, no carousel).
   {
     id: 'veloz-home-top',
     placement: 'home-top',

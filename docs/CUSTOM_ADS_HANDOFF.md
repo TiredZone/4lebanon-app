@@ -9,25 +9,31 @@
 
 ## 1. Where things stand right now
 
-|                 |                                                                                                               |
-| --------------- | ------------------------------------------------------------------------------------------------------------- |
-| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                                  |
-| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                         |
-| **Advertisers** | MDM Atelier · Jisr Al Kadi Restaurant _(no link)_ · Toyota Veloz 2026 · ~~Toyota Lite Ace / Dyna~~ **paused** |
-| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                                  |
+|                 |                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                           |
+| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                  |
+| **Advertisers** | MDM Atelier · Toyota Veloz 2026 · ~~Toyota Lite Ace / Dyna~~ **paused** · ~~Jisr Al Kadi~~ **removed** |
+| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                           |
 
-**Live today:** 4 wide homepage banners + 2 article banners, each rotating between **three**
-advertisers — **MDM Atelier**, **Jisr Al Kadi Restaurant** and **Toyota Veloz 2026** — plus the
-**article sidebar**, which Toyota Veloz holds on its own (one creative → static, no carousel).
+**Live today:** 4 wide homepage banners + 2 article banners, each rotating between **two**
+advertisers — **MDM Atelier** and **Toyota Veloz 2026** — plus the **article sidebar**, which
+Toyota Veloz holds on its own (one creative → static, no carousel).
 
-⚠️ **Jisr Al Kadi has no landing page.** The client supplied the logo only, so its six entries in
-`lib/ads/config.ts` carry **no `href`** and render as _unlinked plates_ — same reserved box, same
-`إعلان` label, nothing to click. `href` is now **optional** on `AdCreative`; add
-`href: 'https://…'` to those entries the moment a URL exists and they become links, no other
-change needed. Its artwork was a near-square logo (1290×1295), which cannot be cropped into the
-4.8:1 wide box, so the banners were **recomposed**: the logo tight-cropped out of the source
-(the original has 4px black bars on the top and bottom edges) and centred at 84% of the box
-height on white. The trimmed original is kept at `public/ads/jisr-al-kadi-source-1290x1287.png`.
+⚠️ **Jisr Al Kadi Restaurant was removed** (2026-09-03, client request). Unlike the paused Toyota
+campaign, its six entries were **deleted** from `lib/ads/config.ts`, not flagged `active: false`,
+so nothing about it remains in the rotation. The creatives are still in `public/ads/`
+(`jisr-al-kadi-wide-1200x250.png`, `-card-728x200.png`, `-source-1290x1287.png`) in case it comes
+back — delete them freely otherwise, or `git show e57fd9f~1:lib/ads/config.ts` for the old entries.
+
+It ran as the reference case for two things worth keeping:
+
+- **An advertiser with no landing page.** `href` is **optional** on `AdCreative` — omit it and the
+  creative renders as an _unlinked plate_: same reserved box, same `إعلان` label, nothing to click.
+- **Square artwork in a 4.8:1 box.** Its near-square logo (1290×1295) could not be cropped without
+  cutting the brand name off, so the banners were **recomposed**: logo tight-cropped out of the
+  source (the original carries 4px black bars top and bottom), then centred at 84% of the box
+  height on the white field it already sat on.
 
 ⚠️ **Toyota runs TWO campaigns in the config — one live, one paused.** They are separate:
 
@@ -47,7 +53,7 @@ are the advertiser's originals — no cropping, no recomposition. A supplied 120
 discarded: no placement uses that ratio any more.
 
 **Phase 2 (carousel):** the 4 wide homepage slots and both article-body slots now rotate between
-three advertisers. Built on `feat/promo-carousel`, reviewed on that branch's Vercel preview before
+two advertisers. Built on `feat/promo-carousel`, reviewed on that branch's Vercel preview before
 merge.
 
 ⚠️ **The flag is now build-time-baked into Production too.** Changing it requires a redeploy, not
@@ -117,7 +123,7 @@ Five `<AdSlot>`s are wired into the homepage and four into the article page, but
 renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
 a placeholder.
 
-**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Jisr Al Kadi ⇄ Toyota Veloz):**
+**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Toyota Veloz):**
 `home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
 [dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
 الأكثر قراءة
@@ -131,7 +137,7 @@ banners at once. It was deliberately left empty to keep the page from feeling cl
 entry to switch it back on.
 
 **Article — 4 wired, 3 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
-recommended) rotate MDM Atelier ⇄ Jisr Al Kadi ⇄ Toyota Veloz at 728×200. `article-sidebar` (under
+recommended) rotate MDM Atelier ⇄ Toyota Veloz at 728×200. `article-sidebar` (under
 trending, **desktop ≥1500px only**) now runs Toyota Veloz's 300×250 as a single static ad. `article-after-recommended` has no creative and renders nothing.
 
 The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
