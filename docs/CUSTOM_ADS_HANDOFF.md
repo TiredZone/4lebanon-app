@@ -9,16 +9,16 @@
 
 ## 1. Where things stand right now
 
-|                 |                                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------------------ |
-| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                           |
-| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                  |
-| **Advertisers** | MDM Atelier · Toyota Veloz 2026 · ~~Toyota Lite Ace / Dyna~~ **paused** · ~~Jisr Al Kadi~~ **removed** |
-| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                           |
+|                 |                                                                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                                                                          |
+| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                                                                 |
+| **Advertisers** | MDM Atelier · Toyota Land Cruiser FJ 2027 · ~~Toyota Veloz 2026~~ **replaced** · ~~Toyota Lite Ace / Dyna~~ **paused** · ~~Jisr Al Kadi~~ **removed** |
+| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                                                                          |
 
 **Live today:** 4 wide homepage banners + 2 article banners, each rotating between **two**
-advertisers — **MDM Atelier** and **Toyota Veloz 2026** — plus the **article sidebar**, which
-Toyota Veloz holds on its own (one creative → static, no carousel).
+advertisers — **MDM Atelier** and **Toyota Land Cruiser FJ 2027** — plus the **article sidebar**,
+which Land Cruiser FJ holds on its own (one creative → static, no carousel).
 
 ⚠️ **Jisr Al Kadi Restaurant was removed** (2026-09-03, client request). Unlike the paused Toyota
 campaign, its six entries were **deleted** from `lib/ads/config.ts`, not flagged `active: false`,
@@ -37,20 +37,26 @@ It ran as the reference case for two things worth keeping:
 
 ⚠️ **Toyota runs TWO campaigns in the config — one live, one paused.** They are separate:
 
-| Campaign            | State      | Entry ids  | Link                                  |
-| ------------------- | ---------- | ---------- | ------------------------------------- |
-| **Veloz 2026**      | **LIVE**   | `veloz-*`  | `toyotalebanon.com/Vehicles/22/veloz` |
-| Lite Ace / Dyna 200 | **PAUSED** | `toyota-*` | `toyotalebanon.com/Vehicles/11/Dyna`  |
+| Campaign                 | State      | Entry ids  | Link                                           |
+| ------------------------ | ---------- | ---------- | ---------------------------------------------- |
+| **Land Cruiser FJ 2027** | **LIVE**   | `fj-*`     | `toyotalebanon.com/Vehicles/3/land-cruiser-fj` |
+| Lite Ace / Dyna 200      | **PAUSED** | `toyota-*` | `toyotalebanon.com/Vehicles/11/Dyna`           |
 
 Lite Ace / Dyna was paused at the client's request (2026-08-17): every `toyota-*` entry carries
 `active: false`, so `getEligibleAds()` filters them out. The entries and the
 `/public/ads/toyota-lite-ace-dyna-*` creatives are untouched — dropping the `active: false` lines
 switches it back on, **but** that would then run two different Toyota creatives in the same slots
-at once. Retire Veloz first if Lite Ace ever returns.
+at once. Retire Land Cruiser FJ first if Lite Ace ever returns.
 
-Veloz arrived pre-cut to the exact slot sizes (1200×250, 728×200, 300×250), so those three files
-are the advertiser's originals — no cropping, no recomposition. A supplied 1200×200 (6:1) cut was
-discarded: no placement uses that ratio any more.
+Land Cruiser FJ arrived pre-cut to the exact slot sizes (1200×250, 728×200, 300×250), so those
+three files are the advertiser's originals — no cropping, no recomposition. A supplied 1200×200
+(6:1) cut was discarded: no placement uses that ratio any more.
+
+⚠️ **Veloz 2026 was replaced by Land Cruiser FJ** (2026-09-10, client request). Same advertiser,
+so it was a straight swap rather than a third Toyota: the seven `veloz-*` entries became `fj-*`
+over the same seven placements, and the three `toyota-veloz-*` creatives were **deleted** from
+`public/ads/`. Recover them from the last commit that had them if it ever comes back —
+`git show af93e1d:public/ads/toyota-veloz-wide-1200x250.jpg > restored.jpg`.
 
 **Phase 2 (carousel):** the 4 wide homepage slots and both article-body slots now rotate between
 two advertisers. Built on `feat/promo-carousel`, reviewed on that branch's Vercel preview before
@@ -123,7 +129,7 @@ Five `<AdSlot>`s are wired into the homepage and four into the article page, but
 renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
 a placeholder.
 
-**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Toyota Veloz):**
+**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Land Cruiser FJ):**
 `home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
 [dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
 الأكثر قراءة
@@ -137,8 +143,8 @@ banners at once. It was deliberately left empty to keep the page from feeling cl
 entry to switch it back on.
 
 **Article — 4 wired, 3 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
-recommended) rotate MDM Atelier ⇄ Toyota Veloz at 728×200. `article-sidebar` (under
-trending, **desktop ≥1500px only**) now runs Toyota Veloz's 300×250 as a single static ad. `article-after-recommended` has no creative and renders nothing.
+recommended) rotate MDM Atelier ⇄ Land Cruiser FJ at 728×200. `article-sidebar` (under
+trending, **desktop ≥1500px only**) now runs Land Cruiser FJ's 300×250 as a single static ad. `article-after-recommended` has no creative and renders nothing.
 
 The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
 case an unsold slot should ever advertise itself again — delete them freely.
@@ -227,7 +233,8 @@ request a squarer ratio (3:1/4:1) or add an optional separate mobile creative la
       added to the same slots in phase 2. Unsold slots render nothing. _(Toyota has since been
       paused — see §1.)_
 - [x] Get a **300×250** sidebar creative from the advertiser and add an `article-sidebar` entry.
-      **Done** — Toyota Veloz 2026 supplied one; `article-sidebar` has rendered since 2026-09-02.
+      **Done** — Toyota Veloz 2026 supplied one; `article-sidebar` has rendered since 2026-09-02,
+      and Land Cruiser FJ's 300×250 took the slot over on 2026-09-10.
 - [ ] Merge PR #1 into `main`. _(Optionally squash the noisy commits —`17be41f` is an empty
       rebuild-trigger commit.)_
 - [ ] In Vercel, add `NEXT_PUBLIC_ADS_ENABLED=true` to the **Production** environment.

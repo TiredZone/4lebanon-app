@@ -30,24 +30,29 @@ import type { AdCreative } from './types'
  * PAUSED (2026-08-17, client request): every entry in this campaign carries
  * `active: false`, so none of them render. The creatives stay in /public/ads/
  * and the entries stay here — drop the `active: false` lines to switch it back
- * on. NOTE: this is a DIFFERENT campaign from the live Toyota Veloz one below;
+ * on. NOTE: this is a DIFFERENT campaign from the live Land Cruiser FJ one below;
  * un-pausing it would run two Toyota creatives in the same slots at once.
  */
 const TOYOTA_HREF = 'https://toyotalebanon.com/Vehicles/11/Dyna'
 const TOYOTA_ALT = 'تويوتا لبنان — لايت إيس ودينا 200 للمركبات التجارية'
 
 /**
- * Toyota Lebanon (BUMC) — Veloz 2026 campaign. LIVE.
+ * Toyota Lebanon (BUMC) — Land Cruiser FJ 2027 campaign. LIVE.
+ *
+ * Replaced the Veloz 2026 campaign on 2026-09-10 (client request). Veloz held
+ * exactly these seven placements and its creatives are gone from /public/ads/,
+ * so this is a straight swap of one Toyota campaign for another — not a second
+ * live Toyota running beside it.
  *
  * The advertiser supplied artwork already cut to the exact slot sizes, so these
  * are the originals, uncropped and unrecomposed. A supplied 1200x200 (6:1) cut
  * was dropped: no placement uses that ratio any more.
  *
- * This campaign is also what finally fills `article-sidebar` — the 300x250 slot
- * that had been wired but empty since phase 1.
+ * This campaign is what keeps `article-sidebar` filled — the 300x250 slot that
+ * had been wired but empty from phase 1 until Veloz took it on 2026-09-02.
  */
-const VELOZ_HREF = 'https://toyotalebanon.com/Vehicles/22/veloz'
-const VELOZ_ALT = 'تويوتا فيلوز 2026 — سبعة مقاعد من تويوتا لبنان'
+const FJ_HREF = 'https://toyotalebanon.com/Vehicles/3/land-cruiser-fj'
+const FJ_ALT = 'تويوتا لاند كروزر إف جيه 2027 — الجيل الجديد من تويوتا لبنان'
 
 /** MDM Atelier — women's fashion. Banners recomposed from the supplied 1600x800 source. */
 const MDM_HREF = 'https://mdm-atelier.com/'
@@ -122,8 +127,8 @@ export const ADS: AdCreative[] = [
   },
 
   // MDM Atelier fills the same six slots as Toyota. With Toyota paused, it
-  // shares each of them with Toyota Veloz below, so they rotate between those
-  // two; un-pausing Toyota would make it three.
+  // shares each of them with Land Cruiser FJ below, so they rotate between
+  // those two; un-pausing Toyota would make it three.
   {
     id: 'mdm-home-top',
     placement: 'home-top',
@@ -178,69 +183,69 @@ export const ADS: AdCreative[] = [
     width: 728,
     height: 200,
   },
-  // Toyota Veloz 2026 joins the six shared slots, so each rotates between two
-  // advertisers, and takes `article-sidebar` on its own (a placement with one
-  // creative renders as a plain static ad, no carousel).
+  // Land Cruiser FJ 2027 joins the six shared slots, so each rotates between
+  // two advertisers, and takes `article-sidebar` on its own (a placement with
+  // one creative renders as a plain static ad, no carousel).
   {
-    id: 'veloz-home-top',
+    id: 'fj-home-top',
     placement: 'home-top',
-    src: '/ads/toyota-veloz-wide-1200x250.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-wide-1200x250.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 1200,
     height: 250,
   },
   {
-    id: 'veloz-home-after-featured',
+    id: 'fj-home-after-featured',
     placement: 'home-after-featured',
-    src: '/ads/toyota-veloz-wide-1200x250.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-wide-1200x250.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 1200,
     height: 250,
   },
   {
-    id: 'veloz-home-after-latest',
+    id: 'fj-home-after-latest',
     placement: 'home-after-latest',
-    src: '/ads/toyota-veloz-wide-1200x250.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-wide-1200x250.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 1200,
     height: 250,
   },
   {
-    id: 'veloz-home-before-mostread',
+    id: 'fj-home-before-mostread',
     placement: 'home-before-mostread',
-    src: '/ads/toyota-veloz-wide-1200x250.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-wide-1200x250.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 1200,
     height: 250,
   },
   {
-    id: 'veloz-article-top',
+    id: 'fj-article-top',
     placement: 'article-top',
-    src: '/ads/toyota-veloz-card-728x200.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-card-728x200.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 728,
     height: 200,
   },
   {
-    id: 'veloz-article-in-body',
+    id: 'fj-article-in-body',
     placement: 'article-in-body',
-    src: '/ads/toyota-veloz-card-728x200.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-card-728x200.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 728,
     height: 200,
   },
   {
-    id: 'veloz-article-sidebar',
+    id: 'fj-article-sidebar',
     placement: 'article-sidebar',
-    src: '/ads/toyota-veloz-sidebar-300x250.jpg',
-    href: VELOZ_HREF,
-    alt: VELOZ_ALT,
+    src: '/ads/toyota-land-cruiser-fj-sidebar-300x250.jpg',
+    href: FJ_HREF,
+    alt: FJ_ALT,
     width: 300,
     height: 250,
   },
