@@ -9,16 +9,24 @@
 
 ## 1. Where things stand right now
 
-|                 |                                                                                                                                                       |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                                                                          |
-| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                                                                 |
-| **Advertisers** | MDM Atelier · Toyota Land Cruiser FJ 2027 · ~~Toyota Veloz 2026~~ **replaced** · ~~Toyota Lite Ace / Dyna~~ **paused** · ~~Jisr Al Kadi~~ **removed** |
-| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                                                                          |
+|                 |                                                                                                                                                                              |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase 1**     | ✅ **Shipped.** PR #1 merged to `main`; ads are **live on www.4lebanon.com**                                                                                                 |
+| **Phase 2**     | Rotating carousel for a 2nd advertiser — branch `feat/promo-carousel`                                                                                                        |
+| **Advertisers** | MDM Atelier · Toyota Land Cruiser FJ 2027 · Sabitech _(no link)_ · ~~Toyota Veloz 2026~~ **replaced** · ~~Toyota Lite Ace / Dyna~~ **paused** · ~~Jisr Al Kadi~~ **removed** |
+| **Flag**        | `NEXT_PUBLIC_ADS_ENABLED=true` on **Production and Preview**                                                                                                                 |
 
-**Live today:** 4 wide homepage banners + 2 article banners, each rotating between **two**
-advertisers — **MDM Atelier** and **Toyota Land Cruiser FJ 2027** — plus the **article sidebar**,
-which Land Cruiser FJ holds on its own (one creative → static, no carousel).
+**Live today:** 4 wide homepage banners + 2 article banners, each rotating between **three**
+advertisers — **MDM Atelier**, **Toyota Land Cruiser FJ 2027** and **Sabitech** — plus the
+**article sidebar**, which Land Cruiser FJ holds on its own (one creative → static, no carousel).
+
+ℹ️ **Sabitech runs unlinked** (added 2026-09-14, client asked for no link). Its six `sabitech-*`
+entries carry no `href`, so they render as unlinked plates; add `href` to each to make them links.
+It was supplied as a 2-page **vector Illustrator PDF**, not an image: page 1 (the lockup without the
+vertical "CO.LTD", unreadable at banner size) was rasterised with pdf.js and centred on white at 82%
+of the box height. The logo is ~3.1:1, so nothing is cropped. The transparent render is kept at
+`public/ads/sabitech-source-2229x735.png` for re-cuts. It is **not** in `article-sidebar` — a 3.1:1
+logo in a 300×250 box would be too small to read.
 
 ⚠️ **Jisr Al Kadi Restaurant was removed** (2026-09-03, client request). Unlike the paused Toyota
 campaign, its six entries were **deleted** from `lib/ads/config.ts`, not flagged `active: false`,
@@ -59,7 +67,7 @@ over the same seven placements, and the three `toyota-veloz-*` creatives were **
 `git show af93e1d:public/ads/toyota-veloz-wide-1200x250.jpg > restored.jpg`.
 
 **Phase 2 (carousel):** the 4 wide homepage slots and both article-body slots now rotate between
-two advertisers. Built on `feat/promo-carousel`, reviewed on that branch's Vercel preview before
+three advertisers. Built on `feat/promo-carousel`, reviewed on that branch's Vercel preview before
 merge.
 
 ⚠️ **The flag is now build-time-baked into Production too.** Changing it requires a redeploy, not
@@ -129,7 +137,7 @@ Five `<AdSlot>`s are wired into the homepage and four into the article page, but
 renders if `lib/ads/config.ts` has an entry for it** — an unsold slot renders nothing at all, not
 a placeholder.
 
-**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Land Cruiser FJ):**
+**Homepage — 5 wired, 4 filled (each rotates MDM ⇄ Land Cruiser FJ ⇄ Sabitech):**
 `home-top` → أهم الأخبار → `home-after-featured` → آخر الأخبار → `home-after-latest` →
 [dynamic section] → `home-mid-sections` _(empty on purpose)_ → … → `home-before-mostread` →
 الأكثر قراءة
@@ -143,7 +151,7 @@ banners at once. It was deliberately left empty to keep the page from feeling cl
 entry to switch it back on.
 
 **Article — 4 wired, 3 filled:** `article-top` (above breadcrumbs) and `article-in-body` (before
-recommended) rotate MDM Atelier ⇄ Land Cruiser FJ at 728×200. `article-sidebar` (under
+recommended) rotate MDM Atelier ⇄ Land Cruiser FJ ⇄ Sabitech at 728×200. `article-sidebar` (under
 trending, **desktop ≥1500px only**) now runs Land Cruiser FJ's 300×250 as a single static ad. `article-after-recommended` has no creative and renders nothing.
 
 The grey `public/ads/placeholder-*.svg` demo files are no longer referenced. They're kept only in
@@ -200,7 +208,7 @@ but _fails_ `sanitizeUrl()` is still dropped, so a typo'd URL can't silently de-
 
 **Square/odd-shaped artwork?** The slot cannot crop a 1:1 logo into a 4.8:1 box without cutting the
 brand name off, so recompose instead of forcing it: tight-crop the artwork, then centre it on a
-canvas of the slot's exact dimensions (see the Jisr Al Kadi note in §1). `sharp` is already a
+canvas of the slot's exact dimensions (see the Jisr Al Kadi and Sabitech notes in §1). `sharp` is already a
 dependency, so this is a ~10-line script.
 
 3. Commit + push. Merge to `main` when it should go live.

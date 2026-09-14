@@ -58,6 +58,22 @@ const FJ_ALT = 'تويوتا لاند كروزر إف جيه 2027 — الجيل
 const MDM_HREF = 'https://mdm-atelier.com/'
 const MDM_ALT = 'إم دي إم أتيليه — أزياء نسائية'
 
+/**
+ * Sabitech — bakery equipment manufacturer.
+ *
+ * NO LANDING PAGE: the client asked for this one unlinked, so the entries have
+ * no `href` and render as unlinked plates (same box, same 'إعلان' label,
+ * nothing to click). Add `href: '...'` to each entry to make them links.
+ *
+ * Supplied as a 2-page vector Illustrator PDF ("Sabitech logo uplift"). Page 1
+ * (the lockup without the vertical "CO.LTD", which is illegible at banner size)
+ * was rasterised and centred on white at 82% of the box height. The logo is
+ * ~3.1:1, so it fits both boxes without cropping. Transparent source kept as
+ * sabitech-source-2229x735.png for future re-cuts. Not in `article-sidebar`: a
+ * 3.1:1 logo in a 300x250 box would be too small to read, and FJ holds it.
+ */
+const SABITECH_ALT = 'سابيتك — مصنّع معدات المخابز'
+
 export const ADS: AdCreative[] = [
   {
     id: 'toyota-home-top',
@@ -248,6 +264,56 @@ export const ADS: AdCreative[] = [
     alt: FJ_ALT,
     width: 300,
     height: 250,
+  },
+  // Sabitech joins the six shared slots unlinked; each now rotates between
+  // MDM Atelier, Toyota Land Cruiser FJ and Sabitech.
+  {
+    id: 'sabitech-home-top',
+    placement: 'home-top',
+    src: '/ads/sabitech-wide-1200x250.png',
+    alt: SABITECH_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'sabitech-home-after-featured',
+    placement: 'home-after-featured',
+    src: '/ads/sabitech-wide-1200x250.png',
+    alt: SABITECH_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'sabitech-home-after-latest',
+    placement: 'home-after-latest',
+    src: '/ads/sabitech-wide-1200x250.png',
+    alt: SABITECH_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'sabitech-home-before-mostread',
+    placement: 'home-before-mostread',
+    src: '/ads/sabitech-wide-1200x250.png',
+    alt: SABITECH_ALT,
+    width: 1200,
+    height: 250,
+  },
+  {
+    id: 'sabitech-article-top',
+    placement: 'article-top',
+    src: '/ads/sabitech-card-728x200.png',
+    alt: SABITECH_ALT,
+    width: 728,
+    height: 200,
+  },
+  {
+    id: 'sabitech-article-in-body',
+    placement: 'article-in-body',
+    src: '/ads/sabitech-card-728x200.png',
+    alt: SABITECH_ALT,
+    width: 728,
+    height: 200,
   },
   // NOTE: `article-after-recommended` is deliberately left empty. An unfilled
   // slot renders nothing at all rather than a grey placeholder.
